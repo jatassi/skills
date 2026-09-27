@@ -1,0 +1,10 @@
+{
+  "name": "jatassi-skills-dev",
+  "private": true,
+  "workspaces": [
+    "packages/visual-grilling"
+  ],
+  "scripts": {
+    "test": "npm test --workspace packages/visual-grilling"
+  }
+}

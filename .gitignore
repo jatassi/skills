@@ -2,3 +2,6 @@
 # Local agent workspace (third-party skills, maintainer skills, symlinks into skills/)
 .agents/
 .claude/
+node_modules/
+# npm test builds the bundle here
+packages/visual-grilling/.test-dist/

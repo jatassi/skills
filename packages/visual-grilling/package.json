@@ -1,0 +1,26 @@
+{
+  "name": "visual-grilling-dev",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "build": "node build.mjs --out .test-dist",
+    "test": "tsc --noEmit -p . && node build.mjs --out .test-dist && vitest run"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^22.20.4",
+    "esbuild": "^0.28.2",
+    "mdast-util-from-markdown": "^2.0.3",
+    "mdast-util-gfm": "^3.1.0",
+    "mdast-util-to-string": "^4.0.0",
+    "micromark": "^4.0.3",
+    "micromark-extension-gfm": "^3.0.0",
+    "playwright": "^1.63.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  }
+}
