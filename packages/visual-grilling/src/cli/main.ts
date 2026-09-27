@@ -19,7 +19,6 @@ import type {
 import { formatRoundError } from '../core/round.ts';
 import {
   isValidSessionId,
-  makeDir,
   preparePrivateSessionDir,
   readServerInfo,
   sessionDir,
@@ -168,7 +167,6 @@ async function ensureServer(paths: SessionPaths, distDir: string): Promise<Serve
   const existing = readServerInfo(paths);
   if (existing && (await ping(existing))) return existing;
 
-  makeDir(paths.dir);
   rmSync(paths.serverJson, { force: true });
   const child = spawn(process.execPath, [join(distDir, 'server.mjs'), paths.dir], {
     cwd: tmpdir(),

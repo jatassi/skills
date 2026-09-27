@@ -111,6 +111,7 @@ export function rawRequest(
 
 function parseRaw(text: string): RawResponse {
   const split = text.indexOf('\r\n\r\n');
+  if (split === -1) throw new Error(`truncated HTTP response: ${JSON.stringify(text)}`);
   const [statusLine, ...headerLines] = text.slice(0, split).split('\r\n');
   const headers: Record<string, string> = {};
   for (const line of headerLines) {

@@ -25,7 +25,7 @@ export const BASE_HEADERS: OutgoingHttpHeaders = {
   'x-content-type-options': 'nosniff',
 };
 
-export const ROUND_PAGE_CSP = [
+const ROUND_PAGE_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline'",
@@ -47,17 +47,20 @@ export const ROUND_PAGE_HEADERS: OutgoingHttpHeaders = {
 /**
  * Checks a request before any route sees it. Returns why it is refused, or
  * `undefined` when routing may go on. It reads headers only, never the body.
+ *
+ * `route` must be the very pathname the router dispatches on (dot segments
+ * already resolved), so the guard and the router can never disagree about
+ * which kind of route a request is.
  */
-export function guardRequest(req: IncomingMessage, port: number): Rejection | undefined {
+export function guardRequest(req: IncomingMessage, route: string, port: number): Rejection | undefined {
   const host = (req.headers.host ?? '').toLowerCase();
   if (host !== `127.0.0.1:${port}` && host !== `localhost:${port}`) {
     return { status: 403, error: 'Host must be 127.0.0.1:<port> or localhost:<port>' };
   }
 
-  const path = (req.url ?? '/').split('?')[0]!;
   const method = req.method ?? '';
 
-  if (path.startsWith('/control/')) {
+  if (route.startsWith('/control/')) {
     if (method !== 'POST') return { status: 405, error: 'control routes are POST-only' };
     if (fromBrowser(req)) return { status: 403, error: 'control routes refuse requests from a browser' };
     return undefined;
@@ -65,7 +68,10 @@ export function guardRequest(req: IncomingMessage, port: number): Rejection | un
 
   if (method === 'POST') {
     if (req.headers.origin !== `http://127.0.0.1:${port}`) {
-      return { status: 403, error: 'page writes must come from the round page Origin' };
+      return {
+        status: 403,
+        error: `page writes must come from the round page's Origin, http://127.0.0.1:${port} (open the page at that address)`,
+      };
     }
     if (!isJson(req.headers['content-type'])) {
       return { status: 415, error: 'page writes must be application/json' };

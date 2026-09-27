@@ -191,6 +191,16 @@ describe('control routes', () => {
     expect((await box.cli(['await', '--timeout', '0'])).stdout).toBe('pending · round 1 · re-run await\n');
   });
 
+  it.each(['/x/../control/end', '/%2e%2e/control/end', '/api/%2E%2E/control/end', '/./control/end'])(
+    'sees through a dotted path to a control route: GET %s',
+    async (path) => {
+      const response = await rawRequest(port, 'GET', path);
+      expect(response.status).toBe(405);
+      expect(process.kill(box.serverInfo('c1').pid, 0)).toBe(true);
+      expect(existsSync(box.sessionDir('c1'))).toBe(true);
+    },
+  );
+
   it('answers the CLI, which sends neither', async () => {
     const response = await rawRequest(port, 'POST', '/control/await', { 'content-type': 'application/json' }, '{"timeoutMs":0}');
     expect(response.status).toBe(200);
@@ -294,6 +304,15 @@ describe.skipIf(!posix)('session folder checks', () => {
 
     expectRefused(await presentIn(box), box.sessionDir('m6'), /group or other/);
     expect(existsSync(join(box.sessionDir('m6'), 'server.json'))).toBe(false);
+  });
+
+  it('makes the temp folder itself when it is missing', async () => {
+    const box = fresh('m8');
+    const missing = join(box.tmp, 'not-yet');
+    Object.assign(box.env, { TMPDIR: missing, TEMP: missing, TMP: missing });
+    expect((await presentIn(box)).code).toBe(0);
+    expect(statSync(join(missing, 'visual-grilling', 'm8')).mode & 0o777).toBe(0o700);
+    expect((await box.cli(['end'])).code).toBe(0);
   });
 
   it('accepts folders that already exist and pass the checks', async () => {

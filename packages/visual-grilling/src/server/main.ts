@@ -82,11 +82,9 @@ const server = createServer((req, res) => {
 });
 
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const rejection = guardRequest(req, port);
+  const route = new URL(req.url ?? '/', 'http://127.0.0.1').pathname;
+  const rejection = guardRequest(req, route, port);
   if (rejection) return sendJson(res, rejection.status, { error: rejection.error });
-
-  const url = new URL(req.url ?? '/', 'http://127.0.0.1');
-  const route = url.pathname;
 
   if (route.startsWith('/control/')) {
     const body = await readJson(req);
@@ -106,7 +104,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   }
 
   if (req.method === 'GET') {
-    if (route === '/') return sendFile(res, 'index.html');
+    if (route === '/') return sendFile(res, 'index.html', ROUND_PAGE_HEADERS);
     const asset = /^\/assets\/([a-z0-9-]+\.(?:js|css))$/.exec(route);
     if (asset) return sendFile(res, asset[1]!);
     if (route === '/events') return openEvents(req, res);
@@ -282,7 +280,7 @@ const CONTENT_TYPES: Record<string, string> = {
   css: 'text/css; charset=utf-8',
 };
 
-function sendFile(res: ServerResponse, name: string): void {
+function sendFile(res: ServerResponse, name: string, headers = BASE_HEADERS): void {
   let content: Buffer;
   try {
     content = readFileSync(join(pageDir, name));
@@ -290,7 +288,7 @@ function sendFile(res: ServerResponse, name: string): void {
     return sendJson(res, 404, { error: 'not found' });
   }
   res.writeHead(200, {
-    ...(name === 'index.html' ? ROUND_PAGE_HEADERS : BASE_HEADERS),
+    ...headers,
     'content-type': CONTENT_TYPES[name.split('.').pop()!] ?? 'application/octet-stream',
     'cache-control': 'no-store',
     'content-length': content.length,

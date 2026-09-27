@@ -4,6 +4,9 @@
 //     rounds/round-N.md        the round files as presented
 //     submissions/round-N.json the structured round submissions
 //     server.json              how the CLI finds the server
+//
+// Folders are 0700 and files 0600. `present` checks `visual-grilling/` and the
+// session folder before trusting them (preparePrivateSessionDir).
 
 import { lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -61,9 +64,11 @@ export function makeDir(dir: string): void {
 export function preparePrivateSessionDir(paths: SessionPaths): void {
   for (const dir of [dirname(paths.dir), paths.dir]) {
     try {
-      mkdirSync(dir, { mode: DIR_MODE });
+      // Recursive so a missing temp folder is made too; it never widens an existing folder.
+      mkdirSync(dir, { recursive: true, mode: DIR_MODE });
     } catch (error) {
-      if ((error as { code?: string }).code !== 'EEXIST') throw error;
+      // Something that isn't a directory is in the way; the check below names it.
+      if (!['EEXIST', 'ENOTDIR'].includes((error as { code?: string }).code ?? '')) throw error;
     }
     if (process.platform !== 'win32') checkPrivateDir(dir);
   }
@@ -71,7 +76,7 @@ export function preparePrivateSessionDir(paths: SessionPaths): void {
 
 function checkPrivateDir(dir: string): void {
   const stat = lstatSync(dir);
-  const refuse = (reason: string) => {
+  const refuse = (reason: string): never => {
     throw new Error(`refusing to use ${dir}: ${reason}`);
   };
   if (stat.isSymbolicLink()) refuse('it is a symlink, not a real directory; remove it and present again');
