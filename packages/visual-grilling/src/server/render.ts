@@ -41,7 +41,15 @@ export function pageRound(
       options: question.options.map((option) => ({
         letter: option.letter,
         labelHtml: inlineHtml(option.label),
-        ...(option.mockup ? { mockup: { source: option.mockup.source, tailwind: option.mockup.tailwind } } : {}),
+        ...(option.mockup
+          ? {
+              mockup: {
+                source: option.mockup.source,
+                tailwind: option.mockup.tailwind,
+                frame: mockupFramePath(number, question.number, option.letter),
+              },
+            }
+          : {}),
       })),
       recommendation: {
         html: markdownHtml(question.recommendation.source),
@@ -61,6 +69,15 @@ export function pageRound(
 /** Where an html illustration's sandboxed frame is served. */
 export function framePath(round: number, illustration: string): string {
   return `/frame/r${round}/${illustration}`;
+}
+
+/**
+ * Where an option's mockup frame is served. A mockup has no id of its own, so
+ * it goes by its question and letter; the extra segment keeps it apart from
+ * illustration ids.
+ */
+export function mockupFramePath(round: number, question: number, option: string): string {
+  return `/frame/r${round}/q${question}/${option}`;
 }
 
 function pageTable(table: TableData): PageTable {

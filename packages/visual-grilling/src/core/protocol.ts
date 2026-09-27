@@ -16,6 +16,7 @@
 //   POST /api/rounds/<n>/warnings    PageWarning → {}  a page-only draw failure or a frame script error
 //   POST /api/activity                     → {}  the user is interacting (keeps the server from idling out)
 //   GET  /frame/r<n>/<illustration-id>     an html illustration's sandboxed frame document
+//   GET  /frame/r<n>/q<m>/<option>         an option's mockup, framed the same way
 //   GET  /frame/assets/<file>              the frame's scripts (inject.js, tailwind.js)
 
 import type { DesignTreeNode, Illustration, RoundError, RoundNote } from './round.ts';
@@ -74,7 +75,8 @@ export interface PageTable {
 export interface PageOption {
   letter: string;
   labelHtml: string;
-  mockup?: { source: string; tailwind: boolean };
+  /** `frame` is the path its sandboxed frame is served at, /frame/r<N>/q<M>/<option>. */
+  mockup?: { source: string; tailwind: boolean; frame: string };
 }
 
 export interface PageQuestion {

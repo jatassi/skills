@@ -27,6 +27,17 @@ export interface FrameSubject {
   title: string;
   /** What the caption calls the kind. */
   kindLabel: string;
+  /** For a mockup: it's drawn as a card that picks its option. */
+  card?: MockupCard;
+}
+
+export interface MockupCard {
+  /** The option's label, rendered from its Markdown with raw HTML escaped. */
+  labelHtml: string;
+  /** The recommendation points at this option. */
+  recommended: boolean;
+  /** Picks the card's option. */
+  pick(): void;
 }
 
 export interface FrameView {
@@ -36,6 +47,8 @@ export interface FrameView {
   nextNumber: number;
   commenting: boolean;
   readOnly: boolean;
+  /** For a mockup card: its option is the answer (picked, or accepted through the recommendation). */
+  picked?: boolean;
 }
 
 export interface FrameHooks {
@@ -71,6 +84,8 @@ export class IllustrationFrame {
   /** The user's backdrop toggle, once used; until then the backdrop follows `unreadable`. */
   private backdropChoice?: boolean;
   private reported = false;
+  /** A mockup card's pick button, laid over the mockup. */
+  private readonly cardPick?: HTMLButtonElement;
 
   constructor(
     private readonly subject: FrameSubject,
@@ -97,6 +112,20 @@ export class IllustrationFrame {
     this.content.append(el('div', 'block'), this.pins);
     this.content.addEventListener('click', (event) => this.pick(event), { capture: true });
 
+    const { card } = subject;
+    // A mockup card picks its option on a click. Clicks inside the sandboxed
+    // frame never reach the page (and a frame's own messages must never answer
+    // for the user), so the card lays a button over its mockup. It steps aside
+    // in comment mode, when the click is the frame's to anchor, and on a round
+    // that can no longer be answered, when the mockup is only there to look at.
+    if (card) {
+      this.cardPick = el('button', 'card-pick');
+      this.cardPick.type = 'button';
+      this.cardPick.setAttribute('aria-label', `Pick option ${subject.option}`);
+      this.cardPick.addEventListener('click', () => card.pick());
+      this.content.append(this.cardPick);
+    }
+
     const stage = el('div', 'stage');
     stage.append(this.content);
 
@@ -105,14 +134,29 @@ export class IllustrationFrame {
     this.composer = el('div', 'composer');
 
     const caption = el('figcaption');
-    caption.append(
-      el('span', 'title', subject.title),
-      el('span', 'kind', subject.kindLabel),
-      this.backdropToggle,
-      this.toggle,
-    );
+    if (card) {
+      const label = el('span', 'title');
+      label.innerHTML = card.labelHtml;
+      // The tools wrap under the letter and label when the card is narrow.
+      const tools = el('span', 'card-tools');
+      tools.append(this.backdropToggle, this.toggle);
+      caption.append(
+        el('span', 'opt-k', subject.option),
+        label,
+        ...(card.recommended ? [el('span', 'rec-badge', 'Recommended')] : []),
+        tools,
+      );
+    } else {
+      caption.append(
+        el('span', 'title', subject.title),
+        el('span', 'kind', subject.kindLabel),
+        this.backdropToggle,
+        this.toggle,
+      );
+    }
 
-    this.element = el('figure', `illustration kind-${subject.illustration.kind}`);
+    this.element = el('figure', `illustration kind-${subject.illustration.kind}${card ? ' mockup-card' : ''}`);
+    this.element.classList.toggle('recommended', card?.recommended === true);
     this.element.setAttribute('aria-label', subject.title);
     this.element.append(caption, stage, this.composer, this.threads);
     void this.draw();
@@ -195,6 +239,11 @@ export class IllustrationFrame {
     this.toggle.setAttribute('aria-pressed', String(view.commenting));
     this.toggle.disabled = view.readOnly;
     this.element.classList.toggle('commenting', canComment);
+    this.element.classList.toggle('on', view.picked === true);
+    if (this.cardPick) {
+      this.cardPick.hidden = view.commenting || view.readOnly;
+      this.cardPick.setAttribute('aria-pressed', String(view.picked === true));
+    }
     this.pushState();
 
     this.pins.replaceChildren(

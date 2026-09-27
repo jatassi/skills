@@ -142,8 +142,11 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     if (frameAsset && (FRAME_ASSETS as readonly string[]).includes(frameAsset[1]!)) {
       return sendFile(res, frameAsset[1]!, BASE_HEADERS, frameDir);
     }
-    const frameRoute = /^\/frame\/r(\d+)\/([a-z0-9][a-z0-9-]*)$/.exec(route);
-    if (frameRoute) return sendFrame(res, Number(frameRoute[1]), frameRoute[2]!, url.searchParams.get('theme'));
+    const frameRoute = /^\/frame\/r(\d+)\/([a-z0-9][a-z0-9-]*)(?:\/([A-Z]))?$/.exec(route);
+    if (frameRoute) {
+      const [, n, id, option] = frameRoute;
+      return sendFrame(res, frameSource(Number(n), id!, option), url.searchParams.get('theme'));
+    }
     if (route === '/api/rounds') return sendJson(res, 200, roundIndex());
     const roundRoute = /^\/api\/rounds\/(latest|\d+)$/.exec(route);
     if (roundRoute) {
@@ -248,15 +251,28 @@ function submit(res: ServerResponse, n: number, body: PageSubmission): void {
   sendJson(res, 200, {});
 }
 
-/** Serves an html illustration's frame: the agent's HTML with the frame head injected, sandboxed. */
-function sendFrame(res: ServerResponse, n: number, id: string, theme: string | null): void {
-  const illustration = rounds
-    .get(n)
-    ?.questions.flatMap((question) => question.illustrations)
+/**
+ * The agent HTML a frame path names: /frame/r<N>/<illustration-id> is an html
+ * illustration, /frame/r<N>/q<M>/<option> is that option's mockup.
+ */
+function frameSource(n: number, id: string, option: string | undefined): { source: string; tailwind: boolean } | undefined {
+  const round = rounds.get(n);
+  if (!round) return undefined;
+  if (option !== undefined) {
+    const question = round.questions.find((candidate) => `q${candidate.number}` === id);
+    return question?.options.find((candidate) => candidate.letter === option)?.mockup;
+  }
+  const illustration = round.questions
+    .flatMap((question) => question.illustrations)
     .find((candidate) => candidate.id === id && candidate.kind === 'html');
-  if (!illustration) return sendJson(res, 404, { error: 'no such frame' });
-  const page = frameDocument(illustration.source, {
-    tailwind: illustration.tailwind !== false,
+  return illustration && { source: illustration.source, tailwind: illustration.tailwind !== false };
+}
+
+/** Serves an html illustration's or a mockup's frame: the agent's HTML with the frame head injected, sandboxed. */
+function sendFrame(res: ServerResponse, frame: { source: string; tailwind: boolean } | undefined, theme: string | null): void {
+  if (!frame) return sendJson(res, 404, { error: 'no such frame' });
+  const page = frameDocument(frame.source, {
+    tailwind: frame.tailwind,
     theme: theme === 'light' ? 'light' : 'dark',
   });
   res.writeHead(200, {
@@ -287,6 +303,7 @@ function reportWarning(res: ServerResponse, n: number, body: unknown): void {
     (existing) =>
       existing.question === warning.question &&
       existing.illustration === warning.illustration &&
+      existing.option === warning.option &&
       existing.kind === warning.kind &&
       (warning.kind === 'draw' || existing.message === warning.message),
   );

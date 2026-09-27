@@ -1,7 +1,8 @@
 // The `html` block: the agent's own HTML, in a sandboxed frame that never
 // shares the round page's origin.
 //
-// The frame is loaded by URL (/frame/r<N>/<illustration-id>, never srcdoc)
+// The frame is loaded by URL (/frame/r<N>/<illustration-id>, or
+// /frame/r<N>/q<M>/<option> for a mockup; never srcdoc)
 // with the sandbox below and no allow-same-origin, so its scripts can neither
 // read this page nor send its round submission (page writes need this page's
 // exact Origin; the frame's is "null"). The server injects the frame script
@@ -35,7 +36,7 @@ function listen(): void {
 
 export const htmlBlock: BlockRenderer = {
   render(target, illustration, context) {
-    // Only illustrations have a frame so far; an option's mockup shows its source.
+    // The server gives every html illustration and mockup a frame; without one there is only the source.
     if (!illustration.frame) return sourceBlock.render(target, illustration, context);
     listen();
 

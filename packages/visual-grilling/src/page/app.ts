@@ -484,8 +484,8 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
         render();
       },
       reportWarning: (kind, message) => {
-        // Only an illustration has an id the round knows; a mockup's problems stay on the page.
-        if (!subject.option) void reportWarning(view.round, { question: n, illustration: subject.illustration.id, kind, message });
+        const about = subject.option ? { option: subject.option } : { illustration: subject.illustration.id };
+        void reportWarning(view.round, { question: n, ...about, kind, message });
       },
     });
     frames.push({ frame: made, subject });
@@ -516,26 +516,39 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
     h(
       'div',
       { class: 'opts', role: 'group', 'aria-label': 'Options' },
-      ...question.options.map((option, index) =>
-        h(
-          'div',
-          { class: 'opt-row' },
-          optionButtons[index],
-          option.mockup &&
-            frame({
-              illustration: {
-                id: `mockup-${option.letter.toLowerCase()}`,
-                kind: 'html',
-                fence: 'html',
-                source: option.mockup.source,
-                tailwind: option.mockup.tailwind,
-              },
-              option: option.letter,
-              title: `Mockup ${option.letter}`,
-              kindLabel: 'html mockup',
-            }),
-        ),
-      ),
+      ...question.options.map((_, index) => h('div', { class: 'opt-row' }, optionButtons[index])),
+    );
+  // Mockups sit side by side as cards keyed by letter, above the options they
+  // illustrate; a click on a card picks its option.
+  const withMockups = question.options.filter((option) => option.mockup);
+  const mockups =
+    withMockups.length > 0 &&
+    h(
+      'div',
+      { class: 'mockups', role: 'group', 'aria-label': 'Mockups' },
+      ...withMockups.map((option) => {
+        const mockup = option.mockup!;
+        const title = `Mockup ${option.letter}`;
+        return frame({
+          illustration: {
+            id: `mockup-${option.letter.toLowerCase()}`,
+            kind: 'html',
+            fence: 'html',
+            title,
+            source: mockup.source,
+            tailwind: mockup.tailwind,
+            frame: mockup.frame,
+          },
+          option: option.letter,
+          title,
+          kindLabel: 'html mockup',
+          card: {
+            labelHtml: option.labelHtml,
+            recommended: question.recommendation.option === option.letter,
+            pick: () => act(view, n, { kind: 'pick', letter: option.letter }),
+          },
+        });
+      }),
     );
 
   // Read-only rather than disabled, so a draft stays selectable and copyable.
@@ -565,6 +578,7 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
       ...question.illustrations.map((illustration) =>
         frame({ illustration, title: illustration.title ?? illustration.id, kindLabel: illustration.kind }),
       ),
+      mockups,
       options,
       textarea,
       note,
@@ -577,6 +591,9 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
     const readOnly = !canSend(view.round);
     const accepted = draft.mode === 'accepted';
     const all = comments();
+    /** The option is the answer: picked, or accepted through the recommendation's letter. */
+    const chosen = (letter: string) =>
+      (draft.mode === 'picked' && draft.option === letter) || (accepted && question.recommendation.option === letter);
 
     fill(header, [
       stateIcon(questionState(view, n)),
@@ -599,6 +616,7 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
         nextNumber: all.length + 1,
         commenting: state.commenting,
         readOnly,
+        picked: subject.option !== undefined && chosen(subject.option),
       });
     }
 
@@ -631,9 +649,7 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
 
     question.options.forEach((option, index) => {
       const button = optionButtons[index]!;
-      const on =
-        (draft.mode === 'picked' && draft.option === option.letter) ||
-        (accepted && question.recommendation.option === option.letter);
+      const on = chosen(option.letter);
       button.classList.toggle('on', on);
       button.setAttribute('aria-pressed', String(on));
       button.disabled = readOnly;

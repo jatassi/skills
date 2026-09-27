@@ -26,13 +26,22 @@ export type PageComment = Anchor & { text: string; cropImage?: string };
  * /api/rounds/<n>/warnings) and carried by the round's submission: a block
  * that failed to draw on the page, or an uncaught script error in agent HTML.
  */
-export interface PageWarning {
+export type PageWarning = {
   question: number;
-  /** The illustration's id. */
-  illustration: string;
   kind: 'draw' | 'script';
   message: string;
-}
+} & (
+  | {
+      /** The illustration's id. */
+      illustration: string;
+      option?: undefined;
+    }
+  | {
+      illustration?: undefined;
+      /** The letter of the option whose mockup it is. */
+      option: string;
+    }
+);
 
 export interface PageSubmission {
   round: number;
@@ -54,11 +63,11 @@ export type Verdict =
 /** An anchored comment in the saved record. `crop` is the absolute path of a weak match's crop image. */
 export type CommentRecord = Omit<PageComment, 'cropImage'> & { question: number; crop?: string };
 
-export interface WarningRecord {
-  kind: 'draw' | 'script';
-  illustration: { id: string; lang: string };
-  message: string;
-}
+/** A page warning in the saved record: about an illustration, or (with `option`) about that option's mockup. */
+export type WarningRecord = { kind: 'draw' | 'script'; message: string } & (
+  | { illustration: { id: string; lang: string }; option?: undefined }
+  | { illustration?: undefined; option: string }
+);
 
 export interface QuestionRecord {
   number: number;
@@ -140,6 +149,7 @@ export function buildRecord(
     const questionWarnings = warnings
       .filter((warning) => warning.question === question.number)
       .map((warning): WarningRecord => {
+        if (warning.option !== undefined) return { kind: warning.kind, option: warning.option, message: warning.message };
         const illustration = question.illustrations.find((candidate) => candidate.id === warning.illustration)!;
         return { kind: warning.kind, illustration: { id: illustration.id, lang: illustration.fence }, message: warning.message };
       });
@@ -161,13 +171,22 @@ export function checkWarning(round: Round, payload: unknown): PageWarning {
   const body = (typeof payload === 'object' && payload !== null ? payload : {}) as Partial<Record<keyof PageWarning, unknown>>;
   const question = round.questions.find((candidate) => candidate.number === body.question);
   if (!question) throw new Error(`the round has no Q${String(body.question)}`);
-  const illustration = question.illustrations.find((candidate) => candidate.id === body.illustration);
-  if (!illustration) throw new Error(`Q${question.number} has no illustration "${String(body.illustration)}"`);
+  let subject: { illustration: string } | { option: string };
+  if (body.option !== undefined && body.option !== null) {
+    // A mockup is always agent HTML, so it may report either kind.
+    const option = question.options.find((candidate) => candidate.letter === body.option && candidate.mockup);
+    if (!option) throw new Error(`Q${question.number}: option ${String(body.option).slice(0, 2)} has no mockup`);
+    subject = { option: option.letter };
+  } else {
+    const illustration = question.illustrations.find((candidate) => candidate.id === body.illustration);
+    if (!illustration) throw new Error(`Q${question.number} has no illustration "${String(body.illustration)}"`);
+    if (body.kind === 'script' && illustration.kind !== 'html') throw new Error('only html illustrations run scripts');
+    subject = { illustration: illustration.id };
+  }
   if (body.kind !== 'draw' && body.kind !== 'script') throw new Error('unknown warning kind');
-  if (body.kind === 'script' && illustration.kind !== 'html') throw new Error('only html illustrations run scripts');
   const message = typeof body.message === 'string' ? body.message.trim().slice(0, WARNING_MESSAGE_LIMIT) : '';
   if (!message) throw new Error('a warning needs a message');
-  return { question: question.number, illustration: illustration.id, kind: body.kind, message };
+  return { question: question.number, ...subject, kind: body.kind, message };
 }
 
 /**
@@ -352,9 +371,12 @@ function record(value: unknown): Record<string, unknown> | undefined {
 }
 
 function warningLine(warning: WarningRecord): string {
-  const { id, lang } = warning.illustration;
+  // A mockup is named as its comments are (anchorLine): by its option.
+  const subject = warning.illustration
+    ? `${warning.illustration.lang} "${warning.illustration.id}"`
+    : `mockup ${warning.option}`;
   const what = warning.kind === 'draw' ? 'failed to draw on the page' : 'script error';
-  return `${lang} "${id}" ${what}: ${oneLine(warning.message)}`;
+  return `${subject} ${what}: ${oneLine(warning.message)}`;
 }
 
 const SENTENCE_LIMIT = 80;
