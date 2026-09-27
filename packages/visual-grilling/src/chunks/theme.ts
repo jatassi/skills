@@ -35,7 +35,7 @@ export function presetMarks(t: DiagramTokens): { recommended: PresetMark; risk: 
 }
 
 /** A tint of `color` over `base`, for a fill that keeps the label readable. */
-export function mix(color: string, base: string, amount = 0.25): string {
+function mix(color: string, base: string, amount = 0.25): string {
   const a = rgb(color);
   const b = rgb(base);
   if (!a || !b) return base;

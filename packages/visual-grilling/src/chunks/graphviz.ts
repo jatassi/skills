@@ -66,7 +66,7 @@ export async function drawDot(renderId: string, source: string, tokens: DiagramT
   }
   const empty = emptiness(result.output);
   if (empty) throw new EmptyDrawingError(empty);
-  return { svg: themed(result.output, renderId, tokens) };
+  return { svg: forPage(result.output, renderId, tokens) };
 }
 
 /** Why an SVG shows nothing, or `undefined` when something is drawn. */
@@ -74,8 +74,9 @@ function emptiness(svg: string): string | undefined {
   const viewBox = /<svg\b[^>]*\bviewBox="([^"]*)"/.exec(svg)?.[1] ?? '';
   const [, , width, height] = viewBox.trim().split(/[\s,]+/).map(Number);
   if (!(Number(width) > 0) || !(Number(height) > 0)) return 'the graph came out empty (zero size)';
-  const drawn = /<g\b[^>]*\bclass="(?:node|edge|cluster)\b/.test(svg) || /<text\b/.test(svg);
-  return drawn ? undefined : 'the graph came out empty (no nodes, edges or labels)';
+  // Graphviz writes nothing at all for what it doesn't draw (`style=invis`, no statements).
+  const drawn = /<(?:ellipse|polygon|polyline|path|text|image)\b/.test(svg);
+  return drawn ? undefined : 'the graph came out empty (nothing drawn)';
 }
 
 /**
@@ -84,7 +85,7 @@ function emptiness(svg: string): string | undefined {
  * graph, node, edge and cluster groups move to `data-id`, so the agent's ids
  * can't collide with the page's or another drawing's.
  */
-function themed(svg: string, renderId: string, tokens: DiagramTokens): string {
+function forPage(svg: string, renderId: string, tokens: DiagramTokens): string {
   const start = svg.indexOf('<svg');
   const body = svg
     .slice(start)
@@ -114,6 +115,9 @@ function presetStyle(id: string, t: DiagramTokens): string {
     rules('recommended', recommended),
     rules('risk', risk),
     `#${id} .muted { opacity: ${mutedOpacity}; }`,
+    // A cluster is unfilled by default; a mark tints it, as it does a Mermaid subgraph.
+    `#${id} .cluster.recommended > :is(polygon, path)[fill="none"] { fill: ${recommended.fill}; }`,
+    `#${id} .cluster.risk > :is(polygon, path)[fill="none"] { fill: ${risk.fill}; }`,
     // A cluster is unfilled by default; a click anywhere in its frame is still on it.
     `#${id} .cluster > :is(polygon, path) { pointer-events: all; }`,
   ].join('\n');

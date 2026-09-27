@@ -116,5 +116,6 @@ export const DOT_FIXTURES: DotFixture[] = [
 
   // ------------------------------------------------------------- empty
   { name: 'no statements', verdict: 'empty', source: 'digraph {}' },
+  { name: 'only invisible parts', verdict: 'empty', source: 'digraph {\n  a [style=invis]\n  b [style=invis]\n  a -> b [style=invis]\n}' },
   { name: 'only defaults', verdict: 'empty', source: 'strict graph G {\n  node [shape=box]\n  edge [color=red]\n}' },
 ];

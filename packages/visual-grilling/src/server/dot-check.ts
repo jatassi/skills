@@ -7,12 +7,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type * as GraphvizChunk from '../chunks/graphviz.ts';
 import type { Illustration } from '../core/round.ts';
-
-/** Why a block failed the check, and the line of its source to point at. */
-export interface DrawFailure {
-  message: string;
-  sourceLine?: number;
-}
+import type { DrawFailure } from './draw-check.ts';
 
 export class DotCheck {
   private chunk: Promise<typeof GraphvizChunk> | undefined;

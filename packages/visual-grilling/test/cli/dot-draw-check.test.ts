@@ -70,7 +70,7 @@ describe('the draw check for dot blocks', () => {
     expect(result.stdout).toBe('');
     expect(result.stderr.trimEnd().split('\n')).toEqual([
       `${file}:12 · Q1 · illustration "typo" (dot): Graphviz failed to draw it: syntax error in line 3 near '['`,
-      `${file}:20 · Q2 · illustration "blank" (dot): the graph came out empty (no nodes, edges or labels)`,
+      `${file}:20 · Q2 · illustration "blank" (dot): the graph came out empty (nothing drawn)`,
       `${file}:24 · Q2 · illustration "engine" (dot): Graphviz failed to draw it: Layout type: "nope" not recognized. Use one of: circo dot fdp neato nop nop1 nop2 osage patchwork sfdp twopi`,
     ]);
     expect(existsSync(sandbox.sessionDir('g1'))).toBe(false);

@@ -12,8 +12,14 @@ import { pathToFileURL } from 'node:url';
 import type * as MermaidChunk from '../chunks/mermaid.ts';
 import type { Illustration, Round, RoundError } from '../core/round.ts';
 import { installDomGlobals } from './dom-shim.ts';
-import { DotCheck, type DrawFailure } from './dot-check.ts';
+import { DotCheck } from './dot-check.ts';
 import { explainMermaidFailure } from './mermaid-explain.ts';
+
+/** Why a block failed the check, and the line of its source to point at. */
+export interface DrawFailure {
+  message: string;
+  sourceLine?: number;
+}
 
 export class DrawCheck {
   private mermaid: Promise<typeof MermaidChunk> | undefined;

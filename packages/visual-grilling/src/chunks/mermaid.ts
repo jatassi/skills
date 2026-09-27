@@ -6,7 +6,7 @@
 
 import elkLayouts from '@mermaid-js/layout-elk';
 import mermaid, { type MermaidConfig } from 'mermaid';
-import { DARK_TOKENS, isDark, presetMarks as presetColours, type DiagramTokens } from './theme.ts';
+import { DARK_TOKENS, isDark, presetMarks, type DiagramTokens } from './theme.ts';
 
 mermaid.registerLayoutLoaders(elkLayouts);
 
@@ -98,7 +98,7 @@ async function withPresetClassDefs(source: string, diagramType: string, tokens: 
 }
 
 function presetStyles(t: MermaidTokens): Record<'recommended' | 'risk' | 'muted', string> {
-  const { recommended, risk, mutedOpacity } = presetColours(t);
+  const { recommended, risk, mutedOpacity } = presetMarks(t);
   return {
     recommended: `fill:${recommended.fill},stroke:${recommended.stroke},stroke-width:${recommended.strokeWidth}`,
     risk: `fill:${risk.fill},stroke:${risk.stroke},stroke-width:${risk.strokeWidth}`,
@@ -135,7 +135,7 @@ function baseConfig(tokens: MermaidTokens): MermaidConfig {
     look: 'neo',
     theme: 'base',
     themeVariables: themeVariables(tokens),
-    themeCSS: presetMarks(tokens),
+    themeCSS: presetMarkCss(tokens),
   };
 }
 
@@ -192,9 +192,9 @@ function themeVariables(t: MermaidTokens): Record<string, string | boolean> {
  * mindmap, say). Types that take `classDef` get them as real ones as well, so
  * an agent's `%%{init: {themeCSS}}%%`, which replaces this, doesn't lose them.
  */
-function presetMarks(t: MermaidTokens): string {
+function presetMarkCss(t: MermaidTokens): string {
   const shapes = ':is(rect, circle, ellipse, polygon, path.basic, path.outer-path, .label-container)';
-  const { recommended, risk, mutedOpacity } = presetColours(t);
+  const { recommended, risk, mutedOpacity } = presetMarks(t);
   return [
     `.recommended ${shapes}, .recommended${shapes} { fill: ${recommended.fill}; stroke: ${recommended.stroke}; stroke-width: ${recommended.strokeWidth}; }`,
     `.risk ${shapes}, .risk${shapes} { fill: ${risk.fill}; stroke: ${risk.stroke}; stroke-width: ${risk.strokeWidth}; }`,
