@@ -36,3 +36,13 @@ Point your client at this repository; the manifest is [`plugin.json`](plugin.jso
 ```
 
 Keep `version` in `plugin.json` and `.claude-plugin/plugin.json` in sync when releasing.
+
+## Development
+
+`visual-grilling`'s CLI, server and round page are built from the TypeScript workspace in `packages/visual-grilling/`, outside the shipped skill folder.
+
+```
+npm install
+npx playwright install chromium   # once, for the round page tests
+npm test                          # type-check, build into packages/visual-grilling/.test-dist, run every test against it
+```
