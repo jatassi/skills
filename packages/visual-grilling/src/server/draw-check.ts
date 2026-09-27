@@ -14,6 +14,7 @@ import type { Illustration, Round, RoundError } from '../core/round.ts';
 import { installDomGlobals } from './dom-shim.ts';
 import { DotCheck } from './dot-check.ts';
 import { explainMermaidFailure } from './mermaid-explain.ts';
+import { checkVegaLite } from './vega-lite-check.ts';
 
 /** Why a block failed the check, and the line of its source to point at. */
 export interface DrawFailure {
@@ -34,6 +35,7 @@ export class DrawCheck {
   private readonly drawers: Partial<Record<Illustration['kind'], (illustration: Illustration) => Promise<DrawFailure | undefined>>> = {
     mermaid: (illustration) => this.drawMermaid(illustration),
     dot: (illustration) => this.dot.draw(illustration),
+    'vega-lite': (illustration) => checkVegaLite(this.pageDir, illustration),
   };
 
   /** Starts loading the drawing libraries so the first `present` doesn't wait on them. */

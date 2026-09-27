@@ -6,9 +6,9 @@
  * amber unsure. Dark is the default; light is the same roles on white.
  *
  * The tokens below are the page's one theme: blocks that draw with page
- * colours read them from :root by name (the Mermaid and dot blocks read canvas, panel,
- * line, fg, muted, accent, answered, unsure and risk), and redraw when
- * data-theme flips.
+ * colours read them from :root by name (the Mermaid, dot and Vega-Lite blocks
+ * read canvas, panel, line, fg, muted, accent, answered, unsure and risk), and
+ * redraw when data-theme flips.
  */
 
 :root,
@@ -1395,4 +1395,20 @@ textarea[readonly] {
 
 .diagram-viewport.capped + .show-full {
   display: block;
+}
+
+/* Chart blocks: Vega-Lite's own SVG, centred. */
+
+.vega-lite-block {
+  padding: 8px;
+}
+
+.vega-lite-block svg {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Points are hollow by default: let a click inside one name it. */
+.vega-lite-block .mark-symbol.role-mark > path {
+  pointer-events: visible;
 }

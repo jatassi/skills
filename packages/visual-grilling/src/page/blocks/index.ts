@@ -5,9 +5,11 @@ import { dotBlock } from './dot.ts';
 import { mermaidBlock } from './mermaid.ts';
 import { registerBlock } from './registry.ts';
 import { tableBlock } from './table.ts';
+import { vegaLiteBlock } from './vega-lite.ts';
 
 registerBlock('dot', dotBlock);
 registerBlock('mermaid', mermaidBlock);
 registerBlock('table', tableBlock);
+registerBlock('vega-lite', vegaLiteBlock);
 
 export { blockFor, registerBlock, type BlockContext, type BlockRenderer } from './registry.ts';

@@ -7,6 +7,7 @@
 //   <out>/page/mermaid.js    the Mermaid+ELK chunk: the page loads it lazily, and
 //                            the server imports it for the draw check
 //   <out>/page/graphviz.js   the Graphviz (@viz-js/viz) chunk, shared the same way
+//   <out>/page/vega-lite.js  the Vega + Vega-Lite chunk, used the same way
 
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -94,6 +95,7 @@ await Promise.all([
   // and the server imports the same files (Mermaid's under jsdom).
   esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/mermaid.ts')], outfile: join(out, 'page/mermaid.js') }),
   esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/graphviz.ts')], outfile: join(out, 'page/graphviz.js') }),
+  esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/vega-lite.ts')], outfile: join(out, 'page/vega-lite.js') }),
 ]);
 
 mkdirSync(join(out, 'page'), { recursive: true });
