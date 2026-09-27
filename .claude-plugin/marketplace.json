@@ -11,7 +11,7 @@
       "source": {
         "source": "github",
         "repo": "jatassi/skills",
-        "ref": "v1.0.2"
+        "ref": "v1.0.3"
       },
       "description": "Skills for grilling plans with an agent stand-in or through a visual browser channel, turning them into specs and tickets, and orchestrating implementation loops."
     }
