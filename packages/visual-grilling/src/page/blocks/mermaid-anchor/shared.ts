@@ -96,6 +96,12 @@ export function splitPair(joined: string, separator: string, known: Set<string>)
   return null;
 }
 
+/** `from → to` for two known ids joined by `separator`, or null when they don't split (see splitPair). */
+export function ends(joined: string | undefined, separator: string, known: Set<string>): string | null {
+  const pair = joined === undefined ? null : splitPair(joined, separator, known);
+  return pair ? `${pair[0]} → ${pair[1]}` : null;
+}
+
 /**
  * `from → to`, with `#k` added when several connections join the same pair:
  * `pairs` lists every connection's pair in document order, and `index` is
@@ -122,7 +128,7 @@ export function peerIndex(click: DiagramClick, element: SnapshotElement): number
 }
 
 /** Visible text, or null when empty or the same as the id it would repeat. */
-export function labelUnlessId(text: string | undefined, id: string | null): string | null {
+export function labelUnlessId(text: string | null | undefined, id: string | null): string | null {
   const trimmed = text?.trim() ?? '';
   return trimmed && trimmed !== id ? trimmed : null;
 }

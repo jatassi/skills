@@ -67,7 +67,11 @@ export interface AdapterMatch {
   chainIndex: number;
 }
 
-/** A block's own reading of a click, tried before the generic fallback. */
+/**
+ * A block's own reading of a click, tried before the generic fallback. The
+ * page builds one from the block's `anchor` (blocks/registry.ts), which also
+ * sees the illustration.
+ */
 export type AnchorAdapter = (snapshot: Snapshot) => AdapterMatch | null;
 
 export interface AnchorTarget {

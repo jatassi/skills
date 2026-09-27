@@ -87,6 +87,18 @@ describe('the Mermaid adapter', () => {
     expect(term(snap('venn', [area]), 'venn-beta\n  set A\n  set B')).toBeNull();
   });
 
+  it('reads Venn set names that hold "_" from the source instead of splitting them', () => {
+    const source = 'venn-beta\n  set Must_have\n  set Cheap\n  union Cheap,Must_have["Easy wins"]';
+    const area = (sets: string, text: string): Node => ({ tag: 'g', attrs: { class: 'venn-area', 'data-venn-sets': sets }, text });
+    expect(term(snap('venn', [area('Must_have', 'Must_have')]), source)).toBe('set Must_have');
+    expect(term(snap('venn', [area('Must_have_Cheap', 'Easy wins')]), source)).toBe('region Must_have ∩ Cheap "Easy wins"');
+  });
+
+  it('joins a commit id with spaces back from the class names it spreads over', () => {
+    const circle = { tag: 'circle', attrs: { class: 'commit Fix login bug commit1' } };
+    expect(term(snap('gitGraph', [circle]))).toBe('commit Fix login bug');
+  });
+
   it('leaves a type with no adapter to the generic rules', () => {
     expect(term(snap('pie', [{ tag: 'path', attrs: { class: 'pieCircle' } }]))).toBeNull();
   });

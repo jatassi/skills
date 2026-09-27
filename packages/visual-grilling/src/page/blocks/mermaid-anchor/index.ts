@@ -3,12 +3,13 @@
 // the type's adapter can't name, or a type with no adapter, falls to the
 // generic rules.
 //
-// Adding a type: write a DiagramAdapter in its own module and list it in
+// Adding a type: write a DiagramAdapter in its own module (types drawn by
+// one renderer, like the graph family, share a module) and list it in
 // ADAPTERS with the type names it reads. Its `peers` selector joins the
 // block's, scoped to drawings of those types.
 //
-// The rules come from the research on Mermaid 12's SVG output
-// (research/mermaid-anchor-terms, docs/research/mermaid-anchor-terms.md).
+// The rules come from the research on Mermaid 12's SVG output: docs/research/
+// mermaid-anchor-terms.md on the research/mermaid-anchor-terms branch.
 
 import type { AdapterMatch, Snapshot, SnapshotElement } from '../../../core/anchor.ts';
 import type { PageIllustration } from '../../../core/protocol.ts';
@@ -28,7 +29,7 @@ import {
 } from './graph.ts';
 import { sequenceAdapter } from './sequence.ts';
 import { HIT_CLASS, HIT_ORIGINAL_CLASS, HIT_ORIGINAL_ID } from './hit.ts';
-import type { DiagramAdapter, DiagramClick } from './shared.ts';
+import { hasClass, type DiagramAdapter, type DiagramClick } from './shared.ts';
 import { vennAdapter } from './venn.ts';
 
 const ADAPTERS: [types: string[], adapter: DiagramAdapter][] = [
@@ -73,7 +74,7 @@ export function mermaidAnchor(snapshot: Snapshot, illustration: PageIllustration
     type,
     prefix: `${svg.attrs.id}-`,
     source: illustration.source,
-    peers: snapshot.peers.filter((peer) => !(peer.attrs.class ?? '').split(/\s+/).includes(HIT_CLASS)),
+    peers: snapshot.peers.filter((peer) => !hasClass(peer, HIT_CLASS)),
   };
   return adapter.read(click);
 }

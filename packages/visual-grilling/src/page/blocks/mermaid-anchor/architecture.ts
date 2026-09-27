@@ -2,7 +2,7 @@
 // groups `rect#<P>group-<id>` and edges `path.edge#<P>L_<a>_<b>_<n>`. A group's
 // title isn't inside its group; it is matched by geometry, elsewhere.
 
-import { find, idOf, knownIds, labelUnlessId, match, pairRef, splitPair, type DiagramAdapter, type DiagramClick } from './shared.ts';
+import { ends, find, idOf, knownIds, labelUnlessId, match, pairRef, type DiagramAdapter, type DiagramClick } from './shared.ts';
 
 const PARTS: [RegExp, string][] = [
   [/^service-(.+)$/, 'service'],
@@ -35,6 +35,5 @@ export const architectureAdapter: DiagramAdapter = {
 function edgeEnds(click: DiagramClick, edgeId: string): string | null {
   const known = new Set([...knownIds(click, /^service-(.+)$/), ...knownIds(click, /^node-(.+)$/)]);
   const body = /^L_(.+)_\d+$/.exec(edgeId)?.[1];
-  const pair = body === undefined ? null : splitPair(body, '_', known);
-  return pair ? `${pair[0]} → ${pair[1]}` : null;
+  return ends(body, '_', known);
 }

@@ -5,6 +5,7 @@
 
 import type { AdapterMatch, SnapshotElement, SnapshotPeer } from '../../../core/anchor.ts';
 import {
+  ends,
   find,
   hasClass,
   idOf,
@@ -13,7 +14,6 @@ import {
   match,
   pairRef,
   peerIndex,
-  splitPair,
   unprefixed,
   VIA_NEIGHBOUR,
   type DiagramAdapter,
@@ -29,7 +29,7 @@ const isEdgeLabel = (element: SnapshotElement) => element.tag === 'g' && hasClas
 interface EdgeNaming {
   noun: string;
   /** `from → to` for an edge's data-id, or the explicit id the agent gave it. */
-  ends(click: DiagramClick, dataId: string): string | null;
+  endsOf(click: DiagramClick, dataId: string): string | null;
 }
 
 /**
@@ -40,9 +40,9 @@ interface EdgeNaming {
 function edgeMatch(click: DiagramClick, naming: EdgeNaming, dataId: string, chainIndex: number, onLabel: boolean, via?: string): AdapterMatch {
   const edges = click.peers.filter(isEdge);
   const ids = edges.map((edge) => edge.attrs['data-id']!);
-  const ends = ids.map((id) => naming.ends(click, id));
+  const pairs = ids.map((id) => naming.endsOf(click, id));
   const at = ids.indexOf(dataId);
-  const ref = at >= 0 ? pairRef(ends, at) : naming.ends(click, dataId);
+  const ref = at >= 0 ? pairRef(pairs, at) : naming.endsOf(click, dataId);
   const label = click.peers.find((peer) => peer.tag === 'g' && peer.attrs['data-id'] === dataId && hasClass(peer, 'label'))?.text;
   return match(onLabel ? `${naming.noun} label` : naming.noun, ref ?? dataId, label ?? null, chainIndex, via);
 }
@@ -60,21 +60,25 @@ function textOf(click: DiagramClick, cls: string, below: number): string | null 
   return hit && hit.index < below ? hit.element.text : null;
 }
 
-/** L_<from>_<to>_<n>, split against the drawing's node and subgraph ids; anything else is the agent's own edge id. */
-function lEdgeEnds(nodePattern: RegExp): EdgeNaming['ends'] {
+/**
+ * L_<from>_<to>_<n>, split against the drawing's node, subgraph and lane ids.
+ * Anything else, or an `L_…` id that doesn't split, is the agent's own edge id.
+ */
+function lEdgeEnds(nodePattern: RegExp): EdgeNaming['endsOf'] {
   return (click, dataId) => {
     const body = /^L_(.+)_\d+$/.exec(dataId)?.[1];
     if (body === undefined) return dataId;
     const known = new Set([...knownIds(click, nodePattern), ...knownIds(click, /^(.+)$/, (peer) => hasClass(peer, 'cluster'))]);
-    const pair = splitPair(body, '_', known);
-    return pair ? `${pair[0]} → ${pair[1]}` : null;
+    // Swimlane lanes carry their id bare, without the render-id prefix.
+    for (const peer of click.peers) if (hasClass(peer, 'swimlane') && peer.attrs['data-id']) known.add(peer.attrs['data-id']);
+    return ends(body, '_', known) ?? dataId;
   };
 }
 
 // ------------------------------------------------------------ flowchart
 
 const FLOW_NODE = /^(?:flowchart|agentflow)-(.+)-\d+$/;
-const FLOW_EDGES: EdgeNaming = { noun: 'edge', ends: lEdgeEnds(FLOW_NODE) };
+const FLOW_EDGES: EdgeNaming = { noun: 'edge', endsOf: lEdgeEnds(FLOW_NODE) };
 
 /** Flowchart, swimlane and agentflow: nodes, subgraphs (lanes, flows), edges and edge labels. */
 export const flowchartAdapter: DiagramAdapter = {
@@ -102,7 +106,7 @@ export const flowchartAdapter: DiagramAdapter = {
       const id = lane ? (cluster.element.attrs['data-id'] ?? null) : unprefixed(click, cluster.element.attrs.id);
       if (id === null) return null;
       const kind = lane ? 'lane' : hasClass(cluster.element, 'flow-cluster') ? 'flow' : 'subgraph';
-      return match(kind, id, labelUnlessId(textOf(click, 'cluster-label', cluster.index) ?? undefined, id), cluster.index);
+      return match(kind, id, labelUnlessId(textOf(click, 'cluster-label', cluster.index), id), cluster.index);
     }
     return null;
   },
@@ -113,10 +117,9 @@ export const flowchartAdapter: DiagramAdapter = {
 const CLASS_NODE = /^classId-(.+)-\d+$/;
 const CLASS_EDGES: EdgeNaming = {
   noun: 'relation',
-  ends(click, dataId) {
+  endsOf(click, dataId) {
     const body = /^id_(.+)_\d+$/.exec(dataId)?.[1];
-    const pair = body === undefined ? null : splitPair(body, '_', knownIds(click, CLASS_NODE));
-    return pair ? `${pair[0]} → ${pair[1]}` : null;
+    return ends(body, '_', knownIds(click, CLASS_NODE));
   },
 };
 
@@ -140,8 +143,9 @@ export const classAdapter: DiagramAdapter = {
 
     const node = find(click, (element) => element.tag === 'g' && hasClass(element, 'node') && Boolean(element.attrs.id));
     if (node) {
-      const note = idOf(click, node.element, /^(note\d+)$/);
-      if (note) return match('note', null, node.element.text, node.index);
+      // `note<k>` counts notes from 0 in source order.
+      const note = idOf(click, node.element, /^note(\d+)$/);
+      if (note) return match('note', `#${Number(note) + 1}`, node.element.text, node.index);
       const name = idOf(click, node.element, CLASS_NODE);
       if (!name) return null;
       for (const [group, kind] of [['members-group', 'member'], ['methods-group', 'method']] as const) {
@@ -150,7 +154,7 @@ export const classAdapter: DiagramAdapter = {
           return match(kind, name, row.element.text, row.index);
         }
       }
-      return match('class', name, labelUnlessId(textOf(click, 'label-group', node.index) ?? undefined, name), node.index);
+      return match('class', name, labelUnlessId(textOf(click, 'label-group', node.index), name), node.index);
     }
 
     const namespace = find(click, (element) => element.tag === 'g' && hasClass(element, 'cluster'));
@@ -184,7 +188,7 @@ export const stateAdapter: DiagramAdapter = {
     }
     if (composite) {
       const id = composite.element.attrs['data-id']!;
-      return match('state', id, labelUnlessId(textOf(click, 'cluster-label', composite.index) ?? undefined, id), composite.index);
+      return match('state', id, labelUnlessId(textOf(click, 'cluster-label', composite.index), id), composite.index);
     }
     return null;
   },
@@ -195,7 +199,7 @@ export const stateAdapter: DiagramAdapter = {
 const ENTITY = /^entity-(.+)-\d+$/;
 const ER_EDGES: EdgeNaming = {
   noun: 'relationship',
-  ends(click, dataId) {
+  endsOf(click, dataId) {
     const body = /^id_(.+)_\d+$/.exec(dataId)?.[1];
     if (body === undefined) return null;
     const known = knownIds(click, ENTITY);
@@ -227,7 +231,7 @@ export const erAdapter: DiagramAdapter = {
         return match('attribute', `${name}.${attribute}`, own, cell.index, VIA_NEIGHBOUR);
       }
     }
-    return match('entity', name, labelUnlessId(textOf(click, 'name', entity.index) ?? undefined, name), entity.index);
+    return match('entity', name, labelUnlessId(textOf(click, 'name', entity.index), name), entity.index);
   },
 };
 
@@ -245,11 +249,10 @@ function attributeName(click: DiagramClick, cell: SnapshotElement): string | nul
 
 const REQUIREMENT_EDGES: EdgeNaming = {
   noun: 'relation',
-  ends(click, dataId) {
+  endsOf(click, dataId) {
     const body = /^(.+)-\d+$/.exec(dataId)?.[1];
     const known = knownIds(click, /^(.+)$/, (peer) => hasClass(peer, 'node'));
-    const pair = body === undefined ? null : splitPair(body, '-', known);
-    return pair ? `${pair[0]} → ${pair[1]}` : null;
+    return ends(body, '-', known);
   },
 };
 
@@ -266,7 +269,7 @@ export const requirementAdapter: DiagramAdapter = {
     const kind = stereotype ? stereotype.toLowerCase() : 'requirement';
     const row = find(click, (element) => element.tag === 'g' && hasClass(element, 'label'));
     const field = row && row.index < node.index && !/^<<.*>>$/.test(row.element.text) ? row.element.text : null;
-    return match(kind, name, labelUnlessId(field ?? undefined, name), node.index);
+    return match(kind, name, labelUnlessId(field, name), node.index);
   },
 };
 
@@ -280,12 +283,12 @@ export const kanbanAdapter: DiagramAdapter = {
       const id = unprefixed(click, card.element.attrs.id)!;
       const row = find(click, (element) => element.tag === 'g' && hasClass(element, 'label'));
       const label = row && row.index < card.index ? row.element.text : null;
-      return match('card', id, labelUnlessId(label ?? undefined, id), card.index);
+      return match('card', id, labelUnlessId(label, id), card.index);
     }
     const column = find(click, (element) => element.tag === 'g' && hasClass(element, 'cluster') && unprefixed(click, element.attrs.id) !== null);
     if (!column) return null;
     const id = unprefixed(click, column.element.attrs.id)!;
-    return match('column', id, labelUnlessId(textOf(click, 'cluster-label', column.index) ?? undefined, id), column.index);
+    return match('column', id, labelUnlessId(textOf(click, 'cluster-label', column.index), id), column.index);
   },
 };
 
@@ -294,12 +297,11 @@ export const kanbanAdapter: DiagramAdapter = {
 /** Edges are `<svg id>-<k>-<from>-<to>`, their labels `<k>-<from>-<to>`; ids may hold "-", so split against the block ids. */
 const BLOCK_EDGES: EdgeNaming = {
   noun: 'edge',
-  ends(click, dataId) {
+  endsOf(click, dataId) {
     const bare = dataId.startsWith(click.prefix) ? dataId.slice(click.prefix.length) : dataId;
     const body = /^\d+-(.+)$/.exec(bare)?.[1];
     const known = knownIds(click, /^(.+)$/, (peer) => hasClass(peer, 'node'));
-    const pair = body === undefined ? null : splitPair(body, '-', known);
-    return pair ? `${pair[0]} → ${pair[1]}` : null;
+    return ends(body, '-', known);
   },
 };
 

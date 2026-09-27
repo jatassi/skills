@@ -12,7 +12,8 @@ export const gitGraphAdapter: DiagramAdapter = {
   read(click) {
     const commit = find(click, (element) => (element.tag === 'circle' || element.tag === 'rect') && hasClass(element, 'commit'));
     if (commit) {
-      const id = classes(commit.element).find((name) => !NOT_ID.has(name) && !/^commit\d+$/.test(name));
+      // An id with spaces spreads over several class names.
+      const id = classes(commit.element).filter((name) => !NOT_ID.has(name) && !/^commit\d+$/.test(name)).join(' ');
       return id ? match('commit', commitRef(id), null, commit.index) : null;
     }
     const label = find(click, (element) => element.tag === 'text' && hasClass(element, 'commit-label'));

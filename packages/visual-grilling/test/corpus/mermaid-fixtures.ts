@@ -208,7 +208,7 @@ export const MERMAID_FIXTURES: MermaidFixture[] = [
       { text: '+submit() : bool', term: 'method Order_Line "+submit() : bool"' },
       { text: 'belongs', term: 'relation label Order_Line → Order "belongs"' },
       { text: 'many', term: 'cardinality Order_Line → Order "many"' },
-      { text: 'Holds lines', term: 'note "Holds lines"' },
+      { text: 'Holds lines', term: 'note #1 "Holds lines"' },
     ],
   },
   {
