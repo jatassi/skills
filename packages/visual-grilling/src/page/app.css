@@ -13,7 +13,24 @@
   --comment: #a371f7;
   --comment-soft: rgb(163 113 247 / 15%);
   --on-comment: #fff;
+  --risk: #f85149;
   font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* The light alternative. Blocks that draw with the tokens redraw when it flips. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --canvas: #ffffff;
+  --panel: #f6f8fa;
+  --line: #d0d7de;
+  --fg: #1f2328;
+  --muted: #59636e;
+  --accent: #0969da;
+  --answered: #1a7f37;
+  --unsure: #9a6700;
+  --comment: #8250df;
+  --comment-soft: rgb(130 80 223 / 12%);
+  --risk: #cf222e;
 }
 
 body {
@@ -362,4 +379,52 @@ textarea {
 
 .notice.stopped {
   border-color: var(--unsure);
+}
+
+/* Diagram blocks: capped at min(50vh, 440px) when well over it, with a fade.
+   The block caps itself, so its frame's stage doesn't. */
+
+.kind-mermaid .stage {
+  max-height: none;
+}
+
+.kind-mermaid .block-content {
+  width: auto;
+}
+
+.mermaid-block {
+  padding: 8px;
+}
+
+.diagram-viewport {
+  position: relative;
+}
+
+.diagram svg {
+  display: block;
+  margin: 0 auto;
+  height: auto;
+}
+
+.diagram-viewport.capped:not(.expanded) {
+  max-height: min(50vh, 440px);
+  overflow: hidden;
+}
+
+.diagram-viewport.capped:not(.expanded)::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 64px;
+  background: linear-gradient(to bottom, transparent, var(--panel));
+  pointer-events: none;
+}
+
+.show-full {
+  display: none;
+  margin: 6px auto 0;
+}
+
+.diagram-viewport.capped + .show-full {
+  display: block;
 }

@@ -106,9 +106,8 @@ Q6 Retry policy · accepted
     const round = [
       '❓ **Q1** - **Flow**: Which flow?',
       '',
-      '```mermaid id=flow title="Request flow"',
-      'flowchart LR',
-      '  a --> b',
+      '```dot id=flow title="Request flow"',
+      'digraph { a -> b }',
       '```',
       '',
       '- **A** - Tabs',
@@ -125,8 +124,8 @@ Q6 Retry policy · accepted
     const page = await browser.newPage();
     await page.goto(presented.stdout.trim());
     const flow = page.getByRole('figure', { name: 'Request flow' });
-    await pageExpect(flow).toContainText('mermaid');
-    await pageExpect(flow.locator('pre')).toHaveText('flowchart LR\n  a --> b');
+    await pageExpect(flow).toContainText('dot');
+    await pageExpect(flow.locator('pre')).toHaveText('digraph { a -> b }');
     await pageExpect(page.getByRole('figure', { name: 'Mockup A' }).locator('pre')).toHaveText('<nav>tabs</nav>');
   });
 

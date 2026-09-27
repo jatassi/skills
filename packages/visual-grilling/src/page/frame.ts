@@ -34,6 +34,8 @@ export interface FrameHooks {
   toggleCommenting(): void;
   addComment(comment: PageComment): void;
   removeComment(comment: PageComment): void;
+  /** A block failed to draw on the page; called once per frame, for the agent's warnings. */
+  reportFailure(message: string): void;
 }
 
 export class IllustrationFrame {
@@ -48,6 +50,7 @@ export class IllustrationFrame {
   /** The pending anchor the composer was built for. */
   private composerFor?: Anchor;
   private drawing = 0;
+  private reported = false;
 
   constructor(
     private readonly subject: FrameSubject,
@@ -100,6 +103,10 @@ export class IllustrationFrame {
       const alert = el('p', 'block-error', `This ${this.subject.kindLabel} failed to draw: ${message}`);
       alert.setAttribute('role', 'alert');
       target.replaceChildren(alert);
+      if (!this.reported) {
+        this.reported = true;
+        this.hooks.reportFailure(message);
+      }
     }
   }
 

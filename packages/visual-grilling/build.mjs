@@ -4,8 +4,10 @@
 //   <out>/lib/cli-main.mjs   the CLI
 //   <out>/server.mjs         the detached local server
 //   <out>/page/              the round page (index.html, app.js, app.css)
+//   <out>/page/mermaid.js    the Mermaid+ELK chunk: the page loads it lazily, and
+//                            the server imports it for the draw check
 
-import { copyFileSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -20,6 +22,16 @@ if (!values.out) {
 const out = resolve(values.out);
 rmSync(out, { recursive: true, force: true });
 
+const browser = {
+  bundle: true,
+  platform: 'browser',
+  format: 'esm',
+  target: 'es2022',
+  minify: true,
+  legalComments: 'none',
+  logLevel: 'warning',
+};
+
 const node = {
   bundle: true,
   platform: 'node',
@@ -27,6 +39,33 @@ const node = {
   target: 'node22',
   legalComments: 'none',
   logLevel: 'warning',
+};
+
+/**
+ * jsdom, bundled into the server for the draw check, reaches for files next
+ * to its own sources at load time. Its default stylesheet is inlined, and its
+ * sync-XHR worker (never used: drawing does no XHR) points nowhere.
+ */
+const jsdomFiles = {
+  name: 'jsdom-files',
+  setup(build) {
+    build.onLoad({ filter: /jsdom[\\/]lib[\\/]jsdom[\\/]living[\\/]css[\\/]helpers[\\/]computed-style\.js$/ }, (args) => {
+      const source = readFileSync(args.path, 'utf8');
+      const css = readFileSync(join(dirname(args.path), '../../../browser/default-stylesheet.css'), 'utf8');
+      const inlined = source.replace(
+        /fs\.readFileSync\(\s*path\.resolve\(__dirname, "\.\.\/\.\.\/\.\.\/browser\/default-stylesheet\.css"\),\s*\{ encoding: "utf-8" \}\s*\)/,
+        JSON.stringify(css),
+      );
+      if (inlined === source) throw new Error('jsdom-files: default stylesheet read not found');
+      return { contents: inlined, loader: 'js' };
+    });
+    build.onLoad({ filter: /jsdom[\\/]lib[\\/]jsdom[\\/]living[\\/]xhr[\\/]XMLHttpRequest-impl\.js$/ }, (args) => {
+      const source = readFileSync(args.path, 'utf8');
+      const stubbed = source.replace('require.resolve("./xhr-sync-worker.js")', '"xhr-sync-worker.js is not bundled"');
+      if (stubbed === source) throw new Error('jsdom-files: sync-XHR worker reference not found');
+      return { contents: stubbed, loader: 'js' };
+    });
+  },
 };
 
 await Promise.all([
@@ -41,18 +80,18 @@ await Promise.all([
     logLevel: 'warning',
   }),
   esbuild.build({ ...node, entryPoints: [join(here, 'src/cli/main.ts')], outfile: join(out, 'lib/cli-main.mjs') }),
-  esbuild.build({ ...node, entryPoints: [join(here, 'src/server/main.ts')], outfile: join(out, 'server.mjs') }),
   esbuild.build({
-    entryPoints: [join(here, 'src/page/app.ts')],
-    outfile: join(out, 'page/app.js'),
-    bundle: true,
-    platform: 'browser',
-    format: 'esm',
-    target: 'es2022',
-    minify: true,
-    legalComments: 'none',
-    logLevel: 'warning',
+    ...node,
+    entryPoints: [join(here, 'src/server/main.ts')],
+    outfile: join(out, 'server.mjs'),
+    // jsdom and its dependencies are CommonJS and require Node built-ins.
+    banner: { js: "import { createRequire as __vgCreateRequire } from 'node:module'; const require = __vgCreateRequire(import.meta.url);" },
+    plugins: [jsdomFiles],
   }),
+  esbuild.build({ ...browser, entryPoints: [join(here, 'src/page/app.ts')], outfile: join(out, 'page/app.js') }),
+  // One copy of each drawing library: the page imports these chunks by URL,
+  // and the server imports the same files under jsdom.
+  esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/mermaid.ts')], outfile: join(out, 'page/mermaid.js') }),
 ]);
 
 mkdirSync(join(out, 'page'), { recursive: true });

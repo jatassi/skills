@@ -22,10 +22,13 @@ import { parseRound, type Round } from '../core/round.ts';
 import { makeDir, sessionPaths, writePrivateFile, type ServerInfo } from '../core/session.ts';
 import {
   buildRecord,
+  checkWarning,
   renderSubmission,
   type PageSubmission,
+  type PageWarning,
   type SubmissionRecord,
 } from '../core/submission.ts';
+import { DrawCheck } from './draw-check.ts';
 import { BASE_HEADERS, guardRequest, ROUND_PAGE_HEADERS } from './guards.ts';
 import { idleLimitMs, watchIdle } from './idle.ts';
 import { pageRound } from './render.ts';
@@ -39,11 +42,14 @@ if (!sessionDirArg) {
 }
 const paths = sessionPaths(sessionDirArg);
 const pageDir = join(dirname(fileURLToPath(import.meta.url)), 'page');
+const drawCheck = new DrawCheck(pageDir);
 
 // ------------------------------------------------------------------- state
 
 const rounds = new Map<number, Round>();
 const records = new Map<number, SubmissionRecord>();
+/** Page-only failures reported for rounds not yet submitted; they ride the submission. */
+const pageWarnings = new Map<number, PageWarning[]>();
 let latest = 0;
 
 interface Waiter {
@@ -106,7 +112,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
         return sendJson(res, 200, identity);
       }
       case '/control/present':
-        return present(res, body as PresentRequest);
+        return await present(res, body as PresentRequest);
       case '/control/await':
         return awaitRound(req, res, body as AwaitRequest);
       case '/control/end':
@@ -135,6 +141,10 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   if (submitRoute && req.method === 'POST') {
     return submit(res, Number(submitRoute[1]), (await readJson(req)) as PageSubmission);
   }
+  const warningRoute = /^\/api\/rounds\/(\d+)\/warnings$/.exec(route);
+  if (warningRoute && req.method === 'POST') {
+    return reportWarning(res, Number(warningRoute[1]), await readJson(req));
+  }
 
   // The guard already checked it's a page write; being here was the activity.
   if (route === '/api/activity' && req.method === 'POST') {
@@ -145,9 +155,11 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   sendJson(res, 404, { error: 'not found' });
 }
 
-function present(res: ServerResponse, body: PresentRequest): void {
+async function present(res: ServerResponse, body: PresentRequest): Promise<void> {
   const parsed = parseRound(String(body.source ?? ''));
   if (!parsed.ok) return sendJson(res, 422, { errors: parsed.errors });
+  const drawErrors = await drawCheck.check(parsed.round);
+  if (drawErrors.length > 0) return sendJson(res, 422, { errors: drawErrors });
 
   // A new round means the user answered the open one in the terminal.
   closeOpenRound();
@@ -196,15 +208,37 @@ function submit(res: ServerResponse, n: number, body: PageSubmission): void {
 
   let record: SubmissionRecord;
   try {
-    record = buildRecord(n, round, body, new Date());
+    record = buildRecord(n, round, body, new Date(), pageWarnings.get(n));
   } catch (error) {
     return sendJson(res, 400, { error: (error as Error).message });
   }
   writePrivateFile(paths.submission(n), `${JSON.stringify(record, null, 2)}\n`);
   records.set(n, record);
+  pageWarnings.delete(n);
   for (const waiter of [...waiters]) {
     if (waiter.round === n) waiter.settle(submittedResponse(record));
   }
+  sendJson(res, 200, {});
+}
+
+/** A block that failed only on the page. It doesn't wake `await`; it rides the submission. */
+function reportWarning(res: ServerResponse, n: number, body: unknown): void {
+  const round = rounds.get(n);
+  if (!round) return sendJson(res, 404, { error: 'no such round' });
+  if (records.has(n)) return sendJson(res, 409, { error: `round ${n} was already submitted` });
+  if (answeredInTerminal(n)) return sendJson(res, 409, { error: `round ${n} was answered in the terminal` });
+  let warning: PageWarning;
+  try {
+    warning = checkWarning(round, body);
+  } catch (error) {
+    return sendJson(res, 400, { error: (error as Error).message });
+  }
+  const list = pageWarnings.get(n) ?? [];
+  const known = list.some(
+    (existing) => existing.question === warning.question && existing.illustration === warning.illustration && existing.kind === warning.kind,
+  );
+  // One warning per block: a theme redraw that fails again isn't news.
+  if (!known) pageWarnings.set(n, [...list, warning]);
   sendJson(res, 200, {});
 }
 
@@ -225,6 +259,8 @@ function unsubmitted(n: number): boolean {
 /** Marks the open round answered in the terminal and releases every `await` on it. */
 function closeOpenRound(): void {
   if (unsubmitted(latest)) broadcast('terminal', { round: latest });
+  // Only the open round can still be submitted, so its warnings go with it.
+  pageWarnings.clear();
   for (const waiter of [...waiters]) {
     waiter.settle({ outcome: 'superseded', text: `superseded · round ${waiter.round} answered in the terminal` });
   }
@@ -341,4 +377,5 @@ server.listen(0, '127.0.0.1', () => {
   port = (server.address() as AddressInfo).port;
   const info: ServerInfo = { port, pid: process.pid, startTime };
   writePrivateFile(paths.serverJson, `${JSON.stringify(info)}\n`);
+  drawCheck.warm();
 });
