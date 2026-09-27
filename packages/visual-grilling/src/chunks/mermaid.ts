@@ -54,7 +54,9 @@ async function draw(renderId: string, source: string, tokens: MermaidTokens): Pr
   const parsed = await mermaid.parse(source);
   if (!parsed) throw new Error('Mermaid could not parse the diagram');
   const { diagramType } = parsed;
-  if (GRAPH_FAMILY.has(diagramType)) mermaid.initialize({ ...baseConfig(tokens), layout: 'elk' });
+  // The agent's own directive or frontmatter config merges over this one when Mermaid renders.
+  const config = baseConfig(tokens, parsed.config);
+  mermaid.initialize(GRAPH_FAMILY.has(diagramType) ? { ...config, layout: 'elk' } : config);
   const { svg } = await mermaid.render(renderId, await withPresetClassDefs(source, diagramType, tokens));
   const empty = emptiness(svg);
   if (empty) throw new EmptyDrawingError(empty);
@@ -128,16 +130,77 @@ function isBlank(mark: Element): boolean {
   return false;
 }
 
-function baseConfig(tokens: MermaidTokens): MermaidConfig {
+/**
+ * The page's settings, under the agent's `override` (its `%%{init}%%`
+ * directive or frontmatter `config:`). Mermaid merges the rest of the
+ * override over them when it renders; the theme and its variables are merged
+ * here, since Mermaid's own merge loses the directive's variables.
+ */
+function baseConfig(tokens: MermaidTokens, override: MermaidConfig = {}): MermaidConfig {
   return {
     startOnLoad: false,
     securityLevel: 'strict',
     look: 'neo',
-    theme: 'base',
-    themeVariables: themeVariables(tokens),
+    theme: override.theme ?? 'base',
+    themeVariables: { ...themeVariablesUnder(themeVariables(tokens), override), ...(override.themeVariables as object) },
     themeCSS: presetMarkCss(tokens),
   };
 }
+
+/**
+ * The page's theme variables, minus those the agent's own should decide.
+ * Mermaid derives most variables from a few (`mainBkg` from `primaryColor`,
+ * `textColor` from `primaryTextColor`…) but only when they're unset, so a
+ * page variable derived from one the agent set would hide the agent's colour.
+ * Another named theme than `base` takes none of the page's colours.
+ */
+function themeVariablesUnder(page: Record<string, string | boolean>, override: MermaidConfig): Record<string, string | boolean> {
+  if (override.theme && override.theme !== 'base') return { fontFamily: page.fontFamily! };
+  const set = new Set(Object.keys((override.themeVariables ?? {}) as object));
+  if (set.size === 0) return page;
+  const decidedByAgent = (name: string, seen = new Set<string>()): boolean => {
+    if (seen.has(name)) return false;
+    seen.add(name);
+    return (DERIVED_FROM[name] ?? []).some((source) => set.has(source) || decidedByAgent(source, seen));
+  };
+  return Object.fromEntries(Object.entries(page).filter(([name]) => !set.has(name) && !decidedByAgent(name)));
+}
+
+/** What Mermaid's base theme derives each page-set variable from, when it's unset (themes/theme-base.js). */
+const DERIVED_FROM: Record<string, string[]> = {
+  primaryTextColor: ['darkMode'],
+  secondaryColor: ['primaryColor'],
+  tertiaryColor: ['primaryColor'],
+  primaryBorderColor: ['primaryColor', 'darkMode'],
+  secondaryBorderColor: ['secondaryColor', 'darkMode'],
+  tertiaryBorderColor: ['tertiaryColor', 'darkMode'],
+  noteBorderColor: ['noteBkgColor', 'darkMode'],
+  secondaryTextColor: ['secondaryColor'],
+  tertiaryTextColor: ['tertiaryColor'],
+  lineColor: ['background'],
+  textColor: ['primaryTextColor'],
+  mainBkg: ['primaryColor'],
+  nodeBorder: ['primaryBorderColor'],
+  clusterBkg: ['tertiaryColor'],
+  clusterBorder: ['tertiaryBorderColor'],
+  titleColor: ['tertiaryTextColor'],
+  edgeLabelBackground: ['secondaryColor', 'darkMode'],
+  actorBorder: ['primaryBorderColor'],
+  actorBkg: ['mainBkg'],
+  actorTextColor: ['primaryTextColor'],
+  signalColor: ['textColor'],
+  signalTextColor: ['textColor'],
+  labelBoxBkgColor: ['actorBkg'],
+  labelBoxBorderColor: ['actorBorder'],
+  labelTextColor: ['actorTextColor'],
+  loopTextColor: ['actorTextColor'],
+  sectionBkgColor: ['tertiaryColor'],
+  taskBorderColor: ['primaryBorderColor'],
+  taskBkgColor: ['primaryColor'],
+  activeTaskBkgColor: ['primaryColor'],
+  taskTextColor: ['textColor'],
+  taskTextOutsideColor: ['textColor'],
+};
 
 function themeVariables(t: MermaidTokens): Record<string, string | boolean> {
   return {

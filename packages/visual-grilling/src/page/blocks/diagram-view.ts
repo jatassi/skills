@@ -75,8 +75,14 @@ if (typeof window !== 'undefined') {
 
 // ------------------------------------------------------------------ theme
 
-/** The page's tokens as its CSS custom properties hold them now. */
-export function readTokens(names: typeof TOKEN_NAMES): DiagramTokens {
-  const style = getComputedStyle(document.documentElement);
-  return Object.fromEntries(names.map((name) => [name, style.getPropertyValue(`--${name}`).trim()])) as DiagramTokens;
+/**
+ * The page's tokens as its CSS custom properties hold them now where `target`
+ * sits: the light ones inside a frame on the light backdrop. A target not yet
+ * in the document takes the page's own.
+ */
+export function readTokens(target: Element, names: typeof TOKEN_NAMES): DiagramTokens {
+  const here = getComputedStyle(target);
+  const page = getComputedStyle(document.documentElement);
+  const read = (name: string) => here.getPropertyValue(`--${name}`).trim() || page.getPropertyValue(`--${name}`).trim();
+  return Object.fromEntries(names.map((name) => [name, read(name)])) as DiagramTokens;
 }

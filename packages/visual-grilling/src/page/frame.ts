@@ -8,6 +8,11 @@
 // A block that runs apart from the page (agent HTML in a sandboxed frame)
 // stays live instead: the frame pushes theme, backdrop and comment mode into
 // it, gets its clicks as snapshots, and asks it for crops.
+//
+// A block that reports its readability (agent HTML, or a drawing whose theme
+// the agent overrode) gets the light backdrop when it is unreadable on dark,
+// and the toggle for it. A block drawn on the page draws again when the
+// backdrop changes, reading the light tokens it then sits on.
 
 import { resolveAnchor, targetText, type Anchor, type AnchorSubject, type Snapshot } from '../core/anchor.ts';
 import type { ThemeName } from '../core/frame-tokens.ts';
@@ -68,6 +73,10 @@ export class IllustrationFrame {
   private live?: BlockView;
   /** The block's own verdict: unreadable on the dark backdrop. */
   private unreadable = false;
+  /** Whether the block judges its readability at all (agent HTML, an overridden drawing). */
+  private reportsReadability = false;
+  /** The backdrop the current draw of a block that isn't live was made for. */
+  private drawnBackdrop = false;
   /** The user's backdrop toggle, once used; until then the backdrop follows `unreadable`. */
   private backdropChoice?: boolean;
   private reported = false;
@@ -127,14 +136,20 @@ export class IllustrationFrame {
     const run = ++this.drawing;
     const { illustration } = this.subject;
     const current = () => run === this.drawing;
+    const backdrop = this.backdrop();
+    this.drawnBackdrop = backdrop;
+    // Set before drawing: a block reads the page's tokens where it sits, light on the light backdrop.
+    this.element.classList.toggle('light-backdrop', backdrop);
     const context: BlockContext = {
       theme: pageTheme(),
+      backdrop,
       events: {
         pick: (snapshot) => {
           if (current()) this.pickSnapshot(snapshot);
         },
         readability: (unreadable) => {
           if (!current()) return;
+          this.reportsReadability = true;
           this.unreadable = unreadable;
           this.pushState();
         },
@@ -177,9 +192,11 @@ export class IllustrationFrame {
 
   private pushState(): void {
     const backdrop = this.backdrop();
+    // A block drawn on the page draws again for a new backdrop, with the tokens it now sits on.
+    if (!this.live && backdrop !== this.drawnBackdrop) return void this.draw();
     this.element.classList.toggle('light-backdrop', backdrop);
     // The toggle matters on dark only; on the light theme every backdrop is light.
-    this.backdropToggle.hidden = !this.live || pageTheme() !== 'dark';
+    this.backdropToggle.hidden = !this.reportsReadability || pageTheme() !== 'dark';
     this.backdropToggle.setAttribute('aria-pressed', String(backdrop));
     this.live?.setState({
       theme: pageTheme(),
