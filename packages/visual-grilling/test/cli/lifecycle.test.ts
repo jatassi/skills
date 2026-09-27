@@ -4,7 +4,16 @@
 import { existsSync, mkdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { crash, isAlive, postJson, Sandbox, type CliResult, STORAGE_ROUND, waitFor } from '../support/harness.ts';
+import {
+  crash,
+  isAlive,
+  postJson,
+  rawRequest,
+  Sandbox,
+  type CliResult,
+  STORAGE_ROUND,
+  waitFor,
+} from '../support/harness.ts';
 
 const IDLE_ENV = 'VISUAL_GRILLING_IDLE_MS';
 const FOLLOW_UP = '# Follow-ups\n\n❓ **Q7** - **Anything else?**: Last one.\n\n➡️ No.\n';
@@ -238,7 +247,12 @@ describe('idle shutdown', () => {
     const url = await present(box);
     const { pid } = box.serverInfo('id3');
 
-    const pinging = setInterval(() => void fetch(`${url}control/ping`, { method: 'POST' }).catch(() => {}), 100);
+    // Pinged the way the CLI does (no Origin, no Sec-Fetch-*), so each ping is accepted.
+    const port = Number(new URL(url).port);
+    const pinging = setInterval(
+      () => void rawRequest(port, 'POST', '/control/ping', { 'content-type': 'application/json' }, '{}').catch(() => {}),
+      100,
+    );
     try {
       await waitFor(() => !isAlive(pid));
     } finally {

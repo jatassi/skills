@@ -136,10 +136,8 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     return submit(res, Number(submitRoute[1]), (await readJson(req)) as PageSubmission);
   }
 
+  // The guard already checked it's a page write; being here was the activity.
   if (route === '/api/activity' && req.method === 'POST') {
-    if (!/^application\/json\b/.test(req.headers['content-type'] ?? '')) {
-      return sendJson(res, 415, { error: 'page writes must be JSON' });
-    }
     await readJson(req);
     return sendJson(res, 200, {});
   }
