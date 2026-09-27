@@ -73,7 +73,7 @@ describe('the draw check for vega-lite blocks', () => {
       `${file}:21 · Q1 · illustration "raw" (vega-lite): raw Vega is not supported: write a Vega-Lite spec (mark, layer, concat, facet or repeat)`,
       `${file}:29 · Q2 · illustration "badexpr" (vega-lite): Vega-Lite failed to draw it: Unexpected token *`,
       `${file}:33 · Q2 · illustration "missing" (vega-lite): Vega-Lite failed to draw it: Cannot read properties of undefined (reading 'usd')`,
-      `${file}:37 · Q2 · illustration "nothing" (vega-lite): the chart came out empty (no marks drawn)`,
+      `${file}:37 · Q2 · illustration "nothing" (vega-lite): the chart came out empty (no marks drawn): check its fields and filters`,
       `${file}:42 · Q2 · illustration "csv" (vega-lite): inline CSV can't be parsed under the page's security policy; write data.values as JSON rows`,
     ]);
     expect(existsSync(sandbox.sessionDir('v1'))).toBe(false);

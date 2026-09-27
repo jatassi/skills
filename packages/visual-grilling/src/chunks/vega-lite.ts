@@ -31,13 +31,18 @@ export const DARK_TOKENS: ChartTokens = {
 };
 
 /**
- * The colour scheme holding the preset marks, in this order: `recommended`,
- * `risk`, `muted`. A chart uses it as
+ * The colour scheme holding the preset marks, in `PRESET_MARKS` order. A
+ * chart uses it as
  * `"scale": {"domain": ["recommended", "risk", "muted"], "scheme": "marks"}`.
  */
-export const MARKS_SCHEME = 'marks';
+const MARKS_SCHEME = 'marks';
+const PRESET_MARKS = {
+  recommended: (t: ChartTokens) => t.answered,
+  risk: (t: ChartTokens) => t.risk,
+  muted: (t: ChartTokens) => t.muted,
+};
 
-export const SCHEMA = 'https://vega.github.io/schema/vega-lite/v6.json';
+const SCHEMA = 'https://vega.github.io/schema/vega-lite/v6.json';
 
 /** Thrown when the source isn't a chart the page will draw: not JSON, URL data, or raw Vega. */
 export class ChartSourceError extends Error {
@@ -56,7 +61,7 @@ export class EmptyDrawingError extends Error {
   override name = 'EmptyDrawingError';
 }
 
-export interface ChartDrawing {
+interface ChartDrawing {
   svg: string;
 }
 
@@ -78,7 +83,7 @@ export function drawVegaLite(source: string, tokens: ChartTokens): Promise<Chart
 
 async function draw(source: string, tokens: ChartTokens): Promise<ChartDrawing> {
   const spec = readSpec(source);
-  vega.scheme(MARKS_SCHEME, [tokens.answered, tokens.risk, tokens.muted]);
+  vega.scheme(MARKS_SCHEME, Object.values(PRESET_MARKS).map((colour) => colour(tokens)));
 
   const errors: string[] = [];
   const logger = collectingLogger(errors);
@@ -99,7 +104,7 @@ async function draw(source: string, tokens: ChartTokens): Promise<ChartDrawing> 
   }
   // A dataflow error (datum.a.b on a missing field) is logged, not thrown.
   if (errors[0]) throw new Error(errors[0]);
-  if (!drawsAMark((view.scenegraph() as unknown as { root: unknown }).root)) throw new EmptyDrawingError('the chart came out empty (no marks drawn)');
+  if (!drawsAMark((view.scenegraph() as unknown as { root: unknown }).root)) throw new EmptyDrawingError('the chart came out empty (no marks drawn): check its fields and filters');
   const svg = await view.toSVG();
   view.finalize();
   return { svg };
@@ -108,7 +113,7 @@ async function draw(source: string, tokens: ChartTokens): Promise<ChartDrawing> 
 // ------------------------------------------------------------ the source
 
 /** Parses and checks the source; the page adds `$schema`. */
-export function readSpec(source: string): TopLevelSpec {
+function readSpec(source: string): TopLevelSpec {
   let spec: unknown;
   try {
     spec = JSON.parse(source);
