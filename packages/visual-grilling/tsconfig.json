@@ -14,5 +14,5 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true
   },
-  "include": ["src", "test", "build", "vitest.config.ts"]
+  "include": ["src", "test", "build", "release.ts", "vitest.config.ts"]
 }
