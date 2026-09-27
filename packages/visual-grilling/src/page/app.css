@@ -6,9 +6,9 @@
  * amber unsure. Dark is the default; light is the same roles on white.
  *
  * The tokens below are the page's one theme: blocks that draw with page
- * colours read them from :root by name (the Mermaid and dot blocks read canvas, panel,
- * line, fg, muted, accent, answered, unsure and risk), and redraw when
- * data-theme flips.
+ * colours read them from :root by name (the Mermaid, dot and Vega-Lite blocks
+ * read canvas, panel, line, fg, muted, accent, answered, unsure and risk), and
+ * redraw when data-theme flips.
  */
 
 :root,

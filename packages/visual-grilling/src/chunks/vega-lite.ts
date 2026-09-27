@@ -19,15 +19,15 @@ export type ChartTokens = Record<(typeof TOKEN_NAMES)[number], string>;
 
 /** The dark tokens, for draws with no page around them (the server's check). */
 export const DARK_TOKENS: ChartTokens = {
-  canvas: '#0d1117',
-  panel: '#161b22',
-  line: '#30363d',
-  fg: '#e6edf3',
-  muted: '#8b949e',
-  accent: '#2f81f7',
-  answered: '#3fb950',
-  unsure: '#d29922',
-  risk: '#f85149',
+  canvas: '#0e1014',
+  panel: '#151820',
+  line: '#2a303b',
+  fg: '#e7eaf0',
+  muted: '#a0a8b6',
+  accent: '#5b95ff',
+  answered: '#49c27a',
+  unsure: '#e5a843',
+  risk: '#f0655b',
 };
 
 /**

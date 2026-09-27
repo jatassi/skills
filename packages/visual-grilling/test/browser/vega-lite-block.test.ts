@@ -60,6 +60,15 @@ async function open(source: string, setup?: (page: Page) => Promise<unknown>): P
   return { page, violations };
 }
 
+/** A page token as the rgb() colour computed styles report. */
+function token(page: Page, name: string): Promise<string> {
+  return page.evaluate((name) => {
+    const hex = getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
+    const n = parseInt(hex.slice(1), 16);
+    return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+  }, name);
+}
+
 /** The fill of a bar, by its datum. */
 function fillOf(page: Page, label: string): Promise<string> {
   return page.locator(`[aria-label="${label}"]`).evaluate((element) => getComputedStyle(element).fill);
@@ -79,19 +88,22 @@ describe('vega-lite block', () => {
     await pageExpect(figure.locator('[aria-roledescription="bar"]')).toHaveCount(3);
 
     // Dark: the preset marks are the answered, risk and muted tokens.
-    expect(await fillOf(page, 'runtime: Bun; ms: 60; mark: recommended')).toBe('rgb(63, 185, 80)');
-    expect(await fillOf(page, 'runtime: Node; ms: 120; mark: risk')).toBe('rgb(248, 81, 73)');
-    expect(await fillOf(page, 'runtime: Deno; ms: 90; mark: muted')).toBe('rgb(139, 148, 158)');
-    expect(await labelColour(page, 'Bun')).toBe('rgb(139, 148, 158)');
+    const dark = { answered: await token(page, 'answered'), risk: await token(page, 'risk'), muted: await token(page, 'muted') };
+    expect(await fillOf(page, 'runtime: Bun; ms: 60; mark: recommended')).toBe(dark.answered);
+    expect(await fillOf(page, 'runtime: Node; ms: 120; mark: risk')).toBe(dark.risk);
+    expect(await fillOf(page, 'runtime: Deno; ms: 90; mark: muted')).toBe(dark.muted);
+    expect(await labelColour(page, 'Bun')).toBe(dark.muted);
     // No white backdrop behind the chart.
     await pageExpect(figure.locator('.vega-lite-block svg > rect')).toHaveCount(0);
 
     await page.evaluate(() => {
       document.documentElement.dataset.theme = 'light';
     });
-    await pageExpect.poll(() => fillOf(page, 'runtime: Bun; ms: 60; mark: recommended')).toBe('rgb(26, 127, 55)');
-    expect(await fillOf(page, 'runtime: Node; ms: 120; mark: risk')).toBe('rgb(207, 34, 46)');
-    expect(await labelColour(page, 'Bun')).toBe('rgb(89, 99, 110)');
+    const light = { answered: await token(page, 'answered'), risk: await token(page, 'risk'), muted: await token(page, 'muted') };
+    expect(light.answered).not.toBe(dark.answered);
+    await pageExpect.poll(() => fillOf(page, 'runtime: Bun; ms: 60; mark: recommended')).toBe(light.answered);
+    expect(await fillOf(page, 'runtime: Node; ms: 120; mark: risk')).toBe(light.risk);
+    expect(await labelColour(page, 'Bun')).toBe(light.muted);
     expect(violations).toEqual([]);
   });
 
@@ -107,10 +119,10 @@ describe('vega-lite block', () => {
     const bar = (figure: string) =>
       page.getByRole('figure', { name: figure }).locator('[aria-roledescription="bar"]').evaluate((element) => getComputedStyle(element).fill);
     await pageExpect(page.locator('.vega-lite-block')).toHaveCount(2);
-    expect(await bar('Plain')).toBe('rgb(47, 129, 247)');
+    expect(await bar('Plain')).toBe(await token(page, 'accent'));
     expect(await bar('Own')).toBe('rgb(255, 0, 255)');
     // The page's axis colours still apply.
-    expect(await labelColour(page, 'Bun')).toBe('rgb(139, 148, 158)');
+    expect(await labelColour(page, 'Bun')).toBe(await token(page, 'muted'));
   });
 
   it('sends a comment on a bar in the chart\'s own terms: chart "Cold start" → bar "runtime: Bun; ms: 60"', async () => {
