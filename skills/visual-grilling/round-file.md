@@ -34,7 +34,7 @@ Each question's parts come in this order, and only ➡️ is required:
 
 ### Mockups
 
-A mockup is an `html` fence indented under its option, one per option. It takes no `id`; `tailwind=false` is its only key.
+A mockup is an `html` fence indented under its option, one per option. It takes no `id`; `tailwind=false` is its only key. The page shows the mockups side by side as cards keyed by letter, highlights the one the recommendation points at, and picks an option when its card is clicked. Comments on a mockup come back as `mockup B → …`.
 
 ````
 - **A** - Tabs

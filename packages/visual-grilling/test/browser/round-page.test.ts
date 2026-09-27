@@ -101,7 +101,7 @@ Q6 Retry policy · accepted
     await pageExpect(page.getByRole('region', { name: 'Q7' })).toContainText('Last one.');
   });
 
-  it('shows each illustration and mockup in a titled frame, a kind with no renderer as its raw source', async () => {
+  it('shows each illustration and mockup in a titled frame', async () => {
     sandbox = new Sandbox('p1');
     const round = [
       '❓ **Q1** - **Flow**: Which flow?',
@@ -126,7 +126,8 @@ Q6 Retry policy · accepted
     const flow = page.getByRole('figure', { name: 'Request flow' });
     await pageExpect(flow).toContainText('dot');
     await pageExpect(flow.locator('svg g.node')).toHaveCount(2);
-    await pageExpect(page.getByRole('figure', { name: 'Mockup A' }).locator('pre')).toHaveText('<nav>tabs</nav>');
+    await pageExpect(page.getByRole('figure', { name: 'Mockup A' })).toContainText('Tabs');
+    await pageExpect(page.frameLocator('iframe[title="Mockup A"]').locator('nav')).toHaveText('tabs');
   });
 
   it('shows "answered in the terminal" and "Grilling finished" after end, keeping the drafts', async () => {

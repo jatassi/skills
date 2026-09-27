@@ -659,8 +659,80 @@ kbd {
   font: 12px var(--mono);
 }
 
-.opt-row > .illustration {
-  margin: 0 12px 12px 38px;
+/* Mockups: side-by-side cards keyed by letter, above the options. Two across
+   in a side pane, more on a wide page, one on a phone. */
+.mockups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mockups .illustration {
+  margin: 0;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.mockup-card figcaption {
+  flex-wrap: wrap;
+  row-gap: 0;
+  padding-left: 8px;
+}
+
+.mockup-card figcaption .title {
+  flex: 0 1 auto;
+}
+
+.mockup-card .card-tools {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.mockup-card.recommended {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+
+.mockup-card .rec-badge {
+  font: 600 11px/1 var(--sans);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.mockup-card.on {
+  border-color: var(--answered);
+  box-shadow: 0 0 0 1px var(--answered);
+}
+
+.mockup-card.on .opt-k {
+  color: var(--answered);
+  border-color: color-mix(in srgb, var(--answered) 40%, transparent);
+}
+
+.mockup-card.on figcaption {
+  background: color-mix(in srgb, var(--answered) 8%, var(--panel));
+}
+
+/* Laid over the mockup so a click picks the card; the frame's own clicks never reach the page. */
+.card-pick {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.card-pick:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.card-pick:focus-visible {
+  outline-offset: -2px;
 }
 
 textarea {

@@ -1,7 +1,8 @@
 // The messages between the round page and a sandboxed agent-HTML frame.
 //
 // A frame never shares the page's origin: it is served by URL
-// (/frame/r<N>/<illustration-id>) with the sandbox below and no
+// (/frame/r<N>/<illustration-id>, or /frame/r<N>/q<M>/<option> for a
+// mockup) with the sandbox below and no
 // allow-same-origin, so all it can do is postMessage. The page accepts a
 // message only when event.source is one of its own frames, and reads it with
 // readFrameMessage: plain data of a known shape, never markup or code.

@@ -40,6 +40,24 @@ const ROUND = `# Frames
 \`\`\`
 
 ➡️ Fine.
+
+❓ **Q3** - **Layout**: Tabs or drawer?
+
+- **A** - Tabs
+
+  \`\`\`html
+  <nav data-anchor="tabs" class="flex gap-2">Tabs</nav>
+  \`\`\`
+
+- **B** - Drawer
+
+  \`\`\`html tailwind=false
+  <aside>Drawer</aside>
+  \`\`\`
+
+- **C** - Neither
+
+➡️ **A** Tabs.
 `;
 
 let sandbox: Sandbox;
@@ -115,6 +133,44 @@ describe('the frame document', () => {
     expect(body).toContain('<html lang="en"><head><title>Plain</title></head><body><p>plain</p></body></html>');
   });
 
+  it("serves an option's mockup at /frame/r<N>/q<M>/<option>, with the same head and sandbox", async () => {
+    const tabs = await rawRequest(port, 'GET', '/frame/r1/q3/A');
+    expect(tabs.status).toBe(200);
+    expect(tabs.headers['content-security-policy']).toBe(FRAME_CSP);
+    expect(tabs.body).toContain('<html data-vg-theme="dark">');
+    expect(tabs.body).toContain('/frame/assets/inject.js');
+    expect(tabs.body).toContain('/frame/assets/tailwind.js');
+    expect(tabs.body).toContain('<nav data-anchor="tabs" class="flex gap-2">Tabs</nav>');
+
+    const drawer = await rawRequest(port, 'GET', '/frame/r1/q3/B?theme=light');
+    expect(drawer.status).toBe(200);
+    expect(drawer.body).toContain('<html data-vg-theme="light">');
+    expect(drawer.body).not.toContain('tailwind');
+    expect(drawer.body).toContain('<aside>Drawer</aside>');
+  });
+
+  it("gives the page each mockup's frame path", async () => {
+    const round = (await (await fetch(`${url}api/rounds/1`)).json()) as {
+      questions: { options: { letter: string; mockup?: { frame: string } }[] }[];
+    };
+    expect(round.questions[2]!.options.map((option) => option.mockup?.frame)).toEqual([
+      '/frame/r1/q3/A',
+      '/frame/r1/q3/B',
+      undefined,
+    ]);
+  });
+
+  it.each([
+    ['an option with no mockup', '/frame/r1/q3/C'],
+    ['an unknown option', '/frame/r1/q3/D'],
+    ['a question with no options', '/frame/r1/q1/A'],
+    ['an unknown question', '/frame/r1/q9/A'],
+    ['a lower-case option', '/frame/r1/q3/a'],
+    ['a question number with a leading zero', '/frame/r1/q03/A'],
+  ])('has no mockup frame for %s', async (_, path) => {
+    expect((await rawRequest(port, 'GET', path)).status).toBe(404);
+  });
+
   it.each([
     ['an unknown illustration', '/frame/r1/nope'],
     ['an illustration that is not html', '/frame/r1/compare'],
@@ -153,29 +209,42 @@ describe('warnings', () => {
     // The same warning twice counts once.
     await warn({ question: 1, illustration: 'banner', kind: 'script', message: 'Uncaught Error: boom' });
     await warn({ question: 1, illustration: 'compare', kind: 'draw', message: 'no table\nat all' });
+    expect((await warn({ question: 3, option: 'B', kind: 'script', message: 'Uncaught TypeError: nope' })).status).toBe(200);
+    await warn({ question: 3, option: 'B', kind: 'script', message: 'Uncaught TypeError: nope' });
+    await warn({ question: 3, option: 'A', kind: 'draw', message: 'frame failed' });
 
     const early = await sandbox.cli(['await', '--timeout', '1']);
     expect(early.stdout.split('\n')[0]).toBe('pending · round 1 · re-run await');
 
     expect((await postJson(`${url}api/rounds/1/submission`, unsureAnswers())).status).toBe(200);
     const result = await sandbox.cli(['await', '--timeout', '5']);
-    expect(result.stdout.split('\n')[0]).toBe('submitted · round 1 · Frames · 2 warnings');
+    expect(result.stdout.split('\n')[0]).toBe('submitted · round 1 · Frames · 4 warnings');
     expect(result.stdout).toContain(`Q1 Banner
    unsure
    ⚠ html "banner" script error: Uncaught Error: boom
    ⚠ table "compare" failed to draw on the page: no table at all
 Q2 Plain
    unsure
+Q3 Layout
+   no answer (sent as unsure)
+   ⚠ mockup B script error: Uncaught TypeError: nope
+   ⚠ mockup A failed to draw on the page: frame failed
 `);
     expect(result.stdout).toContain('Q1 Banner · unsure · 2 warnings\n');
+    expect(result.stdout).toContain('Q3 Layout · no answer · 2 warnings\n');
+    const record = JSON.parse(readFileSync(`${sandbox.sessionDir('f1')}/submissions/round-1.json`, 'utf8'));
+    expect(record.questions[2].warnings[0]).toEqual({ kind: 'script', option: 'B', message: 'Uncaught TypeError: nope' });
   });
 
   it.each([
-    [{ question: 3, illustration: 'banner', kind: 'script', message: 'x' }, 'no Q3'],
+    [{ question: 4, illustration: 'banner', kind: 'script', message: 'x' }, 'no Q4'],
     [{ question: 1, illustration: 'plain', kind: 'script', message: 'x' }, 'no illustration "plain"'],
     [{ question: 1, illustration: 'compare', kind: 'script', message: 'x' }, 'only html illustrations run scripts'],
     [{ question: 1, illustration: 'banner', kind: 'other', message: 'x' }, 'unknown warning kind'],
     [{ question: 1, illustration: 'banner', kind: 'script', message: '' }, 'message'],
+    [{ question: 3, option: 'C', kind: 'script', message: 'x' }, 'option C has no mockup'],
+    [{ question: 1, option: 'A', kind: 'script', message: 'x' }, 'option A has no mockup'],
+    [{ question: 3, kind: 'script', message: 'x' }, 'a warning names an illustration or an option'],
   ])('rejects a warning that does not fit the round: %j', async (body, error) => {
     const response = await postJson(`${url}api/rounds/1/warnings`, body);
     expect(response.status).toBe(400);
