@@ -9,8 +9,8 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-export const DIR_MODE = 0o700;
-export const FILE_MODE = 0o600;
+const DIR_MODE = 0o700;
+const FILE_MODE = 0o600;
 
 export interface ServerInfo {
   port: number;

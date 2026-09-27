@@ -31,7 +31,7 @@ async function loadRound(which: number | 'latest'): Promise<void> {
   state.drafts = new Map(
     round.questions.map((question) => [question.number, draftFrom(round.submitted?.[question.number])]),
   );
-  document.title = `Round ${round.number}${round.title ? ` · ${round.title}` : ''}`;
+  document.title = roundHeading(round);
   render();
 }
 
@@ -124,7 +124,7 @@ function render(): void {
       ? 'Round submitted · waiting for the next round'
       : undefined;
   app.replaceChildren(
-    h('h1', {}, `Round ${round.number}${round.title ? ` · ${round.title}` : ''}`),
+    h('h1', {}, roundHeading(round)),
     ...(banner ? [h('p', { class: 'banner', role: 'status' }, banner)] : []),
     tabs,
     body,
@@ -254,6 +254,10 @@ function reviewPanel(round: PageRound, readOnly: boolean): HTMLElement {
       'Submit round',
     ),
   );
+}
+
+function roundHeading(round: PageRound): string {
+  return `Round ${round.number}${round.title ? ` · ${round.title}` : ''}`;
 }
 
 function stateLabel(draft: Draft): string {

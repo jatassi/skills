@@ -136,9 +136,7 @@ function present(res: ServerResponse, body: PresentRequest): void {
   rounds.set(n, parsed.round);
   latest = n;
   // A new round means the user answered the open one in the terminal.
-  for (const waiter of [...waiters]) {
-    waiter.settle({ outcome: 'superseded', text: `superseded · round ${waiter.round} answered in the terminal` });
-  }
+  supersedeWaiters();
   broadcast('round', { round: n });
   const response: PresentResponse = { round: n, url: `http://127.0.0.1:${port}/` };
   sendJson(res, 200, response);
@@ -188,8 +186,13 @@ function submit(res: ServerResponse, n: number, body: PageSubmission): void {
   for (const waiter of [...waiters]) {
     if (waiter.round === n) waiter.settle(submittedResponse(record));
   }
-  broadcast('submitted', { round: n });
   sendJson(res, 200, {});
+}
+
+function supersedeWaiters(): void {
+  for (const waiter of [...waiters]) {
+    waiter.settle({ outcome: 'superseded', text: `superseded · round ${waiter.round} answered in the terminal` });
+  }
 }
 
 function submittedResponse(record: SubmissionRecord): AwaitResponse {
@@ -222,9 +225,8 @@ function broadcast<E extends keyof PageEvents>(event: E, data: PageEvents[E]): v
 function shutdown(): void {
   if (ending) return;
   ending = true;
-  for (const waiter of [...waiters]) {
-    waiter.settle({ outcome: 'superseded', text: `superseded · round ${waiter.round} answered in the terminal` });
-  }
+  // `end` closes the open round the same way a new round does.
+  supersedeWaiters();
   broadcast('finished', {});
   for (const client of eventClients) client.end();
   rmSync(paths.dir, { recursive: true, force: true });

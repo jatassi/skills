@@ -55,10 +55,7 @@ const OPTION = /^\*\*([A-Z])\*\*\s*[-–—]\s*([\s\S]*)$/;
 const POINTER = /^\*\*([A-Z])\*\*/;
 
 export function parseRound(source: string): ParseResult {
-  const tree = fromMarkdown(source, {
-    extensions: [gfm()],
-    mdastExtensions: [gfmFromMarkdown()],
-  });
+  const tree = parseMarkdown(source);
   const slice = (node: Nodes): string =>
     source.slice(node.position!.start.offset!, node.position!.end.offset!);
   const lineOf = (node: Nodes): number => node.position!.start.line;
@@ -168,12 +165,13 @@ function isOptionList(list: List, slice: (node: Nodes) => string): boolean {
   });
 }
 
+function parseMarkdown(source: string) {
+  return fromMarkdown(source, { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] });
+}
+
 function plainText(markdown: string): string {
-  const tree = fromMarkdown(markdown, {
-    extensions: [gfm()],
-    mdastExtensions: [gfmFromMarkdown()],
-  });
-  return tree.children
+  return parseMarkdown(markdown)
+    .children
     .map((node) => toString(node))
     .join(' ')
     .replace(/\s+/g, ' ')

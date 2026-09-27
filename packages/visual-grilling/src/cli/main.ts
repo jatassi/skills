@@ -142,19 +142,21 @@ async function present(
   }
 
   const session = resolveSession(options.session, true);
-  if (session.generated) io.out(`session: ${session.id}`);
-
   const paths = sessionPaths(sessionDir(session.id));
+  const newSession = !existsSync(paths.dir);
   const server = await ensureServer(paths, options.distDir);
   const response = await call(server.port, '/control/present', { source });
   if (response.status === 422) {
     const { errors } = response.body as PresentRejection;
     for (const error of errors) io.err(formatRoundError(file, error));
+    // A rejected first round leaves no grilling session behind.
+    if (newSession) await stopServer(server, paths);
     return EXIT_FAILURE;
   }
   if (response.status !== 200) throw serverError(response);
 
   const { round, url } = response.body as PresentResponse;
+  if (session.generated) io.out(`session: ${session.id}`);
   io.out(url);
   if (round === 1 && options.open) openBrowser(url);
   return EXIT_OK;
@@ -254,17 +256,21 @@ async function end(options: { session: string | undefined }): Promise<number> {
   if (!existsSync(paths.dir)) return EXIT_OK;
 
   const server = readServerInfo(paths);
-  if (server && (await ping(server))) {
-    await call(server.port, '/control/end', {}).catch(() => undefined);
-    const deadline = Date.now() + 5_000;
-    while (Date.now() < deadline && isAlive(server.pid)) await sleep(50);
-  }
+  if (server && (await ping(server))) await stopServer(server, paths);
   rmSync(paths.dir, { recursive: true, force: true });
   io.out(`session ${session.id} ended`);
   return EXIT_OK;
 }
 
 // -------------------------------------------------------------------- helpers
+
+/** Asks the server to end the session, then waits for it to exit and its folder to go. */
+async function stopServer(server: ServerInfo, paths: SessionPaths): Promise<void> {
+  await call(server.port, '/control/end', {}).catch(() => undefined);
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline && isAlive(server.pid)) await sleep(50);
+  rmSync(paths.dir, { recursive: true, force: true });
+}
 
 interface Response {
   status: number;

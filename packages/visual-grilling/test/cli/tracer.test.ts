@@ -93,7 +93,8 @@ describe('present', () => {
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
     expect(result.stderr).toBe(`${file}:1 · Q1: missing ➡️ recommendation\n`);
-    expect(existsSync(join(box.sessionDir('s3'), 'rounds', 'round-1.md'))).toBe(false);
+    // A rejected first round leaves no session folder or server behind.
+    expect(existsSync(box.sessionDir('s3'))).toBe(false);
   });
 });
 

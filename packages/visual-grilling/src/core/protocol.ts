@@ -9,7 +9,7 @@
 // Page routes (page → server):
 //   GET  /                                 the round page
 //   GET  /assets/<file>                    page scripts and styles
-//   GET  /events                           server-sent events: `round`, `submitted`, `finished`
+//   GET  /events                           server-sent events: `round`, `finished`
 //   GET  /api/rounds/latest | /api/rounds/<n>   → PageRound (404 before the first round)
 //   POST /api/rounds/<n>/submission  PageSubmission → {}
 
@@ -62,6 +62,5 @@ export interface PageRound {
 /** Server-sent event payloads, keyed by event name. */
 export interface PageEvents {
   round: { round: number };
-  submitted: { round: number };
   finished: Record<string, never>;
 }
