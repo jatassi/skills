@@ -24,11 +24,12 @@ export function pageRound(
   round: Round,
   record: SubmissionRecord | undefined,
   answeredInTerminal = false,
+  questionRounds: Record<number, number> = {},
 ): PageRound {
   return {
     number,
     ...(round.title ? { title: round.title } : {}),
-    ...(round.designTree ? { designTree: round.designTree } : {}),
+    ...(round.designTree ? { designTree: round.designTree, questionRounds } : {}),
     questions: round.questions.map((question) => ({
       number: question.number,
       title: question.title,

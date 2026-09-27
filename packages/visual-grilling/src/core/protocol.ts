@@ -93,6 +93,12 @@ export interface PageRound {
   title?: string;
   /** The whole design tree as of this round; absent when the round has none. */
   designTree?: DesignTreeNode[];
+  /**
+   * With a design tree: the round holding each question it names, so a link to
+   * an earlier round's question opens that round. Question numbers carry on
+   * across rounds.
+   */
+  questionRounds?: Record<number, number>;
   questions: PageQuestion[];
   /** Present once the round has been submitted: each question's verdict by number. */
   submitted?: Record<number, Verdict>;

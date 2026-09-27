@@ -1,11 +1,12 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Sandbox } from '../support/harness.ts';
+import { crash, Sandbox } from '../support/harness.ts';
 
 let sandbox: Sandbox;
 
 afterEach(async () => {
-  await sandbox?.dispose(['r1', 'r2']);
+  await sandbox?.dispose(['r1', 'r2', 'r3', 'r4', 'r5']);
 });
 
 const BROKEN_ROUND = `# Broken
@@ -113,5 +114,69 @@ describe('present with the full grammar', () => {
     // Prose renders with raw HTML off.
     expect(round.questions[0].proseHtml).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(round.questions[0].proseHtml).not.toContain('<script>');
+  });
+});
+
+describe('present with a design tree that names earlier rounds', () => {
+  const tree = (branches: string) => `\`\`\`design-tree\n${branches}\n\`\`\`\n\n`;
+  const question = (n: number) => `❓ **Q${n}** - **Title ${n}**: Body.\n\n➡️ Yes.\n\n`;
+
+  it('accepts any question of the session, rejects one no round has had, and says which round holds each', async () => {
+    sandbox = new Sandbox('r3');
+    const firstRound = sandbox.writeRound('round-1.md', question(1) + question(2));
+    const first = await sandbox.cli(['present', firstRound, '--no-open']);
+    expect(first).toMatchObject({ code: 0, stderr: '' });
+
+    const unknown = sandbox.writeRound('bad.md', tree('- [ ] Q3 and Q4') + question(3));
+    const rejected = await sandbox.cli(['present', unknown, '--no-open']);
+    expect(rejected.code).toBe(1);
+    expect(rejected.stderr).toBe(`${unknown}:2: design tree: Q4 is not in this round or an earlier one\n`);
+
+    const second = sandbox.writeRound('round-2.md', tree('- [x] Storage Q1: folder\n- [ ] Runtime Q3') + question(3));
+    expect(await sandbox.cli(['present', second, '--no-open'])).toMatchObject({ code: 0, stderr: '' });
+
+    const round = await (await fetch(`${first.stdout.trim()}api/rounds/latest`)).json();
+    expect(round).toMatchObject({
+      number: 2,
+      designTree: [
+        { label: 'Storage Q1', settled: true, gist: 'folder', questions: [1], children: [] },
+        { label: 'Runtime Q3', settled: false, questions: [3], children: [] },
+      ],
+      questionRounds: { 1: 1, 3: 2 },
+    });
+  });
+
+  /** Presents rounds 1 and 2 (round 2's tree names round 1's Q1), then crashes the server. */
+  async function twoRoundsThenCrash(id: string): Promise<void> {
+    sandbox = new Sandbox(id);
+    for (const [n, source] of [[1, question(1)], [2, tree('- [x] Storage Q1: folder') + question(2)]] as const) {
+      const result = await sandbox.cli(['present', sandbox.writeRound(`round-${n}.md`, source), '--no-open']);
+      expect(result).toMatchObject({ code: 0, stderr: '' });
+    }
+    await crash(sandbox.serverInfo(id).pid);
+  }
+  const roundFile = (id: string, n: number) => join(sandbox.sessionDir(id), 'rounds', `round-${n}.md`);
+
+  it('reloads a round after a restart even when the round its tree names no longer parses', async () => {
+    await twoRoundsThenCrash('r4');
+    writeFileSync(roundFile('r4', 1), 'no longer a round\n');
+
+    const url = (await sandbox.cli(['present', sandbox.writeRound('round-3.md', question(3)), '--no-open'])).stdout.trim();
+    const round = await (await fetch(`${url}api/rounds/2`)).json();
+    expect(round).toMatchObject({
+      number: 2,
+      designTree: [{ label: 'Storage Q1', settled: true, gist: 'folder', questions: [1], children: [] }],
+    });
+  });
+
+  it('numbers the next round past every round file on disk, so an unparseable one is never overwritten', async () => {
+    await twoRoundsThenCrash('r5');
+    writeFileSync(roundFile('r5', 2), 'no longer a round\n');
+
+    const result = await sandbox.cli(['present', sandbox.writeRound('round-3.md', question(3)), '--no-open']);
+    expect(result).toMatchObject({ code: 0, stderr: '' });
+    const latest = await (await fetch(`${result.stdout.trim()}api/rounds/latest`)).json();
+    expect(latest.number).toBe(3);
+    expect(readFileSync(roundFile('r5', 2), 'utf8')).toBe('no longer a round\n');
   });
 });

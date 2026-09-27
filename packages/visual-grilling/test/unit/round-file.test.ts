@@ -542,9 +542,22 @@ describe('design tree', () => {
     expect(accept(Q(1)).designTree).toBeUndefined();
   });
 
-  it('rejects a Q<n> that is not in the round', () => {
+  it('accepts a Q<n> from an earlier round of the grilling session', () => {
+    const tree = fence('design-tree', '- [x] Storage Q2: folder\n- [ ] Runtime Q5');
+    const result = parseRound(`${tree}${Q(5)}`, new Set([1, 2, 3]));
+    expect(result.ok && result.round.designTree).toEqual([
+      { label: 'Storage Q2', settled: true, gist: 'folder', questions: [2], children: [] },
+      { label: 'Runtime Q5', settled: false, questions: [5], children: [] },
+    ]);
+  });
+
+  it('rejects a Q<n> that no round of the session has had', () => {
     expect(lines(`${fence('design-tree', '- [ ] Runtime\n  - [ ] Q4')}${Q(1)}`)).toEqual([
-      'round.md:3: design tree: Q4 is not in this round',
+      'round.md:3: design tree: Q4 is not in this round or an earlier one',
+    ]);
+    const result = parseRound(`${fence('design-tree', '- [ ] Q4')}${Q(5)}`, new Set([1, 2, 3]));
+    expect(result.ok ? [] : result.errors.map((error) => formatRoundError('round.md', error))).toEqual([
+      'round.md:2: design tree: Q4 is not in this round or an earlier one',
     ]);
   });
 
@@ -582,7 +595,7 @@ ${fence('mermaid', 'graph LR')}- **A** - One
 `;
     expect(lines(source)).toEqual([
       'round.md:1: the round title is 64 characters; keep it to 60',
-      'round.md:4: design tree: Q9 is not in this round',
+      'round.md:4: design tree: Q9 is not in this round or an earlier one',
       'round.md:9 · Q2 · illustration (mermaid): missing id; add id=<name> after the language',
       'round.md:14 · Q2: option letters run A, B, C… with no gaps; expected B, found C',
       'round.md:16 · Q2: the recommendation points at option D, which does not exist',

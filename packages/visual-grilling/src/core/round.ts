@@ -92,7 +92,7 @@ export interface DesignTreeNode {
   settled: boolean;
   /** For a settled branch, the text after `: `. */
   gist?: string;
-  /** Questions of this round the branch names with a bare `Q<n>`. */
+  /** Questions the branch names with a bare `Q<n>`: of this round or an earlier one of the session. */
   questions: number[];
   children: DesignTreeNode[];
 }
@@ -156,10 +156,24 @@ const ALLOWED_KEYS: Record<IllustrationKind, string[]> = {
   code: CODE_KEYS,
 };
 
+/** Every question a design tree names, in the order its branches name them. */
+export function treeQuestions(tree: DesignTreeNode[]): number[] {
+  return [...new Set(tree.flatMap((node) => [...node.questions, ...treeQuestions(node.children)]))];
+}
+
 // ------------------------------------------------------------------ parser
 
-export function parseRound(source: string): ParseResult {
-  return new RoundParser(source).parse();
+/**
+ * Which questions a design tree may name besides the round's own: the question
+ * numbers of the grilling session's earlier rounds (numbers carry on across
+ * rounds), or `'unchecked'` to skip the check for a round that already passed
+ * it when it was presented.
+ */
+export type EarlierQuestions = ReadonlySet<number> | 'unchecked';
+
+/** Parses one round file. Only the server knows the earlier rounds; the parse is otherwise pure. */
+export function parseRound(source: string, earlierQuestions: EarlierQuestions = new Set()): ParseResult {
+  return new RoundParser(source, earlierQuestions).parse();
 }
 
 type Part = 'prose' | 'illustration' | 'options';
@@ -172,7 +186,10 @@ class RoundParser {
   /** Illustration id → the question it first appeared in. */
   private readonly ids = new Map<string, number>();
 
-  constructor(private readonly source: string) {}
+  constructor(
+    private readonly source: string,
+    private readonly earlierQuestions: EarlierQuestions,
+  ) {}
 
   parse(): ParseResult {
     const tree = parseMarkdown(this.source);
@@ -240,7 +257,9 @@ class RoundParser {
     }
 
     if (treeFence) {
-      const designTree = this.designTree(treeFence, new Set(groups.map(({ match }) => Number(match[1]))));
+      const earlier = this.earlierQuestions;
+      const known = earlier === 'unchecked' ? earlier : new Set([...earlier, ...groups.map(({ match }) => Number(match[1]))]);
+      const designTree = this.designTree(treeFence, known);
       if (designTree) round.designTree = designTree;
     }
 
@@ -620,7 +639,7 @@ class RoundParser {
 
   // ---------------------------------------------------------- design tree
 
-  private designTree(node: Code, questions: Set<number>): DesignTreeNode[] | undefined {
+  private designTree(node: Code, questions: Set<number> | 'unchecked'): DesignTreeNode[] | undefined {
     const inner = parseMarkdown(node.value);
     const offset = this.lineOf(node);
     const errorCount = this.errors.length;
@@ -651,7 +670,9 @@ class RoundParser {
         const named: number[] = [];
         for (const match of text.matchAll(/\bQ(\d+)\b/g)) {
           const n = Number(match[1]);
-          if (!questions.has(n)) report(line, `Q${n} is not in this round`);
+          if (questions !== 'unchecked' && !questions.has(n)) {
+            report(line, `Q${n} is not in this round or an earlier one`);
+          }
           else if (!named.includes(n)) named.push(n);
         }
 
