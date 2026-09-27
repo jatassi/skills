@@ -35,6 +35,37 @@ beforeEach(() => {
 
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
+describe('next', () => {
+  it.each([
+    ['patch', '1.0.1'],
+    ['minor', '1.1.0'],
+    ['major', '2.0.0'],
+  ])('bumps the %s part', async (bump, version) => {
+    expect(await release(['next', '--root', root, '--bump', bump])).toMatchObject({ code: 0, stdout: `${version}\n` });
+  });
+
+  it('resets the parts after the bumped one', async () => {
+    for (const file of ['plugin.json', '.claude-plugin/plugin.json']) {
+      writeFileSync(join(root, file), read(file).replace('"version": "1.0.0"', '"version": "1.2.3"'));
+    }
+    expect((await release(['next', '--root', root, '--bump', 'minor'])).stdout).toBe('1.3.0\n');
+    expect((await release(['next', '--root', root, '--bump', 'major'])).stdout).toBe('2.0.0\n');
+  });
+
+  it('refuses an unknown bump', async () => {
+    const result = await release(['next', '--root', root, '--bump', 'huge']);
+    expect(result.code).toBe(1);
+    expect(result.stderr).toMatch(/bump must be one of major, minor, patch, got "huge"/);
+  });
+
+  it('refuses manifests whose versions disagree', async () => {
+    writeFileSync(join(root, 'plugin.json'), read('plugin.json').replace('"version": "1.0.0"', '"version": "1.1.0"'));
+    const result = await release(['next', '--root', root, '--bump', 'patch']);
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('plugin.json is at 1.1.0 but .claude-plugin/plugin.json is at 1.0.0');
+  });
+});
+
 describe('manifests', () => {
   it('bumps both plugin manifests and pins the marketplace to the tag', async () => {
     const before = Object.fromEntries(MANIFESTS.map((file) => [file, read(file)]));
@@ -128,6 +159,18 @@ describe('notes', () => {
         '',
       ].join('\n'),
     );
+  });
+
+  it('leaves out empty notes', async () => {
+    const dist = join(root, 'dist');
+    mkdirSync(dist);
+    writeFileSync(join(dist, 'cli.mjs'), 'x'.repeat(1024));
+    const notes = join(root, 'notes.md');
+    writeFileSync(notes, '\n');
+
+    const result = await release(['notes', '--dist', dist, '--notes', notes]);
+    expect(result).toMatchObject({ code: 0 });
+    expect(result.stdout).toBe(['## Bundle sizes', '', '| output | size |', '| --- | ---: |', '| `cli.mjs` | 1.0 KiB |', ''].join('\n'));
   });
 
   it('refuses an empty or missing dist folder', async () => {

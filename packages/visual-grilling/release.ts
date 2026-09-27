@@ -1,6 +1,10 @@
 // The file-touching steps of the release workflow (.github/workflows/release.yml).
 // See docs/adr/0002-installs-pinned-to-release-tags.md.
 //
+//   node release.ts next --bump patch|minor|major [--root <repo>]
+//     Prints the version after the one both plugin manifests agree on, with
+//     that part bumped and the parts after it reset.
+//
 //   node release.ts manifests --version X.Y.Z [--check] [--root <repo>]
 //     Bumps `version` in plugin.json and .claude-plugin/plugin.json, and pins
 //     the marketplace entry's source to the tag vX.Y.Z. Refuses, changing
@@ -8,7 +12,7 @@
 //     With --check it only checks, and writes nothing.
 //
 //   node release.ts notes --dist <dir> --notes <file>
-//     Prints the GitHub Release body: the notes, then each output's size.
+//     Prints the GitHub Release body: the notes, if any, then each output's size.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -36,11 +40,11 @@ function isNewer(next: Version, current: Version): boolean {
   return diff !== undefined && diff > 0;
 }
 
-function bumpAndPin(root: string, version: string, check: boolean): void {
-  const next = parseVersion(version);
-  if (!next) throw new ReleaseError(`version must be X.Y.Z (no "v", no pre-release), got "${version}"`);
+const BUMPS = ['major', 'minor', 'patch'] as const;
+type Bump = (typeof BUMPS)[number];
 
-  // Read and check everything before writing anything.
+/** The plugin manifests and the X.Y.Z version they agree on. */
+function readPlugins(root: string) {
   const plugins = PLUGIN_MANIFESTS.map((file) => {
     const text = readFileSync(join(root, file), 'utf8');
     const current = VERSION_LINE.exec(text)?.[1];
@@ -57,6 +61,22 @@ function bumpAndPin(root: string, version: string, check: boolean): void {
   }
   const currentVersion = parseVersion(current);
   if (!currentVersion) throw new ReleaseError(`${file} has version "${current}", not X.Y.Z; fix it by hand first`);
+  return { plugins, current, currentVersion };
+}
+
+function nextVersion(root: string, bump: string): string {
+  const part = BUMPS.indexOf(bump as Bump);
+  if (part === -1) throw new ReleaseError(`bump must be one of ${BUMPS.join(', ')}, got "${bump}"`);
+  const { currentVersion } = readPlugins(root);
+  return currentVersion.map((n, i) => (i < part ? n : i === part ? n + 1 : 0)).join('.');
+}
+
+function bumpAndPin(root: string, version: string, check: boolean): void {
+  const next = parseVersion(version);
+  if (!next) throw new ReleaseError(`version must be X.Y.Z (no "v", no pre-release), got "${version}"`);
+
+  // Read and check everything before writing anything.
+  const { plugins, current, currentVersion } = readPlugins(root);
   if (!isNewer(next, currentVersion)) throw new ReleaseError(`${version} is not newer than the current version ${current}`);
 
   const marketplace = JSON.parse(readFileSync(join(root, MARKETPLACE), 'utf8'));
@@ -79,9 +99,9 @@ function releaseBody(dist: string, notesFile: string): string {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
   if (sizes.length === 0) throw new ReleaseError(`no build output in ${dist}`);
+  const notes = readFileSync(notesFile, 'utf8').trim();
   return [
-    readFileSync(notesFile, 'utf8').trimEnd(),
-    '',
+    ...(notes ? [notes, ''] : []),
     '## Bundle sizes',
     '',
     '| output | size |',
@@ -95,6 +115,7 @@ const { positionals, values } = parseArgs({
   allowPositionals: true,
   options: {
     version: { type: 'string' },
+    bump: { type: 'string' },
     check: { type: 'boolean', default: false },
     root: { type: 'string' },
     dist: { type: 'string' },
@@ -104,13 +125,16 @@ const { positionals, values } = parseArgs({
 
 try {
   const [command] = positionals;
-  if (command === 'manifests' && values.version) {
-    bumpAndPin(resolve(values.root ?? join(import.meta.dirname, '../..')), values.version, values.check);
+  const root = resolve(values.root ?? join(import.meta.dirname, '../..'));
+  if (command === 'next' && values.bump) {
+    process.stdout.write(`${nextVersion(root, values.bump)}\n`);
+  } else if (command === 'manifests' && values.version) {
+    bumpAndPin(root, values.version, values.check);
   } else if (command === 'notes' && values.dist && values.notes) {
     process.stdout.write(releaseBody(resolve(values.dist), values.notes));
   } else {
     console.error(
-      'usage: node release.ts manifests --version X.Y.Z [--check] [--root <repo>]\n       node release.ts notes --dist <dir> --notes <file>',
+      'usage: node release.ts next --bump patch|minor|major [--root <repo>]\n       node release.ts manifests --version X.Y.Z [--check] [--root <repo>]\n       node release.ts notes --dist <dir> --notes <file>',
     );
     process.exit(2);
   }
