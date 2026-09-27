@@ -3,6 +3,7 @@
 // submission.
 
 import { readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { postJson, rawRequest, Sandbox } from '../support/harness.ts';
 
@@ -258,7 +259,7 @@ describe('crops', () => {
     expect((await postJson(`${url}api/rounds/1/submission`, answers)).status).toBe(200);
     const result = await sandbox.cli(['await', '--timeout', '5']);
 
-    const crop = `${sandbox.sessionDir('f1')}/crops/r1-q1-c2.png`;
+    const crop = join(sandbox.sessionDir('f1'), 'crops', 'r1-q1-c2.png');
     expect(result.stdout).toContain(
       '   comment 1 · html "Error banner" → empty area  [near "Retry"; at 72% across, 40% down]: "too loud"\n',
     );
