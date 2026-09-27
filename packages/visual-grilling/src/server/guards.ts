@@ -7,13 +7,15 @@
 //   page write  any other POST, from the round page. Origin must be exactly
 //               http://<the request's Host>, so the page's own address
 //               (127.0.0.1 or localhost) and only that; the body JSON.
-//   page read   GET (only) for the page, its assets, rounds and the event stream.
+//   page read   GET (only) for the page, its assets, rounds, the event stream,
+//               and agent-HTML frames with their scripts.
 // Every request must name the server in Host (127.0.0.1:<port> or
 // localhost:<port>), which blocks DNS rebinding. The server never answers a
 // preflight and never sends CORS headers, so a browser keeps every other
 // origin's reads and non-simple writes out on its own.
 
 import type { IncomingMessage, OutgoingHttpHeaders } from 'node:http';
+import { FRAME_SANDBOX } from '../core/frame-protocol.ts';
 
 export interface Rejection {
   status: number;
@@ -44,6 +46,30 @@ const ROUND_PAGE_CSP = [
 export const ROUND_PAGE_HEADERS: OutgoingHttpHeaders = {
   ...BASE_HEADERS,
   'content-security-policy': ROUND_PAGE_CSP,
+};
+
+/**
+ * An agent-HTML frame's own policy: permissive, since the agent may write any
+ * HTML (any script, eval included; any style; images, fonts and connections
+ * from anywhere), and sandboxed by the response itself as well as by the
+ * iframe, so the document never gets the page's origin even when opened on
+ * its own.
+ */
+const FRAME_CSP = [
+  "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'",
+  "script-src * data: blob: 'unsafe-inline' 'unsafe-eval'",
+  "style-src * data: blob: 'unsafe-inline'",
+  'img-src * data: blob:',
+  'font-src * data: blob:',
+  'connect-src * data: blob:',
+  'media-src * data: blob:',
+  `sandbox ${FRAME_SANDBOX}`,
+].join('; ');
+
+/** Headers for an agent-HTML frame document (/frame/r<N>/<illustration-id>). */
+export const FRAME_HEADERS: OutgoingHttpHeaders = {
+  ...BASE_HEADERS,
+  'content-security-policy': FRAME_CSP,
 };
 
 /**

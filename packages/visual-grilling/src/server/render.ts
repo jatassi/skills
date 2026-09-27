@@ -36,6 +36,7 @@ export function pageRound(
       illustrations: question.illustrations.map(({ line: _line, table, ...illustration }) => ({
         ...illustration,
         ...(table ? { table: pageTable(table) } : {}),
+        ...(illustration.kind === 'html' ? { frame: framePath(number, illustration.id) } : {}),
       })),
       options: question.options.map((option) => ({
         letter: option.letter,
@@ -55,6 +56,11 @@ export function pageRound(
       : {}),
     ...(answeredInTerminal ? { answeredInTerminal: true as const } : {}),
   };
+}
+
+/** Where an html illustration's sandboxed frame is served. */
+export function framePath(round: number, illustration: string): string {
+  return `/frame/r${round}/${illustration}`;
 }
 
 function pageTable(table: TableData): PageTable {

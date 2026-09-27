@@ -78,6 +78,8 @@ describe('dot block corpus', () => {
 
     const round1 = await browser.newPage({ viewport: { width: 700, height: 900 } });
     await round1.goto(presented.stdout.trim());
+    // M does nothing until the round has loaded.
+    await pageExpect(round1.getByRole('figure', { name: 'f1' })).toBeVisible();
     await round1.keyboard.press('m');
 
     const expected: string[] = [];

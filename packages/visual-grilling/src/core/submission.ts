@@ -2,6 +2,7 @@
 // `submissions/round-N.json`, and the text `await` prints for the agent.
 
 import { anchorLine, type Anchor, type Box } from './anchor.ts';
+import { MAX_CROP_DATA_URL, PNG_DATA_URL } from './frame-protocol.ts';
 import type { Question, Round } from './round.ts';
 
 /** One question's answer as the page sends it. */
@@ -14,20 +15,22 @@ export type PageAnswer =
 
 /**
  * An anchored comment as the page sends it: the resolved anchor plus the
- * text. The server trusts none of it beyond its shape, and takes the
- * illustration's kind and title from the round.
+ * text, and for a weak match a crop of the spot as a PNG data URL. The server
+ * trusts none of it beyond its shape, takes the illustration's kind and title
+ * from the round, and saves the crop as a file.
  */
-export type PageComment = Anchor & { text: string };
+export type PageComment = Anchor & { text: string; cropImage?: string };
 
 /**
- * A block that failed to draw only on the page, reported as it happens
- * (POST /api/rounds/<n>/warnings) and carried by the round's submission.
+ * A problem only the page saw, reported as it happens (POST
+ * /api/rounds/<n>/warnings) and carried by the round's submission: a block
+ * that failed to draw on the page, or an uncaught script error in agent HTML.
  */
 export interface PageWarning {
   question: number;
   /** The illustration's id. */
   illustration: string;
-  kind: 'draw';
+  kind: 'draw' | 'script';
   message: string;
 }
 
@@ -49,7 +52,7 @@ export type Verdict =
   | { mode: 'none' };
 
 /** An anchored comment in the saved record. `crop` is the absolute path of a weak match's crop image. */
-export type CommentRecord = PageComment & { question: number; crop?: string };
+export type CommentRecord = Omit<PageComment, 'cropImage'> & { question: number; crop?: string };
 
 export interface WarningRecord {
   kind: 'draw' | 'script';
@@ -160,11 +163,40 @@ export function checkWarning(round: Round, payload: unknown): PageWarning {
   if (!question) throw new Error(`the round has no Q${String(body.question)}`);
   const illustration = question.illustrations.find((candidate) => candidate.id === body.illustration);
   if (!illustration) throw new Error(`Q${question.number} has no illustration "${String(body.illustration)}"`);
-  if (body.kind !== 'draw') throw new Error('unknown warning kind');
+  if (body.kind !== 'draw' && body.kind !== 'script') throw new Error('unknown warning kind');
+  if (body.kind === 'script' && illustration.kind !== 'html') throw new Error('only html illustrations run scripts');
   const message = typeof body.message === 'string' ? body.message.trim().slice(0, WARNING_MESSAGE_LIMIT) : '';
   if (!message) throw new Error('a warning needs a message');
-  return { question: question.number, illustration: illustration.id, kind: 'draw', message };
+  return { question: question.number, illustration: illustration.id, kind: body.kind, message };
 }
+
+/**
+ * The crop images a submission carries, decoded, keyed `<question>:<comment
+ * number>`. Throws with a readable message on anything but a modest PNG.
+ */
+export function cropImages(submission: PageSubmission): Map<string, Buffer> {
+  const crops = new Map<string, Buffer>();
+  // Like buildRecord, the last answer for a question is the one that counts.
+  const answers = new Map((submission.answers ?? []).map((answer) => [answer.question, answer]));
+  for (const answer of answers.values()) {
+    const comments: unknown = (answer as { comments?: unknown }).comments;
+    if (!Array.isArray(comments)) continue;
+    comments.forEach((comment: unknown, index) => {
+      const image = record(comment)?.cropImage;
+      if (image === undefined || image === null) return;
+      const where = `Q${answer.question} comment ${index + 1}`;
+      if (typeof image !== 'string' || !image.startsWith(PNG_DATA_URL) || image.length > MAX_CROP_DATA_URL) {
+        throw new Error(`${where}: cropImage must be a PNG data URL of at most ${MAX_CROP_DATA_URL} characters`);
+      }
+      const png = Buffer.from(image.slice(PNG_DATA_URL.length), 'base64');
+      if (!png.subarray(0, 8).equals(PNG_SIGNATURE)) throw new Error(`${where}: cropImage is not a PNG`);
+      crops.set(`${answer.question}:${index + 1}`, png);
+    });
+  }
+  return crops;
+}
+
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 /** The text `await` prints for a submitted round. */
 export function renderSubmission(record: SubmissionRecord, recordPath: string): string {

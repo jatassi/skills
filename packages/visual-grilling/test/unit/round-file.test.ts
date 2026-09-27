@@ -480,6 +480,24 @@ describe('illustrations', () => {
     // The same name in two illustrations is fine.
     accept(Q(1, fence('html id=a', '<p data-anchor="x"></p>') + fence('html id=b', '<p data-anchor="x"></p>')));
   });
+
+  it('counts only data-anchor attributes, not selectors, scripts, styles or comments that name one', () => {
+    const html = [
+      '<button data-anchor="retry">Retry</button>',
+      '<!-- <i data-anchor="retry"></i> -->',
+      '<style>[data-anchor="retry"] { color: red }</style>',
+      '<script>',
+      "  document.querySelector('[data-anchor=\"retry\"]');",
+      '  const extra = `<b data-anchor="retry"></b>`;',
+      '</script>',
+      '<p title="x [data-anchor=retry]">note</p>',
+    ].join('\n');
+    accept(Q(1, fence('html id=a', html)));
+    // A duplicate after a script is still found, on its own line.
+    expect(lines(Q(1, fence('html id=a', `${html}\n<i data-anchor="retry"></i>`)))).toEqual([
+      'round.md:12 · Q1 · illustration "a" (html): duplicate data-anchor "retry"; each name must be unique in one illustration',
+    ]);
+  });
 });
 
 describe('design tree', () => {

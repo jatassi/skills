@@ -66,9 +66,12 @@ function forget(diagram: HTMLElement): void {
   shown.delete(diagram);
 }
 
-window.addEventListener('resize', () => {
-  for (const { refit } of [...shown.values()]) refit();
-});
+// Guarded: unit tests import block modules (for their anchor adapters) without a DOM.
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    for (const { refit } of [...shown.values()]) refit();
+  });
+}
 
 // ------------------------------------------------------------------ theme
 

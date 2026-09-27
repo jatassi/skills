@@ -4,12 +4,20 @@
 // A frame outlives page re-renders (the page keeps one per illustration for
 // the round), so a block draws once, not on every click. The page pushes
 // comment state into it with `sync`.
+//
+// A block that runs apart from the page (agent HTML in a sandboxed frame)
+// stays live instead: the frame pushes theme, backdrop and comment mode into
+// it, gets its clicks as snapshots, and asks it for crops.
 
-import { resolveAnchor, targetText, type Anchor, type AnchorSubject } from '../core/anchor.ts';
+import { resolveAnchor, targetText, type Anchor, type AnchorSubject, type Snapshot } from '../core/anchor.ts';
+import type { ThemeName } from '../core/frame-tokens.ts';
 import type { PageIllustration } from '../core/protocol.ts';
-import type { PageComment } from '../core/submission.ts';
+import type { PageComment, PageWarning } from '../core/submission.ts';
 import { takeSnapshot } from './anchor-snapshot.ts';
-import { blockFor, type BlockContext } from './blocks/index.ts';
+import { blockFor, type BlockContext, type BlockView } from './blocks/index.ts';
+import { cropRect, rasterCrop } from './crop.ts';
+
+const CROP_WAIT_MS = 5_000;
 
 export interface FrameSubject {
   /** For a mockup, a stand-in `html` illustration of its source. */
@@ -34,22 +42,34 @@ export interface FrameHooks {
   toggleCommenting(): void;
   addComment(comment: PageComment): void;
   removeComment(comment: PageComment): void;
-  /** A block failed to draw on the page; called once per frame, for the agent's warnings. */
-  reportFailure(message: string): void;
+  /**
+   * For the agent's warnings: a block that failed to draw on the page (once
+   * per frame), or a script error in agent HTML.
+   */
+  reportWarning(kind: PageWarning['kind'], message: string): void;
 }
 
 export class IllustrationFrame {
   readonly element: HTMLElement;
   private readonly toggle: HTMLButtonElement;
+  private readonly backdropToggle: HTMLButtonElement;
   private readonly content: HTMLDivElement;
   private readonly pins: HTMLDivElement;
   private readonly threads: HTMLOListElement;
   private readonly composer: HTMLDivElement;
   private view: FrameView = { comments: [], nextNumber: 1, commenting: false, readOnly: false };
   private pending?: Anchor;
+  /** The crop of a weak pending anchor, rasterised while the user types. */
+  private pendingCrop?: Promise<string | null>;
   /** The pending anchor the composer was built for. */
   private composerFor?: Anchor;
   private drawing = 0;
+  /** The drawn block, when it stays live (a sandboxed frame). */
+  private live?: BlockView;
+  /** The block's own verdict: unreadable on the dark backdrop. */
+  private unreadable = false;
+  /** The user's backdrop toggle, once used; until then the backdrop follows `unreadable`. */
+  private backdropChoice?: boolean;
   private reported = false;
 
   constructor(
@@ -61,6 +81,15 @@ export class IllustrationFrame {
     this.toggle.append('Comment', el('kbd', 'key', 'M'));
     this.toggle.setAttribute('aria-label', `Comment on ${subject.title}`);
     this.toggle.addEventListener('click', () => hooks.toggleCommenting());
+
+    this.backdropToggle = el('button', 'comment-toggle backdrop-toggle', 'Light backdrop');
+    this.backdropToggle.type = 'button';
+    this.backdropToggle.hidden = true;
+    this.backdropToggle.setAttribute('aria-label', `Light backdrop for ${subject.title}`);
+    this.backdropToggle.addEventListener('click', () => {
+      this.backdropChoice = !this.backdrop();
+      this.pushState();
+    });
 
     this.pins = el('div', 'pins');
     this.pins.setAttribute('aria-hidden', 'true');
@@ -76,7 +105,12 @@ export class IllustrationFrame {
     this.composer = el('div', 'composer');
 
     const caption = el('figcaption');
-    caption.append(el('span', 'title', subject.title), el('span', 'kind', subject.kindLabel), this.toggle);
+    caption.append(
+      el('span', 'title', subject.title),
+      el('span', 'kind', subject.kindLabel),
+      this.backdropToggle,
+      this.toggle,
+    );
 
     this.element = el('figure', `illustration kind-${subject.illustration.kind}`);
     this.element.setAttribute('aria-label', subject.title);
@@ -92,22 +126,66 @@ export class IllustrationFrame {
   async draw(): Promise<void> {
     const run = ++this.drawing;
     const { illustration } = this.subject;
-    const context: BlockContext = { theme: document.documentElement.dataset.theme === 'light' ? 'light' : 'dark' };
+    const current = () => run === this.drawing;
+    const context: BlockContext = {
+      theme: pageTheme(),
+      events: {
+        pick: (snapshot) => {
+          if (current()) this.pickSnapshot(snapshot);
+        },
+        readability: (unreadable) => {
+          if (!current()) return;
+          this.unreadable = unreadable;
+          this.pushState();
+        },
+        scriptError: (message) => {
+          if (current()) this.hooks.reportWarning('script', message);
+        },
+      },
+    };
     const target = el('div', 'block');
     this.content.firstElementChild!.replaceWith(target);
+    this.live = undefined;
     try {
-      await blockFor(illustration.kind).render(target, illustration, context);
+      const view = await blockFor(illustration.kind).render(target, illustration, context);
+      if (!current()) return;
+      this.live = view ?? undefined;
+      this.pushState();
     } catch (error) {
-      if (run !== this.drawing) return;
+      if (!current()) return;
       const message = error instanceof Error ? error.message : String(error);
       const alert = el('p', 'block-error', `This ${this.subject.kindLabel} failed to draw: ${message}`);
       alert.setAttribute('role', 'alert');
       target.replaceChildren(alert);
       if (!this.reported) {
         this.reported = true;
-        this.hooks.reportFailure(message);
+        this.hooks.reportWarning('draw', message);
       }
     }
+  }
+
+  /** The page theme changed: a live block follows it in place, any other draws again. */
+  retheme(): void {
+    if (this.live) this.pushState();
+    else void this.draw();
+  }
+
+  /** Light backdrop: the user's choice, else automatic when the block is unreadable on dark. */
+  private backdrop(): boolean {
+    return this.backdropChoice ?? (this.unreadable && pageTheme() === 'dark');
+  }
+
+  private pushState(): void {
+    const backdrop = this.backdrop();
+    this.element.classList.toggle('light-backdrop', backdrop);
+    // The toggle matters on dark only; on the light theme every backdrop is light.
+    this.backdropToggle.hidden = !this.live || pageTheme() !== 'dark';
+    this.backdropToggle.setAttribute('aria-pressed', String(backdrop));
+    this.live?.setState({
+      theme: pageTheme(),
+      backdrop,
+      commenting: this.view.commenting && !this.view.readOnly,
+    });
   }
 
   sync(view: FrameView): void {
@@ -117,6 +195,7 @@ export class IllustrationFrame {
     this.toggle.setAttribute('aria-pressed', String(view.commenting));
     this.toggle.disabled = view.readOnly;
     this.element.classList.toggle('commenting', canComment);
+    this.pushState();
 
     this.pins.replaceChildren(
       ...view.comments.map(({ number, comment }) => pin(number, comment)),
@@ -153,10 +232,28 @@ export class IllustrationFrame {
     event.preventDefault();
     event.stopPropagation();
     const renderer = blockFor(this.subject.illustration.kind);
-    const snapshot = takeSnapshot(event.target as Element, this.content, event.clientX, event.clientY, renderer.peers);
-    this.pending = resolveAnchor(snapshot, this.anchorSubject(), renderer.anchor);
+    this.pickSnapshot(takeSnapshot(event.target as Element, this.content, event.clientX, event.clientY, renderer.peers));
+  }
+
+  /** A click, snapshotted here or inside a sandboxed frame, becomes the pending comment's anchor. */
+  private pickSnapshot(snapshot: Snapshot): void {
+    if (!this.view.commenting || this.view.readOnly) return;
+    const renderer = blockFor(this.subject.illustration.kind);
+    const anchor = resolveAnchor(snapshot, this.anchorSubject(), renderer.anchor);
+    this.pending = anchor;
+    this.pendingCrop = anchor.target.weak ? this.crop(anchor, snapshot.root) : undefined;
     this.sync(this.view);
     this.composer.querySelector('textarea')?.focus();
+  }
+
+  /** A weak match's crop: from the live block when it has its own document, else from the page. */
+  private crop(anchor: Anchor, root: Snapshot['root']): Promise<string | null> {
+    const rect = cropRect(anchor, root);
+    if (this.live) return this.live.crop(rect);
+    return rasterCrop(this.content, this.content, rect, {
+      backgroundColor: getComputedStyle(this.element).backgroundColor,
+      filter: (node) => !(node instanceof Element && node.classList.contains('pins')),
+    });
   }
 
   private anchorSubject(): AnchorSubject {
@@ -185,19 +282,28 @@ export class IllustrationFrame {
     const cancel = el('button', 'ghost', 'Cancel');
     cancel.type = 'button';
 
-    const submit = () => {
+    const crop = this.pendingCrop;
+    let saving = false;
+    const submit = async () => {
       const text = textarea.value.trim();
       if (!text) return textarea.focus();
+      if (saving) return;
+      saving = true;
+      save.disabled = true;
+      const cropImage = crop ? await within(crop, CROP_WAIT_MS) : null;
+      // Cancelled, or replaced by another click, while the crop was drawn.
+      if (this.pending !== anchor) return;
       this.pending = undefined;
-      this.hooks.addComment({ ...anchor, text });
+      this.pendingCrop = undefined;
+      this.hooks.addComment({ ...anchor, text, ...(cropImage ? { cropImage } : {}) });
     };
-    save.addEventListener('click', submit);
+    save.addEventListener('click', () => void submit());
     cancel.addEventListener('click', () => this.cancel());
     textarea.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         event.stopPropagation();
-        submit();
+        void submit();
       } else if (event.key === 'Escape') {
         event.stopPropagation();
         this.cancel();
@@ -212,6 +318,15 @@ export class IllustrationFrame {
     this.composer.replaceChildren(head, textarea, actions);
     this.composer.hidden = false;
   }
+}
+
+function pageTheme(): ThemeName {
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+}
+
+/** The promise's value, or null when it takes longer than `ms`. */
+function within<T>(promise: Promise<T | null>, ms: number): Promise<T | null> {
+  return Promise.race([promise, new Promise<null>((done) => setTimeout(() => done(null), ms))]);
 }
 
 function pin(number: number, anchor: Anchor, extra?: string): HTMLElement {

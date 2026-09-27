@@ -24,17 +24,23 @@ import { makeDir, sessionPaths, writePrivateFile, type ServerInfo } from '../cor
 import {
   buildRecord,
   checkWarning,
+  cropImages,
   renderSubmission,
   type PageSubmission,
   type PageWarning,
   type SubmissionRecord,
 } from '../core/submission.ts';
 import { DrawCheck } from './draw-check.ts';
-import { BASE_HEADERS, guardRequest, ROUND_PAGE_HEADERS } from './guards.ts';
+import { frameDocument, FRAME_ASSETS } from './frame.ts';
+import { BASE_HEADERS, FRAME_HEADERS, guardRequest, ROUND_PAGE_HEADERS } from './guards.ts';
 import { idleLimitMs, watchIdle } from './idle.ts';
 import { pageRound } from './render.ts';
 
 const MAX_BODY = 1024 * 1024;
+// A round submission carries weak matches' crops as PNG data URLs.
+const MAX_SUBMISSION_BODY = 16 * 1024 * 1024;
+/** Warnings kept per round: past this, the round's blocks are just noisy. */
+const MAX_WARNINGS = 50;
 
 const sessionDirArg = process.argv[2];
 if (!sessionDirArg) {
@@ -44,6 +50,7 @@ if (!sessionDirArg) {
 const paths = sessionPaths(sessionDirArg);
 const pageDir = join(dirname(fileURLToPath(import.meta.url)), 'page');
 const drawCheck = new DrawCheck(pageDir);
+const frameDir = join(dirname(fileURLToPath(import.meta.url)), 'frame');
 
 // ------------------------------------------------------------------- state
 
@@ -73,6 +80,7 @@ loadSession();
 function loadSession(): void {
   makeDir(paths.rounds);
   makeDir(paths.submissions);
+  makeDir(paths.crops);
   for (const name of readdirSync(paths.rounds)) {
     const n = Number(/^round-(\d+)\.md$/.exec(name)?.[1]);
     if (!n) continue;
@@ -98,7 +106,8 @@ const server = createServer((req, res) => {
 });
 
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const route = new URL(req.url ?? '/', 'http://127.0.0.1').pathname;
+  const url = new URL(req.url ?? '/', 'http://127.0.0.1');
+  const route = url.pathname;
   const rejection = guardRequest(req, route, port);
   if (rejection) return sendJson(res, rejection.status, { error: rejection.error });
   // Every accepted CLI call and page request counts as activity, except ping:
@@ -129,6 +138,12 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     const asset = /^\/assets\/([a-z0-9-]+\.(?:js|css))$/.exec(route);
     if (asset) return sendFile(res, asset[1]!);
     if (route === '/events') return openEvents(req, res);
+    const frameAsset = /^\/frame\/assets\/([a-z0-9-]+\.js)$/.exec(route);
+    if (frameAsset && (FRAME_ASSETS as readonly string[]).includes(frameAsset[1]!)) {
+      return sendFile(res, frameAsset[1]!, BASE_HEADERS, frameDir);
+    }
+    const frameRoute = /^\/frame\/r(\d+)\/([a-z0-9][a-z0-9-]*)$/.exec(route);
+    if (frameRoute) return sendFrame(res, Number(frameRoute[1]), frameRoute[2]!, url.searchParams.get('theme'));
     if (route === '/api/rounds') return sendJson(res, 200, roundIndex());
     const roundRoute = /^\/api\/rounds\/(latest|\d+)$/.exec(route);
     if (roundRoute) {
@@ -141,7 +156,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
 
   const submitRoute = /^\/api\/rounds\/(\d+)\/submission$/.exec(route);
   if (submitRoute && req.method === 'POST') {
-    return submit(res, Number(submitRoute[1]), (await readJson(req)) as PageSubmission);
+    return submit(res, Number(submitRoute[1]), (await readJson(req, MAX_SUBMISSION_BODY)) as PageSubmission);
   }
   const warningRoute = /^\/api\/rounds\/(\d+)\/warnings$/.exec(route);
   if (warningRoute && req.method === 'POST') {
@@ -209,10 +224,20 @@ function submit(res: ServerResponse, n: number, body: PageSubmission): void {
   if (answeredInTerminal(n)) return sendJson(res, 409, { error: `round ${n} was answered in the terminal` });
 
   let record: SubmissionRecord;
+  let crops: Map<string, Buffer>;
   try {
+    crops = cropImages(body);
     record = buildRecord(n, round, body, new Date(), pageWarnings.get(n));
   } catch (error) {
     return sendJson(res, 400, { error: (error as Error).message });
+  }
+  for (const question of record.questions) {
+    question.comments.forEach((comment, index) => {
+      const png = crops.get(`${question.number}:${index + 1}`);
+      if (!png) return;
+      comment.crop = paths.crop(n, question.number, index + 1);
+      writePrivateFile(comment.crop, png);
+    });
   }
   writePrivateFile(paths.submission(n), `${JSON.stringify(record, null, 2)}\n`);
   records.set(n, record);
@@ -223,7 +248,27 @@ function submit(res: ServerResponse, n: number, body: PageSubmission): void {
   sendJson(res, 200, {});
 }
 
-/** A block that failed only on the page. It doesn't wake `await`; it rides the submission. */
+/** Serves an html illustration's frame: the agent's HTML with the frame head injected, sandboxed. */
+function sendFrame(res: ServerResponse, n: number, id: string, theme: string | null): void {
+  const illustration = rounds
+    .get(n)
+    ?.questions.flatMap((question) => question.illustrations)
+    .find((candidate) => candidate.id === id && candidate.kind === 'html');
+  if (!illustration) return sendJson(res, 404, { error: 'no such frame' });
+  const page = frameDocument(illustration.source, {
+    tailwind: illustration.tailwind !== false,
+    theme: theme === 'light' ? 'light' : 'dark',
+  });
+  res.writeHead(200, {
+    ...FRAME_HEADERS,
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': 'no-store',
+    'content-length': Buffer.byteLength(page),
+  });
+  res.end(page);
+}
+
+/** A block that failed only on the page, or a frame's script error. It doesn't wake `await`; it rides the submission. */
 function reportWarning(res: ServerResponse, n: number, body: unknown): void {
   const round = rounds.get(n);
   if (!round) return sendJson(res, 404, { error: 'no such round' });
@@ -236,11 +281,16 @@ function reportWarning(res: ServerResponse, n: number, body: unknown): void {
     return sendJson(res, 400, { error: (error as Error).message });
   }
   const list = pageWarnings.get(n) ?? [];
+  // One draw warning per block (a theme redraw that fails again isn't news),
+  // and each distinct script error once.
   const known = list.some(
-    (existing) => existing.question === warning.question && existing.illustration === warning.illustration && existing.kind === warning.kind,
+    (existing) =>
+      existing.question === warning.question &&
+      existing.illustration === warning.illustration &&
+      existing.kind === warning.kind &&
+      (warning.kind === 'draw' || existing.message === warning.message),
   );
-  // One warning per block: a theme redraw that fails again isn't news.
-  if (!known) pageWarnings.set(n, [...list, warning]);
+  if (!known && list.length < MAX_WARNINGS) pageWarnings.set(n, [...list, warning]);
   sendJson(res, 200, {});
 }
 
@@ -326,13 +376,13 @@ function shutdown(reason: 'end' | 'idle'): void {
 
 // ---------------------------------------------------------------- helpers
 
-function readJson(req: IncomingMessage): Promise<unknown> {
+function readJson(req: IncomingMessage, limit = MAX_BODY): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;
     req.on('data', (chunk: Buffer) => {
       size += chunk.length;
-      if (size > MAX_BODY) {
+      if (size > limit) {
         reject(new Error('request body too large'));
         req.destroy();
         return;
@@ -369,10 +419,10 @@ const CONTENT_TYPES: Record<string, string> = {
   css: 'text/css; charset=utf-8',
 };
 
-function sendFile(res: ServerResponse, name: string, headers = BASE_HEADERS): void {
+function sendFile(res: ServerResponse, name: string, headers = BASE_HEADERS, dir = pageDir): void {
   let content: Buffer;
   try {
-    content = readFileSync(join(pageDir, name));
+    content = readFileSync(join(dir, name));
   } catch {
     return sendJson(res, 404, { error: 'not found' });
   }
@@ -391,5 +441,7 @@ server.listen(0, '127.0.0.1', () => {
   port = (server.address() as AddressInfo).port;
   const info: ServerInfo = { port, pid: process.pid, startTime };
   writePrivateFile(paths.serverJson, `${JSON.stringify(info)}\n`);
-  drawCheck.warm();
+  // Loading the libraries holds the event loop for a while; the CLI that
+  // started this server is still waiting to present, so that time isn't idle.
+  void drawCheck.warm().then(() => idle.touch());
 });

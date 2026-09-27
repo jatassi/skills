@@ -577,12 +577,21 @@ class RoundParser {
     return settings;
   }
 
-  /** Every `data-anchor` name must be unique within one html illustration or mockup. */
+  /**
+   * Every `data-anchor` name must be unique within one html illustration or
+   * mockup. Only attributes count: a name in a script, a style, a comment or
+   * a selector (`[data-anchor="x"]`) is not an element.
+   */
   private duplicateAnchors(node: Code, number: number, subject: RoundError['illustration']): void {
     const seen = new Set<string>();
     const contentLine = this.lineOf(node) + 1;
-    node.value.split('\n').forEach((text, index) => {
-      for (const match of text.matchAll(/\bdata-anchor\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi)) {
+    // Blank out what isn't markup, keeping line breaks so lines still count.
+    const markup = node.value.replace(
+      /<!--[\s\S]*?(?:-->|$)|<(script|style)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi,
+      (skipped) => skipped.replace(/[^\n]/g, ' '),
+    );
+    markup.split('\n').forEach((text, index) => {
+      for (const match of text.matchAll(/(?<=\s)data-anchor\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi)) {
         const name = match[1] ?? match[2] ?? match[3] ?? '';
         if (seen.has(name)) {
           this.errors.push({

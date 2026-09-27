@@ -38,10 +38,13 @@ export class DrawCheck {
     'vega-lite': (illustration) => checkVegaLite(this.pageDir, illustration),
   };
 
-  /** Starts loading the drawing libraries so the first `present` doesn't wait on them. */
-  warm(): void {
-    void this.loadMermaid().catch(() => undefined);
+  /** Starts loading the drawing libraries so the first `present` doesn't wait on them. Settles once Mermaid is loaded (or failed). */
+  warm(): Promise<void> {
     this.dot.warm();
+    return this.loadMermaid().then(
+      () => undefined,
+      () => undefined,
+    );
   }
 
   /** Draws every block in the round; returns one error per block that fails. */

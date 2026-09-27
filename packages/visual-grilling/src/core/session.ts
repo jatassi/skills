@@ -3,6 +3,7 @@
 //   <os.tmpdir()>/visual-grilling/<session-id>/
 //     rounds/round-N.md        the round files as presented
 //     submissions/round-N.json the structured round submissions
+//     crops/rN-qM-cK.png       crops of weak anchor matches (round N, QM, comment K)
 //     server.json              how the CLI finds the server
 //
 // Folders are 0700 and files 0600. `present` checks `visual-grilling/` and the
@@ -37,9 +38,11 @@ export function sessionPaths(dir: string) {
     dir,
     rounds: join(dir, 'rounds'),
     submissions: join(dir, 'submissions'),
+    crops: join(dir, 'crops'),
     serverJson: join(dir, 'server.json'),
     round: (n: number) => join(dir, 'rounds', `round-${n}.md`),
     submission: (n: number) => join(dir, 'submissions', `round-${n}.json`),
+    crop: (n: number, question: number, comment: number) => join(dir, 'crops', `r${n}-q${question}-c${comment}.png`),
   };
 }
 
@@ -90,7 +93,7 @@ function checkPrivateDir(dir: string): void {
 }
 
 /** Writes a file with owner-only access, via a rename so readers never see half of it. */
-export function writePrivateFile(file: string, content: string): void {
+export function writePrivateFile(file: string, content: string | Uint8Array): void {
   const temp = `${file}.${process.pid}.tmp`;
   writeFileSync(temp, content, { mode: FILE_MODE });
   renameSync(temp, file);

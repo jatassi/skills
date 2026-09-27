@@ -8,8 +8,11 @@
 //                            the server imports it for the draw check
 //   <out>/page/graphviz.js   the Graphviz (@viz-js/viz) chunk, shared the same way
 //   <out>/page/vega-lite.js  the Vega + Vega-Lite chunk, used the same way
+//   <out>/frame/             sandboxed agent-HTML frames: inject.js (the frame
+//                            script) and tailwind.js (@tailwindcss/browser)
 
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -96,7 +99,17 @@ await Promise.all([
   esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/mermaid.ts')], outfile: join(out, 'page/mermaid.js') }),
   esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/graphviz.ts')], outfile: join(out, 'page/graphviz.js') }),
   esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/vega-lite.ts')], outfile: join(out, 'page/vega-lite.js') }),
+  esbuild.build({
+    ...browser,
+    entryPoints: [join(here, 'src/frame/inject.ts')],
+    outfile: join(out, 'frame/inject.js'),
+    format: 'iife',
+  }),
 ]);
+
+// Served from the local server into every frame (unless tailwind=false), never from a CDN.
+const require = createRequire(import.meta.url);
+copyFileSync(require.resolve('@tailwindcss/browser'), join(out, 'frame/tailwind.js'));
 
 mkdirSync(join(out, 'page'), { recursive: true });
 for (const file of ['index.html', 'app.css']) {
