@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "round-probe": {
+      "command": "node",
+      "args": ["prototypes/in-chat-round-pages/mcp-apps-probe.mjs"]
+    }
+  }
+}

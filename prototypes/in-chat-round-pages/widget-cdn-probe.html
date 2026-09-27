@@ -1,0 +1,26 @@
+<!-- PROTOTYPE, throwaway. widget_code passed to the inline `visualize` show_widget tool in Claude Code desktop.
+     Probes: since the widget can't reach localhost, can the round page shell and illustration libraries load from the CSP-allowed CDNs instead? -->
+<h2 class="sr-only">Prototype probe checking whether illustration libraries load from a CDN inside the inline widget.</h2>
+<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">PROTOTYPE · CDN shell probe</div>
+<div id="diag" style="margin-bottom:8px"></div>
+<div id="tw" class="rounded-md border border-dashed border-sky-500 p-2 text-sm" style="margin-bottom:8px">If Tailwind loaded, this box has a dashed sky-blue border.</div>
+<pre id="out" style="font-size:11px;background:var(--color-background-secondary,#f3f3f3);padding:8px;border-radius:6px;white-space:pre-wrap;margin:0 0 8px"></pre>
+<button id="send">Send result ↗</button>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>
+const R = { tailwind: "pending", mermaid: typeof mermaid === "undefined" ? "global missing" : "global ok v" + (mermaid.version || "?"), esmImport: "pending" };
+const out = () => document.getElementById("out").textContent = JSON.stringify(R, null, 1);
+(async () => {
+  try {
+    mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+    const { svg } = await mermaid.render("probe1", "flowchart LR\n  A[\"Agent\"] --> S[\"Round page\"] --> U[\"You\"]");
+    document.getElementById("diag").innerHTML = svg; R.mermaid += ", rendered";
+  } catch (e) { R.mermaid += ", render failed: " + e.message; }
+  setTimeout(() => { R.tailwind = getComputedStyle(document.getElementById("tw")).borderStyle === "dashed" ? "applied" : "not applied"; out(); }, 800);
+  try { const m = await import("https://esm.sh/nanoid@5"); R.esmImport = "ok (" + m.nanoid(6) + ")"; } catch (e) { R.esmImport = "failed: " + e.message; }
+  out();
+})();
+document.getElementById("send").onclick = () => sendPrompt("CDN PROBE RESULT\n" + JSON.stringify(R));
+out();
+</script>

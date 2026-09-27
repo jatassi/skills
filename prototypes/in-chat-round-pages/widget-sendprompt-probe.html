@@ -1,0 +1,77 @@
+<!-- PROTOTYPE, throwaway. widget_code passed to the inline `visualize` show_widget tool in Claude Code desktop.
+     Probes: can sendPrompt carry a full round submission (answer, free text, anchored comments, padded up to 400 KB)?
+     Can the widget reach a localhost server (fetch GET/POST, WebSocket, img beacon, sendBeacon, iframe)?
+     Needs localhost-probe.mjs running on 127.0.0.1:47613. -->
+<h2 class="sr-only">Prototype round page probing whether sendPrompt can carry a full round submission back to the agent.</h2>
+<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">PROTOTYPE · round 1 of a probe grilling session</div>
+<div style="font-size:15px;font-weight:500;margin-bottom:4px">Q1. Where should a session's round files live?</div>
+<div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Recommended: A, OS temp dir (cleanup is free and nothing touches the repo). Click a box to leave an anchored comment on it.</div>
+<svg id="ill" viewBox="0 0 640 110" width="100%" style="display:block;margin-bottom:10px">
+  <g data-anchor="agent" style="cursor:pointer"><rect x="10" y="30" width="130" height="50" rx="8" fill="var(--color-background-secondary, #f3f3f3)" stroke="var(--border-strong, #999)" stroke-width="0.5"/><text x="75" y="60" text-anchor="middle" font-size="13" fill="var(--text-primary, #222)">Agent</text></g>
+  <g data-anchor="server" style="cursor:pointer"><rect x="250" y="30" width="130" height="50" rx="8" fill="var(--color-background-secondary, #f3f3f3)" stroke="var(--border-strong, #999)" stroke-width="0.5"/><text x="315" y="60" text-anchor="middle" font-size="13" fill="var(--text-primary, #222)">Local server</text></g>
+  <g data-anchor="files" style="cursor:pointer"><rect x="490" y="30" width="130" height="50" rx="8" fill="var(--color-background-secondary, #f3f3f3)" stroke="var(--border-strong, #999)" stroke-width="0.5"/><text x="555" y="60" text-anchor="middle" font-size="13" fill="var(--text-primary, #222)">Round files</text></g>
+  <line x1="140" y1="55" x2="250" y2="55" stroke="var(--text-secondary, #777)" stroke-width="1"/><line x1="380" y1="55" x2="490" y2="55" stroke="var(--text-secondary, #777)" stroke-width="1"/>
+</svg>
+<div id="cbox" style="display:none;gap:6px;margin-bottom:10px;align-items:center">
+  <span id="ctarget" style="font-size:12px;color:var(--text-secondary);min-width:110px"></span>
+  <input id="ctext" type="text" placeholder="Comment on this element" style="flex:1">
+  <button id="cadd">Add comment</button>
+</div>
+<div id="clist" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+  <button class="opt" data-v="accept">Accept recommendation (A)</button>
+  <button class="opt" data-v="B">B. .visual-grilling/ in repo</button>
+  <button class="opt" data-v="skip">Unsure / skip</button>
+</div>
+<input id="free" type="text" placeholder="Free text (optional)" style="width:100%;margin-bottom:10px">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:13px">
+  <label style="color:var(--text-secondary)">Pad payload to test size</label>
+  <select id="pad"><option value="0">none</option><option value="8000">8 KB</option><option value="32000">32 KB</option><option value="100000">100 KB</option><option value="400000">400 KB</option></select>
+  <button id="probe">Run localhost probes</button>
+  <button id="submit" style="margin-left:auto">Submit round ↗</button>
+</div>
+<pre id="state" style="font-size:11px;background:var(--color-background-secondary,#f3f3f3);padding:8px;border-radius:6px;white-space:pre-wrap;max-height:220px;overflow:auto;margin:0"></pre>
+<script>
+const S = window.roundState = { round: 1, answer: null, free: "", comments: [], probes: {}, sendPromptType: typeof sendPrompt };
+let target = null;
+const render = () => { document.getElementById("state").textContent = JSON.stringify(S, null, 1); document.getElementById("clist").textContent = S.comments.map(c => `• on ${c.element}: ${c.text}`).join("\n"); };
+document.querySelectorAll("#ill [data-anchor]").forEach(g => g.addEventListener("click", ev => {
+  target = g.dataset.anchor;
+  document.getElementById("cbox").style.display = "flex";
+  document.getElementById("ctarget").textContent = "on: " + target;
+  document.getElementById("ctext").focus();
+}));
+document.getElementById("cadd").onclick = () => {
+  const t = document.getElementById("ctext").value.trim(); if (!t || !target) return;
+  S.comments.push({ question: "Q1", illustration: "Q1-flow", element: target, text: t });
+  document.getElementById("ctext").value = ""; render();
+};
+document.querySelectorAll(".opt").forEach(b => b.onclick = () => {
+  S.answer = b.dataset.v;
+  document.querySelectorAll(".opt").forEach(x => x.style.outline = x === b ? "2px solid var(--border-accent, #36c)" : "none");
+  render();
+});
+document.getElementById("free").oninput = e => { S.free = e.target.value; render(); };
+document.getElementById("probe").onclick = async () => {
+  const P = S.probes, base = "http://127.0.0.1:47613";
+  try { localStorage.setItem("vg-probe", "1"); P.localStorage = localStorage.getItem("vg-probe") === "1" ? "ok" : "mismatch"; } catch (e) { P.localStorage = "threw: " + e.name; }
+  try { const r = await fetch(base + "/get"); P.fetchGet = "ok " + r.status; } catch (e) { P.fetchGet = "blocked: " + e.message; }
+  try { const r = await fetch(base + "/post", { method: "POST", body: JSON.stringify({ hi: 1 }) }); P.fetchPost = "ok " + r.status; } catch (e) { P.fetchPost = "blocked: " + e.message; }
+  try { const ws = new WebSocket("ws://127.0.0.1:47613/ws"); P.websocket = await new Promise(res => { ws.onopen = () => res("opened"); ws.onerror = () => res("error"); setTimeout(() => res("timeout"), 2000); }); } catch (e) { P.websocket = "threw: " + e.message; }
+  P.imgBeacon = await new Promise(res => { const i = new Image(); i.onload = () => res("loaded"); i.onerror = () => res("error (check server log)"); i.src = base + "/beacon?x=1"; setTimeout(() => res("timeout"), 2000); });
+  P.navigatorSendBeacon = (() => { try { return navigator.sendBeacon(base + "/sendbeacon", "x") ? "queued (check server log)" : "refused"; } catch (e) { return "threw: " + e.message; } })();
+  const f = document.createElement("iframe"); f.src = base + "/frame"; f.style.cssText = "width:100%;height:36px;border:0.5px solid var(--border-strong,#999);margin-top:8px";
+  document.getElementById("state").after(f); P.iframe = "see box below state (green = loaded)";
+  P.origin = location.origin; P.ua = navigator.userAgent.slice(0, 90);
+  render();
+};
+document.getElementById("submit").onclick = () => {
+  const pad = +document.getElementById("pad").value;
+  const payload = { kind: "round-submission", round: 1, answers: [{ question: "Q1", answer: S.answer ?? "skip", free: S.free || undefined, comments: S.comments }], padding: pad ? "x".repeat(pad) : undefined };
+  const text = "ROUND SUBMISSION (visual-grilling prototype)\n```json\n" + JSON.stringify(payload) + "\n```";
+  S.lastSubmitChars = text.length;
+  try { sendPrompt(text); S.sendPromptResult = "called, no throw"; } catch (e) { S.sendPromptResult = "threw: " + e.message; }
+  render();
+};
+render();
+</script>
