@@ -187,7 +187,7 @@ async function present(
     if (response.status !== 200) throw serverError(response);
 
     const { url, notes } = response.body as PresentResponse;
-    for (const note of notes ?? []) io.err(formatRoundNote(file, note));
+    for (const note of notes) io.err(formatRoundNote(file, note));
     if (session.generated) io.out(`session: ${session.id}`);
     io.out(url);
     // A new or restarted server has a new link; any open tab can't follow it.

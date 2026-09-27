@@ -27,13 +27,13 @@ function loadChunk(): Promise<typeof CodeChunk> {
 }
 
 /** Highlighted output by source, so a redraw (a theme flip) doesn't highlight again. */
-const drawn = new Map<string, Promise<unknown>>();
-function cached<T>(key: string, draw: () => Promise<T>): Promise<T> {
-  let result = drawn.get(key) as Promise<T> | undefined;
+const highlighted = new Map<string, Promise<unknown>>();
+function highlightOnce<T>(key: string, highlight: () => Promise<T>): Promise<T> {
+  let result = highlighted.get(key) as Promise<T> | undefined;
   if (!result) {
-    result = draw();
-    drawn.set(key, result);
-    result.catch(() => drawn.delete(key));
+    result = highlight();
+    highlighted.set(key, result);
+    result.catch(() => highlighted.delete(key));
   }
   return result;
 }
@@ -49,7 +49,7 @@ export const codeBlock: BlockRenderer = {
 
 async function codeView(illustration: PageIllustration): Promise<HTMLElement> {
   const settings = illustration.code ?? { lang: 'text' };
-  const { lines } = await cached(`code\0${settings.lang}\0${illustration.source}`, async () =>
+  const { lines } = await highlightOnce(`code\0${settings.lang}\0${illustration.source}`, async () =>
     (await loadChunk()).highlightCode(illustration.source, settings.lang),
   );
   const texts = illustration.source.replace(/\n$/, '').split('\n');
@@ -91,7 +91,7 @@ async function codeView(illustration: PageIllustration): Promise<HTMLElement> {
 // ------------------------------------------------------------------- diff
 
 async function diffView(illustration: PageIllustration): Promise<HTMLElement> {
-  const files = await cached(`diff\0${illustration.source}`, async () => (await loadChunk()).drawDiff(illustration.source));
+  const files = await highlightOnce(`diff\0${illustration.source}`, async () => (await loadChunk()).drawDiff(illustration.source));
   const view = document.createElement('div');
   view.className = 'diff-block';
   for (const file of files) {
@@ -114,11 +114,11 @@ async function diffView(illustration: PageIllustration): Promise<HTMLElement> {
  * `data-alt-line` is its old line.
  */
 function markDiffLines(root: ShadowRoot): void {
-  const byIndex = new Map<string, { line: number; side: DiffSide; old?: number; text: string }>();
+  const byIndex = new Map<string, LineTerms>();
   for (const row of root.querySelectorAll<HTMLElement>('[data-line][data-line-type][data-line-index]')) {
     const side = diffSide(row.dataset.lineType!);
     if (!side) continue;
-    const terms = {
+    const terms: LineTerms = {
       line: Number(row.dataset.line),
       side,
       ...(side === 'context' && row.dataset.altLine ? { old: Number(row.dataset.altLine) } : {}),
@@ -136,6 +136,14 @@ function markDiffLines(root: ShadowRoot): void {
 
 type DiffSide = 'old' | 'new' | 'context';
 
+/** What names a line: its number (on its side, for a diff), a context line's old number, and its text. */
+interface LineTerms {
+  line: number;
+  side?: DiffSide;
+  old?: number;
+  text: string;
+}
+
 function diffSide(type: string): DiffSide | undefined {
   if (type === 'change-deletion') return 'old';
   if (type === 'change-addition') return 'new';
@@ -143,7 +151,7 @@ function diffSide(type: string): DiffSide | undefined {
   return undefined;
 }
 
-function lineAttributes(element: HTMLElement, terms: { line: number; side?: DiffSide; old?: number; text: string }): void {
+function lineAttributes(element: HTMLElement, terms: LineTerms): void {
   element.dataset.codeLine = String(terms.line);
   if (terms.side) element.dataset.codeSide = terms.side;
   if (terms.old !== undefined) element.dataset.codeOldLine = String(terms.old);
@@ -152,7 +160,7 @@ function lineAttributes(element: HTMLElement, terms: { line: number; side?: Diff
 
 // ---------------------------------------------------------------- anchors
 
-const SIDE_KIND: Record<string, string> = { old: 'old line', new: 'new line', context: 'context line' };
+const SIDE_KIND: Record<DiffSide, string> = { old: 'old line', new: 'new line', context: 'context line' };
 
 /**
  * A code line names its file and its line in the file's own numbers; a diff
@@ -167,7 +175,7 @@ export function codeAnchor(snapshot: Snapshot): AdapterMatch | null {
     const { attrs } = chain[i]!;
     const line = attrs['data-code-line'];
     if (line) {
-      const side = attrs['data-code-side'];
+      const side = attrs['data-code-side'] as DiffSide | undefined;
       const old = attrs['data-code-old-line'];
       return {
         kind: (side && SIDE_KIND[side]) ?? 'line',

@@ -85,9 +85,7 @@ describe('code block', () => {
     const plain = start.getByText('server', { exact: true }).first();
     const dark = await colour(keyword);
     expect(dark).not.toBe(await colour(plain));
-    await page.evaluate(() => {
-      document.documentElement.dataset.theme = 'light';
-    });
+    await page.getByRole('button', { name: 'Switch to light theme' }).click();
     await pageExpect.poll(() => colour(start.getByText('export', { exact: true }))).not.toBe(dark);
 
     // `code lang=html` highlights a reserved language.
@@ -106,9 +104,7 @@ describe('code block', () => {
 
     const keyword = change.getByText('const', { exact: true }).first();
     const dark = await colour(keyword);
-    await page.evaluate(() => {
-      document.documentElement.dataset.theme = 'light';
-    });
+    await page.getByRole('button', { name: 'Switch to light theme' }).click();
     await pageExpect.poll(() => colour(change.getByText('const', { exact: true }).first())).not.toBe(dark);
   });
 
