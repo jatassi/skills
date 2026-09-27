@@ -1,0 +1,131 @@
+{
+  "title": "Choose the round page's visual world",
+  "question": "The roll assigned Transit Standards. Keep it, take an alternate, or re-roll. Dark is the default in every card, as you asked.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Transit Standards",
+      "kicker": "THE ROLL",
+      "lineage": "Vignelli & Noorda's 1970 NYC Transit Authority Graphics Standards Manual",
+      "thesis": "A round page is a wayfinding system: each question is a sign band, and its numbered bullet fills with colour once it's answered.",
+      "palette": ["#0e0e0f", "#f1f1ec", "#6d6e71", "#00933c", "#fccc0a", "#0039a6"],
+      "materials": ["white grotesk on black sign bands", "coloured route-bullet discs", "one unit grid"],
+      "viewport": "In the narrow pane: a black header band with the round number and an answered-count, then question bands stacked full-width. Each band opens with a large numbered bullet, the title set in heavy grotesk, and the recommendation as its own row with one Accept key.",
+      "risk": "Bullets in several colours can read as decoration unless every colour means exactly one answer mode.",
+      "raised": [
+        {"from": "challenger-cracktro", "raise": "No card boxes: questions separate by black bands and space alone, and the current question is ranked by brightness, not by a border."},
+        {"from": "challenger-crouwel", "raise": "Whole-unit grid: every module is sized in whole 8px units, and the wide tab adds columns in whole units rather than stretching."},
+        {"from": "challenger-cloud-edge", "raise": "Colour lives only in the bullets and one hairline edge. Question text stays achromatic."},
+        {"from": "challenger-nixie", "raise": "Fixed-place counts: '3 of 5 answered' in tabular figures that never reflow."},
+        {"from": "challenger-orizuru", "raise": "Past rounds keep every mark. A read-only round shows its answers in place, not as a summary."}
+      ]
+    },
+    {
+      "id": "model-pick",
+      "label": "Code Review",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "pull-request review screens (inline comments, batched 'Submit review')",
+      "thesis": "Answering a round is reviewing a change: comment inline, pick a verdict per item, submit the review once.",
+      "palette": ["#0d1117", "#161b22", "#e6edf3", "#7d8590", "#2f81f7", "#3fb950"],
+      "materials": ["hairline-bordered panels", "gutter comment markers", "sticky review bar"],
+      "viewport": "Questions as file-like panels, each with a header row; illustrations sit like diffs; a sticky 'Submit round' bar with a pending-comments count.",
+      "risk": "Very familiar, close enough to GitHub that it reads as a clone, and most runs in this category land here."
+    },
+    {
+      "id": "challenger-console",
+      "label": "Developer Console",
+      "verdict": "competitive",
+      "lineage": "dark-first IDE and console panels",
+      "thesis": "Graphite panels divided by one-pixel seams, with syntax colours kept for state only.",
+      "palette": ["#1c1d20", "#26282c", "#d4d4d4", "#8b8d91", "#4ec9b0", "#dcdcaa"],
+      "materials": ["hairline seams", "monospaced figures", "small-caps panel headers"],
+      "viewport": "The round is a persistent panel stack: questions on the left, the illustration panel expanding along one axis, the design tree as a collapsible panel.",
+      "case": "Wins on audience recognition (it's their editor) but loses on clarity: panels compete with the illustration for attention.",
+      "risk": "Could pass for any dev tool. Nothing says 'decision'.",
+      "hero": "https://impeccable.style/worlds/cards/digital-design-canon-dark-first-developer-console-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/digital-design-canon-dark-first-developer-console.webp"
+    },
+    {
+      "id": "challenger-crouwel",
+      "label": "Grid Specimen",
+      "verdict": "declined",
+      "lineage": "Wim Crouwel's gridded type specimens",
+      "thesis": "Questions built cell by cell on a visible construction grid.",
+      "palette": ["#0e0e0f", "#1f3a8a", "#f1f1ec"],
+      "materials": ["visible grid hairlines", "monumental numerals"],
+      "viewport": "Huge grid-built question numbers over a visible grid.",
+      "case": "Loses both axes: the visible grid is noise on a task surface.",
+      "risk": "Poster, not tool.",
+      "kept": "Every module sized in whole units.",
+      "hero": "https://impeccable.style/worlds/cards/crouwel-grid-specimen-hero.webp"
+    },
+    {
+      "id": "challenger-cracktro",
+      "label": "Cracktro Queue",
+      "verdict": "declined",
+      "lineage": "demoscene cracktro title screens",
+      "thesis": "Bitmap lines riding over a drifting starfield, where rank is depth.",
+      "palette": ["#000000", "#e8e2d0", "#ffb000"],
+      "materials": ["bitmap face", "parallax dust"],
+      "viewport": "One still bright line per question over drifting layers.",
+      "case": "Loses both axes: drifting motion and a bitmap face fight long reading.",
+      "risk": "Novelty over task.",
+      "kept": "No enclosure: rank by brightness, not boxes.",
+      "hero": "https://impeccable.style/worlds/cards/operate-c-cracktro-scroller-queue-hero.webp"
+    },
+    {
+      "id": "challenger-cloud-edge",
+      "label": "Iridescent Edge",
+      "verdict": "declined",
+      "lineage": "cloud iridescence",
+      "thesis": "Achromatic field with colour only at a hairline edge.",
+      "palette": ["#f4f5f7", "#5b6270", "#8a5cf6"],
+      "materials": ["pastel fringe", "wide margins"],
+      "viewport": "White field, spectral hairline marking the active question.",
+      "case": "Loses both axes and fights the dark-mode default.",
+      "risk": "Too faint for state.",
+      "kept": "Colour confined to one edge, text stays achromatic.",
+      "hero": "https://impeccable.style/worlds/cards/clouds-storms-auroras-iridescent-cloud-edge-hero.webp"
+    },
+    {
+      "id": "challenger-nixie",
+      "label": "Nixie Counter",
+      "verdict": "declined",
+      "lineage": "laboratory nixie-tube counters",
+      "thesis": "Counts as glowing digit banks.",
+      "palette": ["#121212", "#ff7a1a", "#6b6b6b"],
+      "materials": ["glass tubes", "steel chassis"],
+      "viewport": "Round progress as a tube bank.",
+      "case": "Loses both axes: a round isn't a quantity.",
+      "risk": "Skeuomorphic gimmick.",
+      "kept": "Fixed-place counts that never reflow.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-nixie-laboratory-counter-hero.webp"
+    },
+    {
+      "id": "challenger-orizuru",
+      "label": "Folding Sequence",
+      "verdict": "declined",
+      "lineage": "origami crane diagrams",
+      "thesis": "One sheet carrying every earlier crease.",
+      "palette": ["#c8321e", "#f3efe6", "#1a1a1a"],
+      "materials": ["washi", "crease lines"],
+      "viewport": "Numbered folds in a margin column.",
+      "case": "Loses both axes: vermilion ground breaks the dark default and the metaphor is foreign.",
+      "risk": "Ornamental.",
+      "kept": "History stays visible: past rounds keep their marks.",
+      "hero": "https://impeccable.style/worlds/cards/paper-folds-pleats-deployable-orizuru-crane-sequence-hero.webp"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "code", "toggle": false},
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "A dark form stack: rounded question cards, one accent colour, a sticky submit bar, done impeccably.",
+    "palette": ["#111113", "#1c1c1f", "#ededed", "#8e8e93", "#7c6cf2"],
+    "materials": ["rounded cards", "soft elevation", "pill buttons"],
+    "viewport": "Centred column of question cards with radio-style answer choices and a sticky 'Submit round' footer.",
+    "risk": "Indistinguishable from any dark questionnaire, by design."
+  },
+  "steer": true
+}

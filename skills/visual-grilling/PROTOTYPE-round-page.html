@@ -1,0 +1,1028 @@
+<!doctype html>
+<!--
+  PROTOTYPE, throwaway. Question: what should a round page look and feel like?
+  (https://github.com/jatassi/skills/issues/6)
+  Three structural variants of one round page, switchable via ?variant=A|B|C and the floating bar
+  (or the ← → keys). All content is synthetic, taken from the visual-grilling map.
+  Open the file directly in a browser; state lives in sessionStorage only.
+-->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round Page Prototype</title>
+<style>
+:root, :root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #0e1014; --panel: #151820; --panel-2: #1a1e27; --inset: #0b0d11; --hover: #212631;
+  --line: #2a303b; --line-soft: #20252e; --line-strong: #3a4250;
+  --text: #e7eaf0; --text-2: #a0a8b6; --text-3: #7f8898;
+  --blue: #5b95ff; --blue-bg: #2f6fe4; --blue-bg-hover: #3b7af0;
+  --green: #49c27a; --green-soft: rgba(73,194,122,.11);
+  --purple: #ad93fb; --purple-soft: rgba(173,147,251,.13); --on-purple: #150f24;
+  --amber: #e5a843; --amber-soft: rgba(229,168,67,.11);
+  --sel: rgba(91,149,255,.32);
+  --shadow: 0 6px 16px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.3);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f4f5f7; --panel: #ffffff; --panel-2: #f7f8fa; --inset: #eef0f3; --hover: #eceff3;
+  --line: #d7dbe2; --line-soft: #e5e8ed; --line-strong: #bfc6d0;
+  --text: #1a1e26; --text-2: #525b69; --text-3: #667080;
+  --blue: #1f63e0; --blue-bg: #1f63e0; --blue-bg-hover: #1a55c2;
+  --green: #17784a; --green-soft: rgba(23,120,74,.08);
+  --purple: #6b43d4; --purple-soft: rgba(107,67,212,.08); --on-purple: #ffffff;
+  --amber: #8f5e07; --amber-soft: rgba(143,94,7,.09);
+  --sel: rgba(31,99,224,.18);
+  --shadow: 0 6px 16px rgba(20,24,32,.12), 0 1px 3px rgba(20,24,32,.08);
+}
+:root {
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --ease: cubic-bezier(.2,.8,.2,1);
+  scrollbar-color: var(--line-strong) transparent;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--canvas); color: var(--text); font: 14px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+::selection { background: var(--sel); }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+button { font: inherit; color: inherit; }
+.grow { flex: 1; }
+.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- controls ---------- */
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); color: var(--text); font: 500 13px/1 var(--sans); cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s, color .15s; }
+.btn:hover { background: var(--hover); border-color: var(--line-strong); }
+.btn:active { transform: translateY(.5px); }
+.btn:disabled { opacity: .45; cursor: default; transform: none; }
+.btn.primary { background: var(--blue-bg); border-color: transparent; color: #fff; }
+.btn.primary:hover { background: var(--blue-bg-hover); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--text-2); }
+.btn.ghost:hover { background: var(--hover); color: var(--text); }
+.btn.ok { color: var(--green); background: var(--green-soft); border-color: color-mix(in srgb, var(--green) 40%, transparent); }
+.btn.on-un { color: var(--amber); background: var(--amber-soft); }
+.btn.on-cm { color: var(--purple); background: var(--purple-soft); border-color: color-mix(in srgb, var(--purple) 40%, transparent); }
+.btn.sm { height: 26px; padding: 0 10px; font-size: 12.5px; }
+.icon-btn { width: 30px; padding: 0; justify-content: center; }
+kbd { font: 500 10.5px/1 var(--mono); padding: 2px 4px 1px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; color: var(--text-3); background: var(--inset); }
+.btn.primary kbd { background: transparent; border-color: rgba(255,255,255,.35); color: rgba(255,255,255,.85); }
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-2); font: 500 12px/1 var(--sans); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chip .i { width: 14px; height: 14px; }
+.tone-ok { color: var(--green); background: var(--green-soft); border-color: color-mix(in srgb, var(--green) 38%, transparent); }
+.tone-cm { color: var(--purple); background: var(--purple-soft); border-color: color-mix(in srgb, var(--purple) 38%, transparent); }
+.tone-un { color: var(--amber); background: var(--amber-soft); border-color: color-mix(in srgb, var(--amber) 38%, transparent); }
+.chip.fresh .ck { stroke-dasharray: 12; stroke-dashoffset: 12; animation: draw .32s var(--ease) .05s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.cm-count { color: var(--purple); font: 500 12px/1 var(--sans); display: inline-flex; gap: 4px; align-items: center; font-variant-numeric: tabular-nums; }
+.cm-count .i { width: 14px; height: 14px; }
+
+/* ---------- review bar ---------- */
+.bar { position: sticky; top: 0; z-index: 20; height: 48px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.round-btn b { font-weight: 600; color: var(--text); }
+.subject { color: var(--text-2); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.count { color: var(--text-2); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; margin-right: 4px; }
+.count b { color: var(--text); font-weight: 600; }
+@media (max-width: 700px) { .subject { display: none; } }
+@media (max-width: 440px) { .count .w { display: none; } }
+
+/* ---------- shell ---------- */
+.shell { display: grid; grid-template-columns: minmax(0, 1fr); }
+.side { display: none; }
+main { min-width: 0; padding: 16px 16px 112px; }
+.col { max-width: 880px; margin: 0 auto; }
+@media (min-width: 1080px) {
+  .shell.left { grid-template-columns: 288px minmax(0, 1fr); }
+  .shell.right { grid-template-columns: minmax(0, 1fr) 300px; }
+  .side { display: block; position: sticky; top: 48px; align-self: start; height: calc(100vh - 48px); overflow: auto; padding: 16px 12px 80px; }
+  .shell.left .side { border-right: 1px solid var(--line); }
+  .shell.right .side { border-left: 1px solid var(--line); order: 2; }
+  .tree-toggle { display: none; }
+}
+
+/* ---------- question panel ---------- */
+.qp { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; margin-bottom: 16px; scroll-margin-top: 60px; transition: border-color .15s; }
+.qp.is-current { border-color: var(--line-strong); }
+.qp-h { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; background: var(--panel-2); border-bottom: 1px solid var(--line); border-radius: 6px 6px 0 0; }
+.stack .qp-h { position: sticky; top: 48px; z-index: 3; }
+.qp:not(.is-current) .qp-title { color: var(--text-2); }
+.qp-icon { display: inline-flex; }
+.num { font: 500 12px/1 var(--mono); color: var(--text-3); flex: none; }
+.qp-title { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.35; min-width: 0; transition: color .15s; }
+.qp-b { padding: 14px 16px 16px; }
+.prose { margin: 0; max-width: 72ch; color: var(--text); }
+.prose code { font: 12.5px var(--mono); background: var(--inset); border: 1px solid var(--line-soft); padding: 1px 4px; border-radius: 4px; }
+.qp:not(.is-current) kbd, .tri-row:not(.open) kbd { display: none; }
+
+/* state icons */
+.st { display: inline-flex; color: var(--text-3); }
+.st.ok { color: var(--green); } .st.cm { color: var(--purple); } .st.un { color: var(--amber); }
+
+/* ---------- answer ---------- */
+.ans { margin-top: 16px; }
+.rec { display: flex; align-items: flex-start; gap: 12px; padding: 10px 10px 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); transition: background .18s, border-color .18s; }
+.rec.is-on { background: var(--green-soft); border-color: color-mix(in srgb, var(--green) 40%, transparent); }
+.rec-t { margin: 0; flex: 1; min-width: 0; }
+.rec-k { font-weight: 600; color: var(--text-2); margin-right: 4px; }
+.rec.is-on .rec-k { color: var(--green); }
+@media (max-width: 520px) { .rec { flex-wrap: wrap; } .rec .btn { margin-left: auto; } }
+.opts { margin-top: 10px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.opt { display: grid; grid-template-columns: 16px 16px minmax(0, 1fr) auto; gap: 10px; align-items: start; width: 100%; text-align: left; padding: 10px 12px; background: transparent; border: 0; border-top: 1px solid var(--line-soft); cursor: pointer; transition: background .15s; }
+.opt:first-child { border-top: 0; }
+.opt:hover:not(:disabled) { background: var(--hover); }
+.opt:disabled { cursor: default; }
+.radio { width: 14px; height: 14px; margin-top: 3px; border-radius: 50%; border: 1.5px solid var(--text-3); transition: border-color .15s, box-shadow .15s; }
+.opt.on { background: color-mix(in srgb, var(--blue) 8%, transparent); }
+.opt.on .radio { border-color: var(--blue); box-shadow: inset 0 0 0 2.5px var(--panel), inset 0 0 0 7px var(--blue); }
+.opt.on.acc { background: var(--green-soft); }
+.opt.on.acc .radio { border-color: var(--green); box-shadow: inset 0 0 0 2.5px var(--panel), inset 0 0 0 7px var(--green); }
+.opt-k { font: 600 12px/20px var(--mono); color: var(--text-3); }
+.opt-l { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; }
+.opt-d { display: block; color: var(--text-2); font-size: 13px; line-height: 1.45; margin-top: 1px; }
+.opt kbd { margin-top: 2px; }
+.tag { font: 500 11px/1 var(--sans); padding: 3px 6px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-2); }
+textarea { display: block; width: 100%; margin-top: 10px; min-height: 80px; resize: vertical; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--inset); color: var(--text); font: 14px/1.5 var(--sans); caret-color: var(--blue); transition: border-color .15s, box-shadow .15s; }
+textarea::placeholder { color: var(--text-3); }
+textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 22%, transparent); }
+.own { margin: 10px 0 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--green) 38%, transparent); background: var(--green-soft); border-radius: 6px; }
+.own .rec-k { color: var(--green); }
+.note { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 0; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+.note.un { color: var(--amber); background: var(--amber-soft); border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent); }
+.note .i { margin-top: 2px; }
+.ans-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 8px; margin-left: -6px; }
+
+/* ---------- illustration ---------- */
+.illus { margin: 14px 0 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--inset); }
+.illus-bar { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 4px 6px 4px 12px; border-bottom: 1px solid var(--line-soft); background: var(--panel); font-size: 12.5px; color: var(--text-2); }
+.illus-t { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.kind { font: 11px var(--mono); color: var(--text-3); white-space: nowrap; }
+@media (max-width: 480px) { .kind { display: none; } }
+.stage-host { min-height: 60px; }
+.skel { height: 180px; margin: 16px; border-radius: 4px; background: linear-gradient(90deg, var(--panel-2) 0%, var(--hover) 50%, var(--panel-2) 100%); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+.stage { position: relative; padding: 16px; }
+.stage .fig { overflow-x: auto; }
+.stage .fig > svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.kind-mermaid .fig > svg { max-width: none; }
+.stage.commenting, .stage.commenting * { cursor: crosshair !important; }
+.hover-box { position: absolute; display: none; pointer-events: none; border: 1.5px solid var(--purple); background: var(--purple-soft); border-radius: 4px; transition: all .08s linear; }
+.pins { position: absolute; inset: 0; pointer-events: none; }
+.pin { position: absolute; transform: translate(0, -100%); min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px 10px 10px 2px; background: var(--purple); color: var(--on-purple); font: 600 11px/20px var(--sans); text-align: center; font-variant-numeric: tabular-nums; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.pin.pending { opacity: .7; }
+.threads { list-style: none; margin: 0; padding: 10px 12px; border-top: 1px solid var(--line-soft); background: var(--panel); display: grid; gap: 10px; }
+.th { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+.th .pin { position: static; transform: none; display: inline-block; }
+.anc { font: 12px/1.4 var(--mono); color: var(--text-2); overflow-wrap: anywhere; }
+.th p { margin: 2px 0 0; font-size: 13.5px; line-height: 1.45; }
+.hint { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-top: 1px solid var(--line-soft); background: var(--panel); color: var(--purple); font-size: 12.5px; }
+table.tb { border-collapse: collapse; width: 100%; font-size: 13px; }
+.tb th, .tb td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+.tb th { color: var(--text-2); font-weight: 500; }
+.tb tr:last-child td { border-bottom: 0; }
+.tb td:first-child { font: 12px/1.6 var(--mono); }
+.mocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.mock { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.mock-h { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line-soft); background: var(--panel); font-size: 12.5px; color: var(--text-2); }
+.mock-h b { color: var(--text); font-weight: 600; }
+.stage iframe { display: block; width: 100%; height: 150px; border: 0; }
+
+/* ---------- banners ---------- */
+.banner { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--text-2); font-size: 13.5px; }
+.banner b { color: var(--text); font-weight: 600; }
+.banner.sent { border-color: color-mix(in srgb, var(--green) 38%, transparent); }
+.wait-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--green); animation: pulse 1.8s var(--ease) infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 55%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
+
+/* ---------- design tree ---------- */
+.tree-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 6px 10px; }
+.tree-h h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 6px 12px; font-size: 11.5px; color: var(--text-3); }
+.legend span { display: inline-flex; gap: 4px; align-items: center; }
+.legend .i { width: 12px; height: 12px; }
+.tn { position: relative; display: flex; align-items: flex-start; gap: 6px; width: 100%; padding: 4px 6px 4px calc(6px + var(--d) * 16px); border: 0; border-radius: 5px; background: none; text-align: left; font-size: 13px; line-height: 1.4; color: var(--text); }
+.tn::before { content: ""; position: absolute; left: calc(var(--d) * 16px - 3px); top: 0; bottom: 0; border-left: 1px solid var(--line-soft); display: var(--guide, block); }
+.tn[style*="--d:0"]::before { display: none; }
+button.tn { cursor: pointer; }
+button.tn:hover { background: var(--hover); }
+.tn.cur { background: var(--hover); }
+.tn .i { margin-top: 1px; }
+.tn-l { min-width: 0; }
+.tn-meta { margin-left: auto; padding-left: 8px; font: 11px/19px var(--mono); color: var(--text-3); white-space: nowrap; }
+.tn-sub { display: block; font-size: 11.5px; color: var(--text-3); }
+.tn.group { color: var(--text-2); font-weight: 600; }
+.tn.later { color: var(--text-3); }
+.drawer { position: fixed; top: 48px; bottom: 0; left: 0; z-index: 30; width: min(320px, 88vw); padding: 16px 12px 80px; overflow: auto; background: var(--panel); border-right: 1px solid var(--line); box-shadow: var(--shadow); transform: translateX(-104%); transition: transform .22s var(--ease); }
+.drawer.open { transform: none; }
+.scrim { position: fixed; inset: 48px 0 0; z-index: 29; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.scrim.open { opacity: 1; pointer-events: auto; }
+@media (min-width: 1080px) { .drawer, .scrim { display: none; } }
+
+/* ---------- B: one at a time ---------- */
+.steps { display: flex; gap: 2px; margin: 0 0 16px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+.step { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-2); font: 500 13px/1 var(--sans); cursor: pointer; white-space: nowrap; margin-bottom: -1px; }
+.step:hover { color: var(--text); }
+.step.on { color: var(--text); border-bottom-color: var(--blue); }
+.stepnav { display: flex; gap: 8px; align-items: center; margin-top: -4px; }
+.review { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.review-h { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel-2); border-radius: 6px 6px 0 0; }
+.review-h h2 { margin: 0; font-size: 15px; }
+.review-h p { margin: 2px 0 0; color: var(--text-2); font-size: 13px; }
+.rv { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: start; padding: 12px 16px; border-bottom: 1px solid var(--line-soft); }
+.rv-t { font-weight: 600; }
+.rv-a { grid-column: 3; color: var(--text-2); font-size: 13px; }
+.rv .num { line-height: 20px; }
+.rv .st { margin-top: 2px; }
+.review-f { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; }
+.warn { color: var(--amber); font-size: 13px; display: flex; gap: 6px; align-items: flex-start; }
+.warn .i { margin-top: 2px; }
+
+/* ---------- C: triage ---------- */
+.bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--text-2); font-size: 13px; }
+.tri { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.tri-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; border-top: 1px solid var(--line); scroll-margin-top: 60px; }
+.tri-row:first-child { border-top: 0; }
+.tri-head { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 10px 8px 10px 12px; border: 0; background: none; text-align: left; cursor: pointer; }
+.tri-head:hover .tri-title { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--text-3); }
+.tri-head .num { line-height: 20px; }
+.tri-head .st { margin-top: 2px; }
+.tri-title { display: block; font-weight: 600; }
+.tri-row:not(.open) .tri-title { color: var(--text); }
+.tri-rec { display: block; color: var(--text-2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tri-row.open .tri-rec { display: none; }
+.tri-act { display: flex; align-items: center; gap: 8px; padding: 10px 12px 10px 4px; align-self: start; }
+.tri-body { grid-column: 1 / -1; padding: 2px 16px 16px 44px; }
+.tri-row.open { background: color-mix(in srgb, var(--panel-2) 60%, var(--panel)); }
+@media (max-width: 560px) { .tri-body { padding-left: 16px; } }
+
+/* ---------- popovers ---------- */
+.pop { position: fixed; z-index: 40; background: var(--panel); border: 1px solid var(--line-strong); border-radius: 8px; box-shadow: var(--shadow); }
+.pop[hidden] { display: none; }
+#cpop { width: min(340px, calc(100vw - 24px)); padding: 12px; }
+#cpop .anc { margin-bottom: 8px; }
+#cpop textarea { margin-top: 0; min-height: 72px; }
+.pop-f { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+#spop { top: 52px; right: 12px; width: min(360px, calc(100vw - 24px)); }
+#spop .sp-h { padding: 12px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
+.sp-rows { padding: 8px 14px; display: grid; gap: 4px; font-size: 13px; }
+.sp-row { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.sp-row b { margin-left: auto; color: var(--text); font-weight: 600; }
+#spop .warn { padding: 0 14px 4px; }
+#spop .pop-f { padding: 8px 14px 12px; margin: 0; }
+#rmenu { top: 52px; left: 12px; width: min(300px, calc(100vw - 24px)); padding: 4px; }
+.rm { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 5px; background: none; text-align: left; cursor: pointer; }
+.rm:hover { background: var(--hover); }
+.rm small { display: block; color: var(--text-3); font-size: 12px; }
+.rm .meta { font: 11px var(--mono); color: var(--text-3); }
+
+/* ---------- submission preview (prototype only) ---------- */
+.preview { position: fixed; top: 48px; right: 0; bottom: 0; z-index: 35; width: min(460px, 100vw); display: flex; flex-direction: column; background: var(--panel); border-left: 1px solid var(--line); box-shadow: var(--shadow); transform: translateX(104%); transition: transform .22s var(--ease); }
+.preview.open { transform: none; }
+.preview-h { display: flex; align-items: center; gap: 8px; padding: 10px 12px 10px 16px; border-bottom: 1px solid var(--line); }
+.preview-h h3 { margin: 0; font-size: 13.5px; }
+.preview-h p { margin: 0; color: var(--text-3); font-size: 12px; }
+.preview pre { flex: 1; margin: 0; padding: 14px 16px 90px; overflow: auto; font: 12px/1.6 var(--mono); color: var(--text); white-space: pre-wrap; }
+
+/* ---------- prototype switcher (not part of the design) ---------- */
+.proto { position: fixed; left: 50%; bottom: 14px; z-index: 60; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; padding: 4px; max-width: calc(100vw - 16px); border-radius: 999px; background: #f3f0e6; color: #15171c; box-shadow: 0 8px 24px rgba(0,0,0,.55); font: 500 12px/1 var(--sans); }
+:root[data-theme="light"] .proto { background: #15171c; color: #f3f0e6; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.proto button { height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: none; cursor: pointer; white-space: nowrap; }
+.proto button:hover { background: rgba(127,127,127,.2); }
+.proto .lab { padding: 0 6px; white-space: nowrap; min-width: 136px; text-align: center; }
+.proto .sep { width: 1px; height: 16px; margin: 0 2px; background: currentColor; opacity: .2; }
+.proto .i { width: 14px; height: 14px; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="scrim" id="scrim" data-act="close-drawer"></div>
+<aside class="drawer" id="drawer" aria-label="Design tree"></aside>
+<aside class="preview" id="preview" aria-label="Round submission preview">
+  <div class="preview-h"><div class="grow"><h3>Round submission preview</h3><p>Prototype only: the text the agent receives when you submit.</p></div><button class="btn ghost icon-btn" data-act="preview" aria-label="Close preview"><svg class="i" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+  <pre data-slot="payload"></pre>
+</aside>
+<div class="pop" id="cpop" hidden></div>
+<div class="pop" id="spop" hidden></div>
+<div class="pop" id="rmenu" hidden></div>
+<nav class="proto" aria-label="Prototype controls">
+  <button data-act="variant-prev" aria-label="Previous variant"><svg class="i" viewBox="0 0 16 16"><path d="M10 4L6 8l4 4"/></svg></button>
+  <span class="lab" id="proto-lab"></span>
+  <button data-act="variant-next" aria-label="Next variant"><svg class="i" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></svg></button>
+  <span class="sep"></span>
+  <button data-act="preview">Preview</button>
+  <button data-act="reset">Reset</button>
+</nav>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@12/+esm';
+import vegaEmbed from 'https://cdn.jsdelivr.net/npm/vega-embed@7/+esm';
+
+// ================= demo content (synthetic, from the visual-grilling map) =================
+const ROUNDS = [
+  { n: 1, subject: 'Browser channel architecture', submittedAt: '13:42', questions: [
+    { id: 'r1q1', n: 1, past: true, title: 'Is the terminal still the default channel?',
+      body: 'The browser channel adds a surface; it should not change how a plain grilling session starts.',
+      rec: { text: 'Yes. The browser channel is opt-in per session.', short: 'Terminal stays the default' },
+      answer: { mode: 'accept' } },
+    { id: 'r1q2', n: 2, past: true, title: 'Does visual-grilling copy the grilling procedure or call it?',
+      body: 'A fork drifts from grilling every time grilling changes.',
+      rec: { text: 'Call grilling unchanged, the way auto-grill does.', short: 'Call grilling unchanged', option: 'A' },
+      options: [ { id: 'A', label: 'Call grilling unchanged', desc: 'visual-grilling only adds the channel.' }, { id: 'B', label: 'Fork and extend it', desc: 'Free to reshape rounds for the browser.' } ],
+      answer: { mode: 'accept', option: 'A' } },
+  ]},
+  { n: 2, subject: 'Browser channel architecture', submittedAt: '13:58', questions: [
+    { id: 'r2q1', n: 1, past: true, title: 'What is the baseline transport?',
+      body: 'The baseline has to work in any agent and any browser.',
+      rec: { text: 'A local server plus a blocking <code>await</code> command.', short: 'Local server + await', option: 'A' },
+      options: [ { id: 'A', label: 'Local server + blocking await', desc: 'Any agent that can run a command.' }, { id: 'B', label: 'MCP server only', desc: 'Needs MCP configuration in every host.' } ],
+      illus: { kind: 'mermaid', title: 'Baseline transport', src: 'flowchart LR\n  P[Round page] -->|POST submission| S[Local server]\n  A[Agent] -->|await| S\n  S -->|submission| A' },
+      answer: { mode: 'accept', option: 'A' },
+      comments: [ { x: 49, y: 38, anchor: { text: 'node S "Local server"' }, text: 'Bind to 127.0.0.1 only.' } ] },
+    { id: 'r2q2', n: 2, past: true, title: 'Is an MCP server required?',
+      body: 'Hosts that render MCP Apps could show the round page inline.',
+      rec: { text: 'No. It is an optional wrapper around the same core.', short: 'MCP is an optional wrapper', option: 'A' },
+      options: [ { id: 'A', label: 'No, an optional wrapper', desc: 'Installed only where a host benefits.' }, { id: 'B', label: 'Yes, always', desc: 'One code path, heavier install.' } ],
+      answer: { mode: 'accept', option: 'A' } },
+    { id: 'r2q3', n: 3, past: true, title: 'Should the round page use WebMCP?',
+      body: 'WebMCP would let the page expose tools to an agent driving the browser.',
+      rec: { text: 'No. Browser support is still behind a flag.', short: 'No WebMCP' },
+      answer: { mode: 'text', text: 'No, and don\'t revisit it until Chrome ships it unflagged.' } },
+  ]},
+  { n: 3, subject: 'Browser channel architecture', questions: [
+    { id: 'q1', n: 1, title: 'How does the agent learn that a round was submitted?',
+      body: 'The round page posts the submission to the local server, and something has to get it back into the agent\'s context. The research found that a blocking call the agent can re-call works in every agent. Hosts that support wake-ups can wrap it.',
+      rec: { text: 'Re-call <code>await</code> in a loop. It blocks up to 110 s, then the agent calls it again.', short: 'Re-call await in a loop', option: 'A' },
+      options: [
+        { id: 'A', label: 'Re-call await in a loop', desc: 'Blocks up to 110 s per call. Works in any agent.' },
+        { id: 'B', label: 'Background process + notification', desc: 'Claude Code wakes the agent when the process exits. Host-specific.' },
+        { id: 'C', label: 'Poll a submission file', desc: 'No server call, but the answer waits for the agent\'s next turn.' } ],
+      illus: { kind: 'mermaid', title: 'The await loop', src: 'flowchart TD\n  A[Agent runs await] --> B{Round submitted?}\n  B -- "no, after 110 s" --> A\n  B -- yes --> C[await prints the round submission]\n  C --> D[Agent reads the answers]\n  D --> E[Agent writes the next round page]' } },
+    { id: 'q2', n: 2, title: 'Which runtime runs the round server?',
+      body: 'The server starts once per session, so its cold start is paid once. Install friction is paid by every new user.',
+      rec: { text: 'Node, since it is already installed wherever Claude Code runs.', short: 'Node', option: 'A' },
+      options: [
+        { id: 'A', label: 'Node', desc: 'Already present for most agent installs.' },
+        { id: 'B', label: 'Bun', desc: 'Fastest start; one more install for most users.' },
+        { id: 'C', label: 'Deno', desc: 'Permission sandbox built in; less common.' },
+        { id: 'D', label: 'Python', desc: 'On most machines; slowest start measured.' } ],
+      illus: { kind: 'vega', title: 'Cold start by runtime (synthetic)', data: [ { runtime: 'Node', ms: 180 }, { runtime: 'Bun', ms: 60 }, { runtime: 'Deno', ms: 110 }, { runtime: 'Python', ms: 240 } ] } },
+    { id: 'q3', n: 3, title: 'Where do a session\'s files live?',
+      body: 'Past rounds stay viewable for the whole session, so they live on disk. Every file is removed when the session ends.',
+      rec: { text: 'One folder per session under the OS temp dir: <code>$TMPDIR/visual-grilling/&lt;session-id&gt;/</code>.', short: 'A session folder under $TMPDIR' },
+      illus: { kind: 'table', title: 'What the session folder holds', cols: ['File', 'Written when', 'Removed when'], rows: [
+        ['rounds/round-3.html', 'the round page opens', 'the session ends'],
+        ['submissions/round-3.json', 'you submit a round', 'the session ends'],
+        ['crops/q2-bar-bun.png', 'a weak-match comment is pinned', 'the session ends'],
+        ['server.pid', 'the server starts', 'the server stops'] ] } },
+    { id: 'q4', n: 4, title: 'Where does the Submit round control sit?',
+      body: 'You submit once per round. The control should be reachable without scrolling back, and it should show how many questions still have no answer.',
+      rec: { text: 'In a sticky bar at the top, next to the answered count.', short: 'Sticky top bar', option: 'A' },
+      options: [
+        { id: 'A', label: 'Sticky top bar', desc: 'Always visible, with the count beside it.' },
+        { id: 'B', label: 'End of the page', desc: 'Read everything first; you have to scroll to submit.' } ],
+      illus: { kind: 'options', title: 'Submit control placements', mocks: [
+        { id: 'A', label: 'Sticky top bar', html: `<style>body{margin:0;font:13px/1.4 system-ui}.bar{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f3f4f6;border-bottom:1px solid #d1d5db}.bar b{flex:1}.muted{color:#6b7280}.sub{background:#2563eb;color:#fff;border:0;border-radius:5px;padding:5px 10px;font:inherit}.q{margin:8px 10px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff}</style><div class="bar"><b>Round 3</b><span class="muted" data-anchor="answered-count">4 / 6</span><button class="sub" data-anchor="submit-button">Submit round</button></div><div class="q">Q1 How does the agent learn…</div><div class="q">Q2 Which runtime runs…</div><div class="q">Q3 Where do the files live?</div>` },
+        { id: 'B', label: 'End of the page', html: `<style>body{margin:0;font:13px/1.4 system-ui}.q{margin:8px 10px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff}.end{display:flex;align-items:center;gap:8px;margin:10px;padding-top:8px;border-top:1px dashed #d1d5db}.end span{flex:1;color:#6b7280}.sub{background:#2563eb;color:#fff;border:0;border-radius:5px;padding:5px 10px;font:inherit}</style><div class="q">Q4 Where does Submit sit?</div><div class="q">Q5 Stale session cleanup</div><div class="q">Q6 Which port?</div><div class="end"><span data-anchor="answered-count">4 of 6 answered</span><button class="sub" data-anchor="submit-button">Submit round</button></div>` } ] } },
+    { id: 'q5', n: 5, title: 'Who cleans up after a crashed session?',
+      body: 'If an agent session crashes, its server and folder can outlive it. The next session to start is the first chance to notice.',
+      rec: { text: 'On start, remove any session folder whose <code>server.pid</code> is no longer running.', short: 'Sweep dead sessions on start' },
+      illus: { kind: 'html', title: 'Start-up sweep (agent HTML)', html: `<style>body{margin:0;padding:12px;font:13px/1.4 system-ui;color:#333}ul{margin:8px 0 0;padding-left:18px}</style><svg viewBox="0 0 470 118" width="100%"><defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#777"/></marker></defs><g data-anchor="new-session"><rect x="6" y="38" width="112" height="44" rx="6" fill="none" stroke="#999"/><text x="62" y="64" text-anchor="middle" fill="#333">New session</text></g><path d="M118 60 H168" stroke="#777" marker-end="url(#ar)"/><g data-anchor="pid-check"><rect x="170" y="38" width="118" height="44" rx="6" fill="none" stroke="#999"/><text x="229" y="64" text-anchor="middle" fill="#333">Is the PID alive?</text></g><path d="M288 52 L336 26" stroke="#777" marker-end="url(#ar)"/><path d="M288 68 L336 94" stroke="#777" marker-end="url(#ar)"/><g data-anchor="live-folder"><rect x="338" y="6" width="126" height="38" rx="6" fill="none" stroke="#6a6"/><text x="401" y="30" text-anchor="middle" fill="#363">yes: keep folder</text></g><g data-anchor="stale-folder"><rect x="338" y="76" width="126" height="38" rx="6" fill="none" stroke="#c66"/><text x="401" y="100" text-anchor="middle" fill="#933">no: delete folder</text></g></svg><ul><li>Runs once, before the new server binds its port.</li><li data-anchor="never-touch">Never touches a folder whose PID is alive.</li></ul>` } },
+    { id: 'q6', n: 6, title: 'Which port does the round server bind?',
+      body: 'More than one grilling session can run on the same machine, and each needs its own server.',
+      rec: { text: 'An ephemeral port picked by the OS, printed with the link.', short: 'Ephemeral port', option: 'A' },
+      options: [
+        { id: 'A', label: 'Ephemeral port picked by the OS', desc: 'Never collides; the link changes every session.' },
+        { id: 'B', label: 'Fixed port 4317', desc: 'The link can be bookmarked; a second session needs a fallback.' } ] },
+  ]},
+];
+const CUR = ROUNDS[2];
+const TREE = { label: 'Browser channel architecture', kids: [
+  { label: 'Terminal stays the default channel', ref: 'r1q1' },
+  { label: 'Call grilling unchanged', ref: 'r1q2' },
+  { label: 'Baseline: local server + await', ref: 'r2q1', kids: [
+    { label: 'Wake-up mechanism', ref: 'q1' },
+    { label: 'Server runtime', ref: 'q2' },
+    { label: 'Port binding', ref: 'q6' },
+    { label: 'Crashed-session cleanup', ref: 'q5' } ] },
+  { label: 'MCP is an optional wrapper', ref: 'r2q2', kids: [
+    { label: 'MCP App view for hosts that render it', later: 'Waits on server runtime' } ] },
+  { label: 'No WebMCP', ref: 'r2q3' },
+  { label: 'Session files location', ref: 'q3', kids: [
+    { label: 'Resuming a session', later: 'Waits on session files location' } ] },
+  { label: 'Round page', kids: [
+    { label: 'Submit control placement', ref: 'q4' },
+    { label: 'Illustration authoring guidance', later: 'Waits on the illustration blocks decision' } ] },
+]};
+const VARIANTS = [ { key: 'A', name: 'Stacked review' }, { key: 'B', name: 'One at a time' }, { key: 'C', name: 'Triage list' } ];
+
+// ================= icons =================
+const ICONS = {
+  check: '<path class="ck" d="M3.5 8.5l3 3 6-7"/>',
+  done: '<circle cx="8" cy="8" r="6.25"/><path class="ck" d="M5.3 8.2l1.8 1.8 3.7-4"/>',
+  open: '<circle cx="8" cy="8" r="6.25"/>',
+  later: '<circle cx="8" cy="8" r="6.25" stroke-dasharray="2.2 2.2"/>',
+  comment: '<path d="M2.75 3.25h10.5v7.5h-5.5l-3 2.5v-2.5h-2z"/>',
+  addcomment: '<path d="M2.75 3.25h10.5v7.5h-5.5l-3 2.5v-2.5h-2z"/><path d="M8 5v3.5M6.25 6.75h3.5"/>',
+  help: '<circle cx="8" cy="8" r="6.25"/><path d="M6.4 6.3a1.7 1.7 0 1 1 2.4 1.6c-.5.2-.8.6-.8 1.1v.3"/><path d="M8 11.3v.1" stroke-width="2"/>',
+  pen: '<path d="M10.4 2.9l2.7 2.7-7.3 7.3H3.1v-2.7z"/><path d="M8.8 4.5l2.7 2.7"/>',
+  down: '<path d="M4 6l4 4 4-4"/>',
+  right: '<path d="M6 4l4 4-4 4"/>',
+  left: '<path d="M10 4L6 8l4 4"/>',
+  tree: '<path d="M2.75 3.5h4.5M4.5 3.5v8.75h3.25M4.5 8h3.25"/><circle cx="10.5" cy="8" r="1.6"/><circle cx="10.5" cy="12.25" r="1.6"/>',
+  sun: '<circle cx="8" cy="8" r="2.75"/><path d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1 1M11.4 11.4l1 1M3.6 12.4l1-1M11.4 4.6l1-1"/>',
+  moon: '<path d="M13.25 9.6A5.5 5.5 0 1 1 6.4 2.75a4.4 4.4 0 0 0 6.85 6.85z"/>',
+  x: '<path d="M4 4l8 8M12 4l-8 8"/>',
+  lock: '<rect x="3.75" y="7.25" width="8.5" height="6" rx="1.25"/><path d="M5.75 7.25V5.5a2.25 2.25 0 0 1 4.5 0v1.75"/>',
+  up: '<path d="M8 12.75v-9.5M4.25 7L8 3.25 11.75 7"/>',
+  backdrop: '<rect x="2.75" y="2.75" width="10.5" height="10.5" rx="2"/><path d="M8 2.75v10.5" /><path d="M8 5h5.25M8 8h5.25M8 11h5.25" stroke-width="1"/>',
+};
+const icon = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 16 16" aria-hidden="true">${ICONS[n]}</svg>`;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const plain = html => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent; };
+
+// ================= state =================
+const KEY = 'vg-round-proto-v1';
+const blank = () => ({ answers: {}, comments: {}, submittedAt: null });
+const load = () => { try { return JSON.parse(sessionStorage.getItem(KEY)) || blank(); } catch { return blank(); } };
+const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+let S = load();
+const params = new URLSearchParams(location.search);
+let storedTheme = null; try { storedTheme = localStorage.getItem('vg-theme'); } catch {}
+const V = {
+  variant: VARIANTS.some(v => v.key === params.get('variant')) ? params.get('variant') : 'A',
+  theme: params.get('theme') || storedTheme || 'dark',
+  round: 3, current: 'q1', step: 0, open: 'q1', commenting: null, drawer: false, preview: false,
+};
+const BD = {};           // qid -> { value: 'dark'|'light', auto: bool }
+const lastState = {};    // qid -> last state label, to animate only real changes
+
+const allQ = () => ROUNDS.flatMap(r => r.questions);
+const qById = id => allQ().find(q => q.id === id);
+const roundOfQ = id => ROUNDS.find(r => r.questions.some(q => q.id === id));
+const isLive = () => V.round === 3 && !S.submittedAt;
+const liveQ = q => !q.past && !S.submittedAt;
+const answerOf = q => (q.past ? q.answer : S.answers[q.id]) || {};
+const commentsOf = q => (q.past ? q.comments : S.comments[q.id]) || [];
+function modeOf(q) {
+  const a = answerOf(q);
+  if (a.mode === 'text' && !(a.text || '').trim()) return commentsOf(q).length ? 'comments' : null;
+  if (a.mode) return a.mode;
+  return commentsOf(q).length ? 'comments' : null;
+}
+const TONE = { accept: 'ok', option: 'ok', text: 'ok', comments: 'cm', unsure: 'un' };
+function stateLabel(q) {
+  const m = modeOf(q);
+  return { accept: 'Accepted', option: 'Picked ' + answerOf(q).option, text: 'Own answer', comments: 'Comments only', unsure: 'Unsure' }[m] || 'No answer';
+}
+function stateIcon(q) {
+  const m = modeOf(q);
+  if (!m) return `<span class="st">${icon('open')}</span>`;
+  const t = TONE[m];
+  return `<span class="st ${t}">${icon(t === 'ok' ? 'done' : t === 'cm' ? 'comment' : 'help')}</span>`;
+}
+const answered = r => r.questions.filter(q => modeOf(q)).length;
+
+// ================= slots (re-rendered in place) =================
+const SLOT = {
+  count: () => { const r = ROUNDS[V.round - 1]; return `<b>${answered(r)}</b> / ${r.questions.length} <span class="w">answered</span>`; },
+  icon: id => stateIcon(qById(id)),
+  state: id => {
+    const q = qById(id), m = modeOf(q), n = commentsOf(q).length, label = stateLabel(q);
+    const fresh = lastState[id] !== undefined && lastState[id] !== label && TONE[m] === 'ok';
+    lastState[id] = label;
+    const cm = n && m !== 'comments' ? `<span class="cm-count">${icon('comment')}${n}</span>` : '';
+    if (!m) return `<span class="chip">No answer</span>`;
+    const t = TONE[m];
+    return `${cm}<span class="chip tone-${t} ${fresh ? 'fresh' : ''}">${icon(t === 'ok' ? 'check' : t === 'cm' ? 'comment' : 'help')}${esc(label)}${m === 'comments' ? ` · ${n}` : ''}</span>`;
+  },
+  answer: id => answerHTML(qById(id)),
+  ibar: id => ibarHTML(qById(id)),
+  threads: id => threadsHTML(qById(id)),
+  triact: id => {
+    const q = qById(id);
+    if (!modeOf(q) && liveQ(q)) return `<button class="btn sm" data-act="accept" data-q="${id}">Accept</button>`;
+    return SLOT.state(id);
+  },
+  bulk: () => {
+    if (!isLive()) return '';
+    const n = CUR.questions.filter(q => !modeOf(q)).length;
+    return n ? `<span>${n} question${n > 1 ? 's have' : ' has'} no answer.</span><button class="btn sm" data-act="accept-all">${icon('check')}Accept ${n > 1 ? 'the ' + n + ' recommendations' : 'the recommendation'}</button>`
+             : `<span>Every question has an answer. Submit when you're ready.</span>`;
+  },
+  tree: () => treeHTML(),
+  steps: () => CUR.questions.map((q, i) => `<button class="step ${V.step === i ? 'on' : ''}" data-act="step" data-i="${i}">${stateIcon(q)}Q${q.n}</button>`).join('')
+    + `<button class="step ${V.step === CUR.questions.length ? 'on' : ''}" data-act="step" data-i="${CUR.questions.length}">${icon('up')}Review</button>`,
+  review: () => reviewHTML(),
+  submitsum: () => submitSummaryHTML(),
+  payload: () => esc(submissionText()),
+};
+function slot(name, id, tag = 'span', cls = '') { return `<${tag} class="${cls}" data-slot="${name}${id ? ':' + id : ''}">${SLOT[name](id)}</${tag}>`; }
+function patch(qid, skipAnswer) {
+  document.querySelectorAll('[data-slot]').forEach(el => {
+    const [name, id] = el.dataset.slot.split(':');
+    if (id && qid && id !== qid) return;
+    if (skipAnswer && name === 'answer') return;
+    el.innerHTML = SLOT[name](id);
+  });
+  document.getElementById('drawer').innerHTML = treeHTML();
+}
+
+// ================= pieces =================
+function answerHTML(q) {
+  const a = answerOf(q), m = modeOf(q), live = liveQ(q), accepted = m === 'accept';
+  let h = `<div class="ans">`;
+  h += `<div class="rec ${accepted ? 'is-on' : ''}"><p class="rec-t"><span class="rec-k">${accepted ? 'Accepted' : 'Recommended'}</span>${q.rec.text}</p>`;
+  if (live) h += `<button class="btn sm ${accepted ? 'ok' : ''}" data-act="accept" data-q="${q.id}" aria-pressed="${accepted}">${accepted ? icon('check') + 'Accepted' : 'Accept'} <kbd>A</kbd></button>`;
+  h += `</div>`;
+  if (q.options) {
+    h += `<div class="opts" role="radiogroup" aria-label="Options">` + q.options.map((o, i) => {
+      const on = (a.mode === 'option' || a.mode === 'accept') && a.option === o.id;
+      return `<button class="opt ${on ? 'on' : ''} ${on && accepted ? 'acc' : ''}" role="radio" aria-checked="${on}" ${live ? `data-act="pick" data-q="${q.id}" data-o="${o.id}"` : 'disabled'}>
+        <span class="radio"></span><span class="opt-k">${o.id}</span>
+        <span><span class="opt-l">${esc(o.label)}${o.id === q.rec.option ? '<span class="tag">recommended</span>' : ''}</span><span class="opt-d">${esc(o.desc)}</span></span>
+        ${live ? `<kbd>${i + 1}</kbd>` : ''}</button>`;
+    }).join('') + `</div>`;
+  }
+  if (a.mode === 'text') {
+    h += live ? `<textarea data-answer-text="${q.id}" rows="3" placeholder="Your answer, in your own words. It replaces the recommendation.">${esc(a.text)}</textarea>`
+              : `<p class="own"><span class="rec-k">Own answer</span>${esc(a.text)}</p>`;
+  }
+  if (m === 'unsure') h += `<p class="note un">${icon('help')}<span>Unsure. This stays on the frontier and comes back in a later round.</span></p>`;
+  if (live) {
+    h += `<div class="ans-foot">
+      <button class="btn ghost sm" data-act="write" data-q="${q.id}">${icon('pen')}${a.mode === 'text' ? 'Discard my answer' : 'Write my own answer'} <kbd>W</kbd></button>
+      <button class="btn ghost sm ${m === 'unsure' ? 'on-un' : ''}" data-act="unsure" data-q="${q.id}" aria-pressed="${m === 'unsure'}">${icon('help')}Unsure <kbd>U</kbd></button>
+      ${q.illus ? '' : `<span class="grow"></span>`}</div>`;
+  }
+  return h + `</div>`;
+}
+function ibarHTML(q) {
+  const I = q.illus, on = V.commenting === q.id, framed = I.kind === 'html' || I.kind === 'options';
+  const bd = BD[q.id];
+  const kindName = { mermaid: 'mermaid', vega: 'vega-lite', table: 'table', options: 'option mockups', html: 'agent html' }[I.kind];
+  let h = `<span class="illus-t">${esc(I.title)}</span><span class="kind">${kindName}</span><span class="grow"></span>`;
+  if (framed) h += `<button class="btn ghost sm" data-act="backdrop" data-q="${q.id}" title="${bd && bd.auto ? 'Switched automatically: the agent\'s colours were unreadable on dark' : 'Backdrop behind the agent\'s HTML'}">${icon('backdrop')}${bd && bd.value === 'light' ? 'Light' : 'Dark'}${bd && bd.auto ? ' · auto' : ''}</button>`;
+  if (liveQ(q)) h += `<button class="btn sm ${on ? 'on-cm' : 'ghost'}" data-act="comment-mode" data-q="${q.id}" aria-pressed="${on}">${icon('addcomment')}${on ? 'Done' : 'Comment'} <kbd>C</kbd></button>`;
+  return h;
+}
+function threadsHTML(q) {
+  const cs = commentsOf(q), live = liveQ(q);
+  if (!cs.length) return V.commenting === q.id ? `<div class="hint">${icon('addcomment')}Click any part of the illustration to pin a comment to it.</div>` : '';
+  return `<ol class="threads">` + cs.map((c, i) => `<li class="th"><span class="pin">${i + 1}</span><div><div class="anc">${esc(c.anchor.text)}</div><p>${esc(c.text)}</p></div>
+    ${live ? `<button class="btn ghost icon-btn sm" data-act="del-comment" data-q="${q.id}" data-i="${i}" aria-label="Delete comment">${icon('x')}</button>` : '<span></span>'}</li>`).join('') + `</ol>`
+    + (V.commenting === q.id ? `<div class="hint">${icon('addcomment')}Click another part to add a comment.</div>` : '');
+}
+function panelHTML(q) {
+  return `<section class="qp ${V.current === q.id ? 'is-current' : ''}" id="p-${q.id}" data-panel="${q.id}">
+    <header class="qp-h">${slot('icon', q.id, 'span', 'qp-icon')}<span class="num">Q${q.n}</span><h2 class="qp-title">${esc(q.title)}</h2><span class="grow"></span>${slot('state', q.id, 'span', 'qp-state')}</header>
+    ${bodyHTML(q)}</section>`;
+}
+function bodyHTML(q) {
+  return `<div class="qp-b"><p class="prose">${q.body}</p>
+    ${q.illus ? `<figure class="illus">${slot('ibar', q.id, 'div', 'illus-bar')}<div class="stage-host" data-illus="${q.id}"><div class="skel"></div></div>${slot('threads', q.id, 'div')}</figure>` : ''}
+    ${slot('answer', q.id, 'div')}</div>`;
+}
+function treeHTML() {
+  const rows = [];
+  (function walk(n, d) {
+    const q = n.ref && qById(n.ref);
+    let cls = 'tn', ic, meta = '', act = '', sub = '';
+    if (!q && !n.later) { cls += ' group'; ic = icon('tree'); }
+    else if (n.later) { cls += ' later'; ic = icon('later'); sub = `<span class="tn-sub">${esc(n.later)}</span>`; }
+    else if (q.past) { ic = `<span class="st ok">${icon('done')}</span>`; meta = 'R' + roundOfQ(q.id).n; act = `data-act="goto" data-q="${q.id}"`; }
+    else { ic = stateIcon(q); meta = 'Q' + q.n; act = `data-act="goto" data-q="${q.id}"`; if (V.round === 3 && V.current === q.id) cls += ' cur'; }
+    const tag = act ? 'button' : 'div';
+    rows.push(`<${tag} class="${cls}" style="--d:${d}" ${act}>${ic}<span class="tn-l">${esc(n.label)}${sub}</span>${meta ? `<span class="tn-meta">${meta}</span>` : ''}</${tag}>`);
+    (n.kids || []).forEach(k => walk(k, d + 1));
+  })(TREE, 0);
+  return `<div class="tree-h"><h3>Design tree</h3></div>
+    <div class="legend"><span>${icon('done')}Settled</span><span>${icon('open')}This round</span><span>${icon('later')}Later</span></div>${rows.join('')}`;
+}
+function banner() {
+  const r = ROUNDS[V.round - 1];
+  if (V.round !== 3) return `<div class="banner">${icon('lock')}<span><b>Round ${r.n}</b> was submitted at ${r.submittedAt}. It is read-only.</span><span class="grow"></span><button class="btn sm" data-act="round" data-r="3">Back to round 3</button></div>`;
+  if (S.submittedAt) return `<div class="banner sent"><span class="wait-dot"></span><span><b>Round 3 sent at ${S.submittedAt}.</b> The agent is reading your answers, and round 4 will open here.</span></div>`;
+  return '';
+}
+function reviewHTML() {
+  const qs = CUR.questions, open = qs.filter(q => !modeOf(q)).length;
+  return `<div class="review"><div class="review-h"><h2>Review round 3</h2><p>${answered(CUR)} of ${qs.length} answered. The whole round goes back to the agent at once.</p></div>
+    ${qs.map((q, i) => `<div class="rv">${stateIcon(q)}<span class="num">Q${q.n}</span><span class="rv-t">${esc(q.title)}</span>
+      <button class="btn ghost sm" data-act="step" data-i="${i}">${isLive() ? 'Edit' : 'View'}</button><span class="rv-a">${esc(summaryLine(q))}</span></div>`).join('')}
+    <div class="review-f">${open && isLive() ? `<span class="warn">${icon('help')}${open} unanswered question${open > 1 ? 's' : ''} will be sent as unsure.</span>` : ''}<span class="grow"></span>
+      ${isLive() ? `<button class="btn primary" data-act="submit-confirm">${icon('up')}Submit round <kbd>⌘↵</kbd></button>` : ''}</div></div>`;
+}
+function summaryLine(q) {
+  const a = answerOf(q), m = modeOf(q), n = commentsOf(q).length;
+  const c = n ? ` · ${n} comment${n > 1 ? 's' : ''}` : '';
+  if (m === 'accept') return 'Accepted: ' + plain(q.rec.short) + c;
+  if (m === 'option') return `Picked ${a.option}: ${q.options.find(o => o.id === a.option).label}` + c;
+  if (m === 'text') return 'Own answer: ' + a.text.trim() + c;
+  if (m === 'unsure') return 'Unsure, stays on the frontier' + c;
+  if (m === 'comments') return `${n} comment${n > 1 ? 's' : ''}, no verdict`;
+  return 'No answer yet';
+}
+function submitSummaryHTML() {
+  const qs = CUR.questions, cnt = k => qs.filter(q => modeOf(q) === k).length, none = qs.filter(q => !modeOf(q)).length;
+  const rows = [['Accepted', 'accept', 'ok', 'done'], ['Picked another option', 'option', 'ok', 'done'], ['Own answer', 'text', 'ok', 'done'], ['Comments only', 'comments', 'cm', 'comment'], ['Unsure', 'unsure', 'un', 'help']]
+    .map(([l, k, t, ic]) => `<div class="sp-row"><span class="st ${t}">${icon(ic)}</span>${l}<b>${cnt(k)}</b></div>`).join('');
+  const comments = qs.reduce((s, q) => s + commentsOf(q).length, 0);
+  return `<div class="sp-h">Submit round 3</div><div class="sp-rows">${rows}<div class="sp-row"><span class="st">${icon('open')}</span>No answer<b>${none}</b></div><div class="sp-row"><span class="st cm">${icon('comment')}</span>Pinned comments<b>${comments}</b></div></div>
+    ${none ? `<p class="warn">${icon('help')}${none} unanswered question${none > 1 ? 's' : ''} will be sent as unsure.</p>` : ''}
+    <div class="pop-f"><button class="btn ghost" data-act="submit-close">Keep answering</button><button class="btn primary" data-act="submit-confirm">${icon('up')}Submit round <kbd>⌘↵</kbd></button></div>`;
+}
+function submissionText() {
+  const L = [`Round 3 · ${CUR.subject}`, S.submittedAt ? `Submitted ${S.submittedAt}` : 'Not submitted yet (live preview)', ''];
+  CUR.questions.forEach(q => {
+    const a = answerOf(q), m = modeOf(q);
+    L.push(`Q${q.n} ${q.title}`);
+    if (m === 'accept') L.push(`   accepted: ${plain(q.rec.short)}`);
+    else if (m === 'option') L.push(`   picked ${a.option}: ${q.options.find(o => o.id === a.option).label}`);
+    else if (m === 'text') L.push(`   own answer: "${a.text.trim()}"`);
+    else if (m === 'unsure') L.push('   unsure: stays on the frontier');
+    else if (m === 'comments') L.push('   comments only, no verdict');
+    else L.push('   no answer: sent as unsure');
+    commentsOf(q).forEach((c, i) => L.push(`   comment ${i + 1} on ${c.anchor.text}: "${c.text}"`));
+    L.push('');
+  });
+  return L.join('\n');
+}
+
+// ================= layout per variant =================
+const app = document.getElementById('app');
+function barHTML() {
+  const r = ROUNDS[V.round - 1];
+  return `<header class="bar">
+    <button class="btn ghost icon-btn tree-toggle" data-act="drawer" aria-label="Design tree">${icon('tree')}</button>
+    <button class="btn ghost round-btn" data-act="rounds" aria-haspopup="menu"><b>Round ${r.n}</b>${icon('down')}</button>
+    <span class="subject">${esc(r.subject)}</span><span class="grow"></span>
+    ${slot('count', null, 'span', 'count')}
+    <button class="btn ghost icon-btn" data-act="theme" aria-label="Switch to ${V.theme === 'dark' ? 'light' : 'dark'} theme">${icon(V.theme === 'dark' ? 'sun' : 'moon')}</button>
+    ${V.round === 3 ? `<button class="btn primary" data-act="submit-open" ${S.submittedAt ? 'disabled' : ''}>${S.submittedAt ? icon('check') + 'Submitted' : icon('up') + 'Submit round'}</button>` : ''}
+  </header>`;
+}
+function mainHTML() {
+  const r = ROUNDS[V.round - 1];
+  if (V.round !== 3 || V.variant === 'A') return `<div class="col stack">${banner()}${r.questions.map(panelHTML).join('')}</div>`;
+  if (V.variant === 'B') {
+    const q = CUR.questions[V.step];
+    return `<div class="col">${banner()}${slot('steps', null, 'nav', 'steps')}
+      ${q ? panelHTML(q) + `<div class="stepnav"><button class="btn ghost" data-act="prev" ${V.step === 0 ? 'disabled' : ''}>${icon('left')}Previous <kbd>K</kbd></button><span class="grow"></span>
+        <button class="btn" data-act="next">${V.step === CUR.questions.length - 1 ? 'Review round' : 'Next'}${icon('right')} <kbd>J</kbd></button></div>`
+          : slot('review', null, 'div')}</div>`;
+  }
+  return `<div class="col">${banner()}${slot('bulk', null, 'div', 'bulk')}<div class="tri">${CUR.questions.map(q => {
+    const open = V.open === q.id;
+    return `<div class="tri-row ${open ? 'open' : ''}" id="p-${q.id}" data-panel="${q.id}">
+      <button class="tri-head" data-act="toggle-row" data-q="${q.id}" aria-expanded="${open}">${slot('icon', q.id)}<span class="num">Q${q.n}</span>
+        <span><span class="tri-title">${esc(q.title)}</span><span class="tri-rec">Recommended: ${esc(plain(q.rec.short))}</span></span></button>
+      ${slot('triact', q.id, 'span', 'tri-act')}
+      ${open ? `<div class="tri-body">${bodyHTML(q)}</div>` : ''}</div>`;
+  }).join('')}</div></div>`;
+}
+function renderAll() {
+  document.documentElement.dataset.theme = V.theme;
+  const side = V.variant === 'B' && V.round === 3 ? 'right' : 'left';
+  app.innerHTML = barHTML() + `<div class="shell ${side}"><aside class="side" aria-label="Design tree">${treeHTML()}</aside><main>${mainHTML()}</main></div>`;
+  document.getElementById('drawer').innerHTML = treeHTML();
+  document.getElementById('proto-lab').textContent = `${V.variant} · ${VARIANTS.find(v => v.key === V.variant).name}`;
+  document.querySelector('[data-slot="payload"]').innerHTML = SLOT.payload();
+  mountIllustrations();
+}
+
+// ================= illustrations =================
+const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const stages = new Map();   // `${qid}|${theme}` -> stage element
+let mmSeq = 0, mmTheme = null;
+
+function mountIllustrations() {
+  document.querySelectorAll('[data-illus]').forEach(async host => {
+    const q = qById(host.dataset.illus), k = `${q.id}|${V.theme}`;
+    let st = stages.get(k);
+    if (!st) { st = buildStage(q); stages.set(k, st); }
+    host.replaceChildren(st);
+    await st._ready;
+    renderPins(q.id);
+    st.classList.toggle('commenting', V.commenting === q.id);
+  });
+}
+function buildStage(q) {
+  const I = q.illus, st = document.createElement('div');
+  st.className = 'stage kind-' + I.kind;
+  st.dataset.stage = q.id;
+  st.innerHTML = `<div class="fig"><div class="skel"></div></div><div class="hover-box"></div><div class="pins"></div>`;
+  const fig = st.querySelector('.fig');
+  st._ready = (async () => {
+    await new Promise(r => requestAnimationFrame(r));
+    if (I.kind === 'mermaid') {
+      if (mmTheme !== V.theme) {
+        mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base', fontFamily: tok('--sans'), flowchart: { useMaxWidth: false, nodeSpacing: 36, rankSpacing: 40 },
+          themeVariables: { background: tok('--inset'), primaryColor: tok('--panel-2'), primaryBorderColor: tok('--line-strong'), primaryTextColor: tok('--text'),
+            lineColor: tok('--text-3'), textColor: tok('--text-2'), edgeLabelBackground: tok('--inset'), fontSize: '13px', darkMode: V.theme === 'dark' } });
+        mmTheme = V.theme;
+      }
+      const { svg } = await mermaid.render(`mm-${q.id}-${++mmSeq}`, I.src);
+      fig.innerHTML = svg;
+    } else if (I.kind === 'vega') {
+      fig.innerHTML = '<div class="viz" style="width:100%"></div>';
+      await vegaEmbed(fig.firstChild, {
+        $schema: 'https://vega.github.io/schema/vega-lite/v6.json', width: 'container', height: 170, autosize: { type: 'fit-x', contains: 'padding' },
+        data: { values: I.data },
+        layer: [
+          { mark: { type: 'bar', cornerRadiusEnd: 2, width: { band: .62 } }, encoding: { color: { condition: { test: "datum.runtime === 'Node'", value: tok('--text-2') }, value: tok('--line-strong') } } },
+          { mark: { type: 'text', dy: -7, fontSize: 11, font: tok('--mono') }, encoding: { text: { field: 'ms', type: 'quantitative', format: 'd' }, color: { value: tok('--text-2') } } } ],
+        encoding: { x: { field: 'runtime', type: 'nominal', sort: null, title: null, axis: { labelAngle: 0 } }, y: { field: 'ms', type: 'quantitative', stack: null, title: 'cold start (ms)', axis: { tickCount: 4 } } },
+      }, { renderer: 'svg', actions: false, config: { background: null, font: tok('--sans'), view: { stroke: null },
+        axis: { domainColor: tok('--line-strong'), tickColor: tok('--line-strong'), gridColor: tok('--line-soft'), labelColor: tok('--text-2'), titleColor: tok('--text-3'), labelFontSize: 12, titleFontSize: 11, titleFontWeight: 500 },
+        axisX: { grid: false } } });
+    } else if (I.kind === 'table') {
+      fig.innerHTML = `<table class="tb"><thead><tr>${I.cols.map(c => `<th data-row="(header)" data-col="${esc(c)}">${esc(c)}</th>`).join('')}</tr></thead><tbody>${I.rows.map(r =>
+        `<tr>${r.map((v, j) => `<td data-row="${esc(r[0])}" data-col="${esc(I.cols[j])}">${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    } else if (I.kind === 'options') {
+      fig.innerHTML = `<div class="mocks">${I.mocks.map(m => `<div class="mock"><div class="mock-h"><b>Option ${m.id}</b>${esc(m.label)}${m.id === q.rec.option ? '<span class="grow"></span><span class="tag">recommended</span>' : ''}</div></div>`).join('')}</div>`;
+      I.mocks.forEach((m, i) => fig.querySelectorAll('.mock')[i].appendChild(makeFrame(q, m.html, m)));
+    } else if (I.kind === 'html') {
+      fig.innerHTML = '';
+      fig.appendChild(makeFrame(q, I.html));
+    }
+    bindStage(q, st);
+  })();
+  return st;
+}
+
+// agent HTML runs sandboxed; this script reports clicks, height and text contrast back to the page
+const FRAME_JS = `
+let on = false;
+const hb = document.createElement('div');
+hb.style.cssText = 'position:absolute;pointer-events:none;border:1.5px solid #ad93fb;background:rgba(173,147,251,.14);border-radius:4px;display:none;z-index:99';
+document.addEventListener('DOMContentLoaded', () => document.body.appendChild(hb));
+const lum = c => { const m = String(c).match(/[\\d.]+/g); if (!m) return null; const [r, g, b, a = 1] = m.map(Number); if (a === 0) return null;
+  const f = v => (v /= 255) <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
+const bgL = el => { for (; el && el.nodeType === 1; el = el.parentElement) { if (el instanceof SVGElement && el.tagName !== 'svg') continue; const L = lum(getComputedStyle(el).backgroundColor); if (L !== null) return L; } return lum(getComputedStyle(document.body).backgroundColor); };
+function worst() { let w = 21; document.querySelectorAll('body *').forEach(el => { if (![...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) return;
+  const cs = getComputedStyle(el), fg = lum(el instanceof SVGElement ? cs.fill : cs.color), bg = bgL(el); if (fg === null || bg === null) return;
+  const r = (Math.max(fg, bg) + .05) / (Math.min(fg, bg) + .05); if (r < w) w = r; }); return w; }
+function named(t) { const n = t.closest('[data-anchor]'); if (n) return { kind: 'named', label: n.dataset.anchor };
+  const al = t.closest('[aria-label]'); if (al) return { kind: 'named', label: al.getAttribute('aria-label') };
+  for (let el = t, i = 0; el && el !== document.body && i < 3; el = el.parentElement, i++) { const tx = (el.textContent || '').trim().replace(/\\s+/g, ' ');
+    if (tx && tx.length <= 60) return { kind: el.tagName.toLowerCase(), label: tx }; }
+  return { kind: 'unlabeled shape', label: '' }; }
+function target(t) { return t.closest('[data-anchor]') || t.closest('button,li,td,th,text,g,p,span,div') || t; }
+document.addEventListener('mousemove', e => { if (!on || !document.body.contains(e.target) || e.target === document.body || e.target === document.documentElement) { hb.style.display = 'none'; return; }
+  const r = target(e.target).getBoundingClientRect(); Object.assign(hb.style, { display: 'block', left: r.left + scrollX - 3 + 'px', top: r.top + scrollY - 3 + 'px', width: r.width + 6 + 'px', height: r.height + 6 + 'px' }); });
+document.addEventListener('mouseleave', () => hb.style.display = 'none');
+document.addEventListener('click', e => { if (!on) return; e.preventDefault(); e.stopPropagation(); hb.style.display = 'none';
+  parent.postMessage({ type: 'pick', ...named(e.target), x: e.clientX, y: e.clientY }, '*'); }, true);
+addEventListener('message', e => { const m = e.data || {};
+  if (m.type === 'mode') { on = m.on; document.documentElement.style.cursor = on ? 'crosshair' : ''; if (!on) hb.style.display = 'none'; }
+  if (m.type === 'backdrop') { document.body.style.background = m.bg; document.body.style.color = m.fg; } });
+const report = () => parent.postMessage({ type: 'h', h: document.documentElement.scrollHeight }, '*');
+addEventListener('load', () => { report(); new ResizeObserver(report).observe(document.body); parent.postMessage({ type: 'ready', contrast: worst() }, '*'); });
+`;
+const BACKDROPS = { dark: () => ({ bg: tok('--inset'), fg: tok('--text') }), light: () => ({ bg: '#ffffff', fg: '#1a1e26' }) };
+function makeFrame(q, html, mock) {
+  const f = document.createElement('iframe');
+  f.setAttribute('sandbox', 'allow-scripts');
+  f.title = mock ? `Option ${mock.id}: ${mock.label}` : q.illus.title;
+  const b = BACKDROPS[(BD[q.id] && BD[q.id].value) || V.theme]();
+  f.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><style>html{color-scheme:light dark}body{background:${b.bg};color:${b.fg}}</style></head><body>${html}<script>${FRAME_JS}<\/script></body></html>`;
+  return f;
+}
+addEventListener('message', e => {
+  const iframe = [...document.querySelectorAll('.stage iframe')].find(f => f.contentWindow === e.source);
+  if (!iframe) return;
+  const st = iframe.closest('.stage'), qid = st.dataset.stage, q = qById(qid), m = e.data || {};
+  if (m.type === 'h') iframe.style.height = Math.min(Math.max(m.h, 80), 520) + 'px';
+  if (m.type === 'ready') {
+    const bd = BD[qid];
+    if (!bd && V.theme === 'dark' && m.contrast < 3) { BD[qid] = { value: 'light', auto: true }; patch(qid); }
+    applyBackdrop(qid);
+    iframe.contentWindow.postMessage({ type: 'mode', on: V.commenting === qid }, '*');
+  }
+  if (m.type === 'pick') {
+    const fr2 = iframe.getBoundingClientRect(), sr = st.getBoundingClientRect();
+    const mockEl = iframe.closest('.mock'), opt = mockEl ? q.illus.mocks[[...st.querySelectorAll('.mock')].indexOf(mockEl)] : null;
+    const x = fr2.left + m.x, y = fr2.top + m.y;
+    const what = m.kind === 'named' ? `named "${m.label}"` : m.kind === 'unlabeled shape' ? 'unlabeled shape' : `${m.kind} "${m.label}"`;
+    openComment(qid, { text: (opt ? `option ${opt.id} · ` : '') + what }, (x - sr.left) / sr.width * 100, (y - sr.top) / sr.height * 100, x, y);
+  }
+});
+function applyBackdrop(qid) {
+  const v = (BD[qid] && BD[qid].value) || V.theme, b = BACKDROPS[v]();
+  document.querySelectorAll(`[data-stage="${qid}"] iframe`).forEach(f => f.contentWindow && f.contentWindow.postMessage({ type: 'backdrop', ...b }, '*'));
+}
+
+// pointing inside page-rendered illustrations (mermaid, vega, table)
+function anchorAt(t, q, st) {
+  const kind = q.illus.kind;
+  if (kind === 'mermaid') {
+    const node = t.closest('g.node');
+    if (node) { const id = (node.id.match(/flowchart-(.+?)-\d+$/) || [])[1]; return { el: node, text: `node ${id ? id + ' ' : ''}"${node.textContent.trim()}"` }; }
+    const lab = t.closest('.edgeLabel');
+    if (lab && lab.textContent.trim()) return { el: lab, text: `edge label "${lab.textContent.trim()}"` };
+    const edge = t.closest('path[id*="L_"], path[data-id*="L_"]');
+    if (edge) { const m = (edge.id || edge.dataset.id || '').match(/L_(.+?)_(.+?)_\d+/); if (m) return { el: edge, text: `edge ${m[1]} → ${m[2]}` }; }
+  }
+  if (kind === 'vega') {
+    let el = t; while (el && el !== st && !el.__data__) el = el.parentNode;
+    const d = el && el.__data__ && el.__data__.datum;
+    if (d && d.runtime) return { el, text: `bar "${d.runtime}: ${d.ms ?? d.ms_end} ms"` };
+    if (t.tagName === 'text' && t.textContent.trim()) return { el: t, text: `axis label "${t.textContent.trim()}"` };
+  }
+  if (kind === 'table') {
+    const c = t.closest('td,th');
+    if (c) return { el: c, text: c.tagName === 'TH' ? `column "${c.dataset.col}"` : `cell row "${c.dataset.row}", column "${c.dataset.col}"` };
+  }
+  return { el: null, text: 'empty area' };
+}
+function bindStage(q, st) {
+  const hb = st.querySelector('.hover-box');
+  st.addEventListener('mousemove', e => {
+    if (V.commenting !== q.id || e.target.tagName === 'IFRAME') return (hb.style.display = 'none');
+    const a = anchorAt(e.target, q, st);
+    if (!a.el) return (hb.style.display = 'none');
+    const r = a.el.getBoundingClientRect(), s = st.getBoundingClientRect();
+    Object.assign(hb.style, { display: 'block', left: r.left - s.left - 3 + 'px', top: r.top - s.top - 3 + 'px', width: r.width + 6 + 'px', height: r.height + 6 + 'px' });
+  });
+  st.addEventListener('mouseleave', () => (hb.style.display = 'none'));
+  st.addEventListener('click', e => {
+    if (V.commenting !== q.id || e.target.tagName === 'IFRAME') return;
+    e.preventDefault(); e.stopPropagation();
+    hb.style.display = 'none';
+    const s = st.getBoundingClientRect();
+    openComment(q.id, { text: anchorAt(e.target, q, st).text }, (e.clientX - s.left) / s.width * 100, (e.clientY - s.top) / s.height * 100, e.clientX, e.clientY);
+  }, true);
+}
+function renderPins(qid, pending) {
+  const st = document.querySelector(`[data-stage="${qid}"]`);
+  if (!st) return;
+  const cs = commentsOf(qById(qid));
+  st.querySelector('.pins').innerHTML = cs.map((c, i) => `<span class="pin" style="left:${c.x}%;top:${c.y}%">${i + 1}</span>`).join('')
+    + (pending ? `<span class="pin pending" style="left:${pending.x}%;top:${pending.y}%">${cs.length + 1}</span>` : '');
+}
+
+// ================= comments =================
+const cpop = document.getElementById('cpop');
+let draft = null;
+function openComment(qid, anchor, x, y, cx, cy) {
+  draft = { qid, anchor, x, y };
+  renderPins(qid, draft);
+  cpop.innerHTML = `<div class="anc">${esc(anchor.text)}</div><textarea id="ctext" placeholder="Comment on this part"></textarea>
+    <div class="pop-f"><button class="btn ghost sm" data-act="comment-cancel">Cancel</button><button class="btn primary sm" data-act="comment-add">Add comment <kbd>⌘↵</kbd></button></div>`;
+  cpop.hidden = false;
+  const w = cpop.offsetWidth, h = cpop.offsetHeight;
+  cpop.style.left = Math.max(12, Math.min(cx + 8, innerWidth - w - 12)) + 'px';
+  cpop.style.top = (cy + 12 + h > innerHeight - 60 ? Math.max(56, cy - h - 12) : cy + 12) + 'px';
+  cpop.querySelector('textarea').focus();
+}
+function closeComment() { if (!draft) return; const q = draft.qid; draft = null; cpop.hidden = true; renderPins(q); }
+function addComment() {
+  const text = cpop.querySelector('textarea').value.trim();
+  if (!text) return cpop.querySelector('textarea').focus();
+  const { qid, anchor, x, y } = draft;
+  (S.comments[qid] = S.comments[qid] || []).push({ anchor, x: +x.toFixed(1), y: +y.toFixed(1), text });
+  save(); draft = null; cpop.hidden = true;
+  patch(qid); renderPins(qid);
+}
+function setCommenting(qid) {
+  const prev = V.commenting;
+  V.commenting = qid;
+  [prev, qid].filter(Boolean).forEach(id => {
+    const st = document.querySelector(`[data-stage="${id}"]`);
+    if (st) { st.classList.toggle('commenting', V.commenting === id); st.querySelectorAll('iframe').forEach(f => f.contentWindow && f.contentWindow.postMessage({ type: 'mode', on: V.commenting === id }, '*')); }
+    patch(id, true);
+  });
+}
+
+// ================= actions =================
+function setAnswer(qid, a) { if (!liveQ(qById(qid))) return; if (a) S.answers[qid] = a; else delete S.answers[qid]; save(); patch(qid); }
+function setCurrent(qid) {
+  if (V.current === qid) return;
+  V.current = qid;
+  document.querySelectorAll('.qp').forEach(p => p.classList.toggle('is-current', p.dataset.panel === qid));
+  document.getElementById('drawer').innerHTML = treeHTML();
+  document.querySelectorAll('.side').forEach(s => (s.innerHTML = treeHTML()));
+}
+function goTo(qid, focusIt = true) {
+  const r = roundOfQ(qid);
+  if (r.n !== V.round) { V.round = r.n; renderAll(); }
+  if (r.n === 3) {
+    if (V.variant === 'B') { V.step = CUR.questions.findIndex(q => q.id === qid); V.current = qid; renderAll(); window.scrollTo({ top: 0 }); return; }
+    if (V.variant === 'C' && V.round === 3) { V.open = qid; V.current = qid; renderAll(); }
+  }
+  setCurrent(qid);
+  const el = document.getElementById('p-' + qid);
+  if (el && focusIt) el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+}
+function move(d) {
+  if (V.round !== 3) return;
+  const qs = CUR.questions;
+  if (V.variant === 'B') { V.step = Math.max(0, Math.min(qs.length, V.step + d)); if (qs[V.step]) V.current = qs[V.step].id; renderAll(); window.scrollTo({ top: 0 }); return; }
+  const i = Math.max(0, Math.min(qs.length - 1, qs.findIndex(q => q.id === V.current) + d));
+  goTo(qs[i].id);
+}
+function cycleVariant(d) {
+  const i = VARIANTS.findIndex(v => v.key === V.variant);
+  V.variant = VARIANTS[(i + d + VARIANTS.length) % VARIANTS.length].key;
+  const u = new URL(location.href); u.searchParams.set('variant', V.variant); history.replaceState(null, '', u);
+  setCommenting(null); renderAll();
+}
+const spop = document.getElementById('spop'), rmenu = document.getElementById('rmenu');
+function openSubmit() { if (!isLive()) return; spop.innerHTML = ''; spop.appendChild(Object.assign(document.createElement('div'), { innerHTML: SLOT.submitsum() })); spop.firstChild.dataset.slot = 'submitsum'; spop.hidden = false; spop.querySelector('.btn.primary').focus(); }
+function submitRound() {
+  if (!isLive()) return;
+  const d = new Date(); S.submittedAt = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  save(); spop.hidden = true; setCommenting(null); V.step = Math.min(V.step, CUR.questions.length); renderAll(); window.scrollTo({ top: 0 });
+}
+const ACT = {
+  accept: (t, id) => { const q = qById(id), a = answerOf(q); setCurrent(id); setAnswer(id, a.mode === 'accept' ? null : { mode: 'accept', option: q.rec.option }); },
+  pick: (t, id) => {
+    const q = qById(id), a = answerOf(q), o = t.dataset.o; setCurrent(id);
+    if ((a.mode === 'option' || a.mode === 'accept') && a.option === o) return setAnswer(id, null);
+    setAnswer(id, o === q.rec.option ? { mode: 'accept', option: o } : { mode: 'option', option: o });
+  },
+  write: (t, id) => {
+    const a = answerOf(qById(id)); setCurrent(id);
+    if (a.mode === 'text') return setAnswer(id, null);
+    setAnswer(id, { mode: 'text', text: '' });
+    document.querySelector(`[data-answer-text="${id}"]`)?.focus();
+  },
+  unsure: (t, id) => { setCurrent(id); setAnswer(id, modeOf(qById(id)) === 'unsure' ? null : { mode: 'unsure' }); },
+  'comment-mode': (t, id) => { setCurrent(id); closeComment(); setCommenting(V.commenting === id ? null : id); },
+  'comment-add': addComment,
+  'comment-cancel': closeComment,
+  'del-comment': (t, id) => { S.comments[id].splice(+t.dataset.i, 1); save(); patch(id); renderPins(id); },
+  backdrop: (t, id) => { const cur = (BD[id] && BD[id].value) || V.theme; BD[id] = { value: cur === 'light' ? 'dark' : 'light', auto: false }; applyBackdrop(id); patch(id, true); },
+  'accept-all': () => { CUR.questions.filter(q => !modeOf(q)).forEach(q => (S.answers[q.id] = { mode: 'accept', option: q.rec.option })); save(); patch(); },
+  'toggle-row': (t, id) => { V.open = V.open === id ? null : id; V.current = id; setCommenting(null); renderAll(); if (V.open) document.getElementById('p-' + id).scrollIntoView({ block: 'nearest' }); },
+  step: t => { V.step = +t.dataset.i; if (CUR.questions[V.step]) V.current = CUR.questions[V.step].id; setCommenting(null); renderAll(); window.scrollTo({ top: 0 }); },
+  prev: () => move(-1), next: () => move(1),
+  goto: (t, id) => { closeDrawer(); goTo(id); },
+  drawer: () => { V.drawer = !V.drawer; document.getElementById('drawer').classList.toggle('open', V.drawer); document.getElementById('scrim').classList.toggle('open', V.drawer); },
+  'close-drawer': () => closeDrawer(),
+  theme: () => { V.theme = V.theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('vg-theme', V.theme); } catch {} Object.keys(BD).forEach(k => BD[k].auto && delete BD[k]); setCommenting(null); renderAll(); },
+  rounds: t => {
+    if (!rmenu.hidden) return (rmenu.hidden = true);
+    rmenu.innerHTML = [...ROUNDS].reverse().map(r => `<button class="rm" data-act="round" data-r="${r.n}">${r.n === V.round ? icon('check') : '<span></span>'}<span>Round ${r.n}<small>${r.n === 3 ? (S.submittedAt ? 'Sent at ' + S.submittedAt : 'Current round') : 'Submitted at ' + r.submittedAt + ' · read-only'}</small></span><span class="meta">${r.questions.length} Q</span></button>`).join('');
+    const b = t.getBoundingClientRect(); rmenu.style.left = Math.max(12, b.left) + 'px'; rmenu.hidden = false;
+  },
+  round: t => { rmenu.hidden = true; V.round = +t.dataset.r; setCommenting(null); renderAll(); window.scrollTo({ top: 0 }); },
+  'submit-open': () => (spop.hidden ? openSubmit() : (spop.hidden = true)),
+  'submit-close': () => (spop.hidden = true),
+  'submit-confirm': submitRound,
+  'variant-prev': () => cycleVariant(-1), 'variant-next': () => cycleVariant(1),
+  preview: () => { V.preview = !V.preview; document.getElementById('preview').classList.toggle('open', V.preview); },
+  reset: () => { S = blank(); save(); Object.keys(lastState).forEach(k => delete lastState[k]); V.round = 3; V.step = 0; V.open = 'q1'; V.current = 'q1'; setCommenting(null); closeComment(); spop.hidden = true; renderAll(); window.scrollTo({ top: 0 }); },
+};
+function closeDrawer() { V.drawer = false; document.getElementById('drawer').classList.remove('open'); document.getElementById('scrim').classList.remove('open'); }
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]');
+  if (!rmenu.hidden && !e.target.closest('#rmenu, [data-act="rounds"]')) rmenu.hidden = true;
+  if (!spop.hidden && !e.target.closest('#spop, [data-act="submit-open"]')) spop.hidden = true;
+  if (draft && !e.target.closest('#cpop, .stage')) closeComment();
+  if (t && ACT[t.dataset.act]) ACT[t.dataset.act](t, t.dataset.q, e);
+});
+document.addEventListener('pointerdown', e => { const p = e.target.closest('[data-panel]'); if (p && V.round === 3) setCurrent(p.dataset.panel); });
+document.addEventListener('input', e => {
+  const id = e.target.dataset && e.target.dataset.answerText;
+  if (!id) return;
+  S.answers[id] = { mode: 'text', text: e.target.value }; save(); patch(id, true);
+});
+document.addEventListener('keydown', e => {
+  const typing = e.target.closest && e.target.closest('input, textarea, [contenteditable]');
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    if (draft) return addComment();
+    if (!spop.hidden) return submitRound();
+    return openSubmit();
+  }
+  if (e.key === 'Escape') {
+    if (draft) return closeComment();
+    if (!spop.hidden || !rmenu.hidden) { spop.hidden = rmenu.hidden = true; return; }
+    if (V.drawer) return closeDrawer();
+    if (V.commenting) return setCommenting(null);
+    if (typing) return e.target.blur();
+  }
+  if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'ArrowLeft') return cycleVariant(-1);
+  if (e.key === 'ArrowRight') return cycleVariant(1);
+  if (V.round !== 3) return;
+  const q = qById(V.current);
+  const k = e.key.toLowerCase();
+  if (k === 'j') return move(1);
+  if (k === 'k') return move(-1);
+  if (!liveQ(q) || (V.variant === 'B' && V.step === CUR.questions.length)) return;
+  if (k === 'a') ACT.accept(null, q.id);
+  else if (k === 'w') { e.preventDefault(); ACT.write(null, q.id); }
+  else if (k === 'u') ACT.unsure(null, q.id);
+  else if (k === 'c' && q.illus) ACT['comment-mode'](null, q.id);
+  else if (/^[1-9]$/.test(k) && q.options && q.options[+k - 1]) ACT.pick({ dataset: { o: q.options[+k - 1].id } }, q.id);
+});
+
+CUR.questions.forEach(q => (lastState[q.id] = stateLabel(q)));
+renderAll();
+</script>
+</body>
+</html>
