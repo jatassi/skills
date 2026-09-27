@@ -8,6 +8,7 @@
 
 import type { AdapterMatch, Snapshot } from '../../core/anchor.ts';
 import type * as VegaLiteChunk from '../../chunks/vega-lite.ts';
+import { readTokens } from './diagram-view.ts';
 import type { BlockRenderer } from './registry.ts';
 
 /** The chunk's URL on the server. Kept out of the page bundle on purpose. */
@@ -55,10 +56,4 @@ export function vegaLiteAnchor(snapshot: Snapshot): AdapterMatch | null {
     }
   }
   return null;
-}
-
-/** The page's tokens as its CSS custom properties hold them now. */
-function readTokens(names: typeof VegaLiteChunk.TOKEN_NAMES): VegaLiteChunk.ChartTokens {
-  const style = getComputedStyle(document.documentElement);
-  return Object.fromEntries(names.map((name) => [name, style.getPropertyValue(`--${name}`).trim()])) as VegaLiteChunk.ChartTokens;
 }

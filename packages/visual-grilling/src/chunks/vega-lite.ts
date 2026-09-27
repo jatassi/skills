@@ -12,23 +12,9 @@
 import * as vega from 'vega';
 import { expressionInterpreter } from 'vega-interpreter';
 import { compile, type Config, type TopLevelSpec } from 'vega-lite';
+import type { DiagramTokens as ChartTokens } from './theme.ts';
 
-/** The page's design tokens (hex colours) that drive the chart `config`, by CSS custom property name. */
-export const TOKEN_NAMES = ['canvas', 'panel', 'line', 'fg', 'muted', 'accent', 'answered', 'unsure', 'risk'] as const;
-export type ChartTokens = Record<(typeof TOKEN_NAMES)[number], string>;
-
-/** The dark tokens, for draws with no page around them (the server's check). */
-export const DARK_TOKENS: ChartTokens = {
-  canvas: '#0e1014',
-  panel: '#151820',
-  line: '#2a303b',
-  fg: '#e7eaf0',
-  muted: '#a0a8b6',
-  accent: '#5b95ff',
-  answered: '#49c27a',
-  unsure: '#e5a843',
-  risk: '#f0655b',
-};
+export { DARK_TOKENS, TOKEN_NAMES } from './theme.ts';
 
 /**
  * The colour scheme holding the preset marks, in `PRESET_MARKS` order. A

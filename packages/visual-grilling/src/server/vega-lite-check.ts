@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type * as VegaLiteChunk from '../chunks/vega-lite.ts';
 import type { Illustration } from '../core/round.ts';
+import type { DrawFailure } from './draw-check.ts';
 import { installDomGlobals } from './dom-shim.ts';
 
 /** Chunk loads by page directory; a failed load is forgotten so the next `present` tries again. */
@@ -29,10 +30,7 @@ function loadChunk(pageDir: string): Promise<typeof VegaLiteChunk> {
 }
 
 /** Draws one chart; `undefined` when it draws, else why not and the source line to point at. */
-export async function checkVegaLite(
-  pageDir: string,
-  illustration: Illustration,
-): Promise<{ message: string; sourceLine?: number } | undefined> {
+export async function checkVegaLite(pageDir: string, illustration: Illustration): Promise<DrawFailure | undefined> {
   let chunk: typeof VegaLiteChunk;
   try {
     chunk = await loadChunk(pageDir);
