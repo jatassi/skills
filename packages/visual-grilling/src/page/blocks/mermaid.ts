@@ -6,23 +6,14 @@
 
 import type * as MermaidChunk from '../../chunks/mermaid.ts';
 import { checkDrawing } from '../readability.ts';
+import { chunkLoader } from './chunk.ts';
 import { diagramView, readTokens } from './diagram-view.ts';
 import { addHitAreas } from './mermaid-anchor/hit.ts';
 import { MERMAID_PEERS, mermaidAnchor } from './mermaid-anchor/index.ts';
 import type { BlockRenderer } from './registry.ts';
 import { overridesTheme } from './theme-override.ts';
 
-/** The chunk's URL on the server. Kept out of the page bundle on purpose. */
-const CHUNK_URL = '/assets/mermaid.js';
-
-let chunk: Promise<typeof MermaidChunk> | undefined;
-function loadChunk(): Promise<typeof MermaidChunk> {
-  chunk ??= (import(CHUNK_URL) as Promise<typeof MermaidChunk>).catch((error: unknown) => {
-    chunk = undefined;
-    throw error;
-  });
-  return chunk;
-}
+const loadChunk = chunkLoader<typeof MermaidChunk>('/assets/mermaid.js');
 
 let drawCount = 0;
 

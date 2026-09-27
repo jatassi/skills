@@ -8,16 +8,24 @@
 //                            the server imports it for the draw check
 //   <out>/page/graphviz.js   the Graphviz (@viz-js/viz) chunk, shared the same way
 //   <out>/page/vega-lite.js  the Vega + Vega-Lite chunk, used the same way
+//   <out>/page/code.js       the Shiki + @pierre/diffs chunk, loaded the same way
 //   <out>/frame/             sandboxed agent-HTML frames: inject.js (the frame
 //                            script) and tailwind.js (@tailwindcss/browser)
-//   <out>/page/code.js       the Shiki + @pierre/diffs chunk, loaded the same way
+//   <out>/THIRD_PARTY_LICENSES.md
+//                            every bundled package's licence; the build fails
+//                            on a missing or disallowed one (build/licences.ts)
+//
+// Dead weight is trimmed by the plugins in build/trim.ts. The build prints
+// each output's size; there is no size ceiling.
 
-import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import * as esbuild from 'esbuild';
+import { packageRoots, thirdPartyLicences, vizWasmEntries } from './build/licences.ts';
+import { jsdomTrim, shikiCore } from './build/trim.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const { values } = parseArgs({ options: { out: { type: 'string' } } });
@@ -36,6 +44,7 @@ const browser = {
   minify: true,
   legalComments: 'none',
   logLevel: 'warning',
+  metafile: true,
 };
 
 const node = {
@@ -45,59 +54,10 @@ const node = {
   target: 'node22',
   legalComments: 'none',
   logLevel: 'warning',
+  metafile: true,
 };
 
-/**
- * jsdom, bundled into the server for the draw check, reaches for files next
- * to its own sources at load time. Its default stylesheet is inlined, and its
- * sync-XHR worker (never used: drawing does no XHR) points nowhere.
- */
-const jsdomFiles = {
-  name: 'jsdom-files',
-  setup(build) {
-    build.onLoad({ filter: /jsdom[\\/]lib[\\/]jsdom[\\/]living[\\/]css[\\/]helpers[\\/]computed-style\.js$/ }, (args) => {
-      const source = readFileSync(args.path, 'utf8');
-      const css = readFileSync(join(dirname(args.path), '../../../browser/default-stylesheet.css'), 'utf8');
-      const inlined = source.replace(
-        /fs\.readFileSync\(\s*path\.resolve\(__dirname, "\.\.\/\.\.\/\.\.\/browser\/default-stylesheet\.css"\),\s*\{ encoding: "utf-8" \}\s*\)/,
-        JSON.stringify(css),
-      );
-      if (inlined === source) throw new Error('jsdom-files: default stylesheet read not found');
-      return { contents: inlined, loader: 'js' };
-    });
-    build.onLoad({ filter: /jsdom[\\/]lib[\\/]jsdom[\\/]living[\\/]xhr[\\/]XMLHttpRequest-impl\.js$/ }, (args) => {
-      const source = readFileSync(args.path, 'utf8');
-      const stubbed = source.replace('require.resolve("./xhr-sync-worker.js")', '"xhr-sync-worker.js is not bundled"');
-      if (stubbed === source) throw new Error('jsdom-files: sync-XHR worker reference not found');
-      return { contents: stubbed, loader: 'js' };
-    });
-  },
-};
-
-/**
- * Keeps the code chunk to Shiki's core. `shiki` (which @pierre/diffs imports)
- * becomes our cut-down stand-in with the JavaScript regex engine and only the
- * code-block grammars, the oniguruma engine and wasm are left out, and
- * @pierre/theming's collection of every Shiki and Pierre theme is stubbed: the
- * chunk draws with its own CSS-variables theme.
- */
-const shikiCore = {
-  name: 'shiki-core',
-  setup(build) {
-    const standIn = join(here, 'src/chunks/shiki.ts');
-    build.onResolve({ filter: /^shiki(\/wasm|\/engine\/oniguruma)?$/ }, () => ({ path: standIn }));
-    build.onLoad({ filter: /@pierre[\\/]theming[\\/]dist[\\/]themes\.js$/ }, () => ({
-      contents: [
-        'export { createTheme } from "./modules/createTheme.js";',
-        'const none = { getThemes: () => [], getTheme: () => undefined };',
-        'export const pierreThemes = none, shikiThemes = none, themes = none;',
-      ].join('\n'),
-      loader: 'js',
-    }));
-  },
-};
-
-await Promise.all([
+const results = await Promise.all([
   // Must stay parseable by old Node: esbuild fails the build on newer syntax.
   esbuild.build({
     entryPoints: [join(here, 'src/cli/entry.js')],
@@ -107,6 +67,7 @@ await Promise.all([
     platform: 'node',
     target: 'node14',
     logLevel: 'warning',
+    metafile: true,
   }),
   esbuild.build({ ...node, entryPoints: [join(here, 'src/cli/main.ts')], outfile: join(out, 'lib/cli-main.mjs') }),
   esbuild.build({
@@ -115,7 +76,11 @@ await Promise.all([
     outfile: join(out, 'server.mjs'),
     // jsdom and its dependencies are CommonJS and require Node built-ins.
     banner: { js: "import { createRequire as __vgCreateRequire } from 'node:module'; const require = __vgCreateRequire(import.meta.url);" },
-    plugins: [jsdomFiles],
+    plugins: [jsdomTrim],
+    // Mostly jsdom, so minifying halves it. Names are kept: jsdom's wrappers
+    // and stack traces read better with them, for ~2% of the size.
+    minify: true,
+    keepNames: true,
   }),
   esbuild.build({ ...browser, entryPoints: [join(here, 'src/page/app.ts')], outfile: join(out, 'page/app.js') }),
   // One copy of each drawing library: the page imports these chunks by URL,
@@ -129,17 +94,32 @@ await Promise.all([
     outfile: join(out, 'frame/inject.js'),
     format: 'iife',
   }),
-  esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/code.ts')], outfile: join(out, 'page/code.js'), plugins: [shikiCore] }),
+  esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/code.ts')], outfile: join(out, 'page/code.js'), plugins: [shikiCore(join(here, 'src/chunks/shiki.ts'))] }),
 ]);
 
 // Served from the local server into every frame (unless tailwind=false), never from a CDN.
 const require = createRequire(import.meta.url);
-copyFileSync(require.resolve('@tailwindcss/browser'), join(out, 'frame/tailwind.js'));
+const tailwind = require.resolve('@tailwindcss/browser');
+copyFileSync(tailwind, join(out, 'frame/tailwind.js'));
 
 mkdirSync(join(out, 'page'), { recursive: true });
 for (const file of ['index.html', 'app.css']) {
   copyFileSync(join(here, 'src/page', file), join(out, 'page', file));
 }
+
+// Every npm package with code in an output, plus the C libraries compiled
+// into @viz-js/viz's WebAssembly. Fails the build on a missing or disallowed
+// licence.
+const bundled = results.flatMap((result) => Object.keys(result.metafile.inputs)).map((input) => resolve(input));
+const [vizDir] = packageRoots([require.resolve('@viz-js/viz')]);
+writeFileSync(
+  join(out, 'THIRD_PARTY_LICENSES.md'),
+  thirdPartyLicences(packageRoots([...bundled, tailwind]), {
+    explicit: vizWasmEntries(readFileSync(join(vizDir, 'lib/provenance.json'), 'utf8')),
+    // Its licence file is the MIT licence; its package.json has no `license`.
+    undeclared: { 'khroma@2.1.0': 'MIT' },
+  }),
+);
 
 for (const file of walk(out)) {
   const size = statSync(file).size;

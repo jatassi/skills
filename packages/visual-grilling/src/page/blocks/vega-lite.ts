@@ -9,21 +9,12 @@
 import type { AdapterMatch, Snapshot } from '../../core/anchor.ts';
 import type * as VegaLiteChunk from '../../chunks/vega-lite.ts';
 import { checkDrawing } from '../readability.ts';
+import { chunkLoader } from './chunk.ts';
 import { readTokens } from './diagram-view.ts';
 import type { BlockRenderer } from './registry.ts';
 import { overridesTheme } from './theme-override.ts';
 
-/** The chunk's URL on the server. Kept out of the page bundle on purpose. */
-const CHUNK_URL = '/assets/vega-lite.js';
-
-let chunk: Promise<typeof VegaLiteChunk> | undefined;
-function loadChunk(): Promise<typeof VegaLiteChunk> {
-  chunk ??= (import(CHUNK_URL) as Promise<typeof VegaLiteChunk>).catch((error: unknown) => {
-    chunk = undefined;
-    throw error;
-  });
-  return chunk;
-}
+const loadChunk = chunkLoader<typeof VegaLiteChunk>('/assets/vega-lite.js');
 
 export const vegaLiteBlock: BlockRenderer = {
   async render(target, illustration, context) {

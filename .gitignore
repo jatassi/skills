@@ -5,3 +5,5 @@
 node_modules/
 # npm test builds the bundle here
 packages/visual-grilling/.test-dist/
+# npm run try builds the plugin here for claude --plugin-dir .; never committed
+skills/visual-grilling/dist/

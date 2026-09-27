@@ -8,7 +8,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
     "build": "node build.mjs --out .test-dist",
-    "test": "tsc --noEmit -p . && node build.mjs --out .test-dist && vitest run"
+    "test": "tsc --noEmit -p . && node build.mjs --out .test-dist && vitest run",
+    "try": "node build.mjs --out ../../skills/visual-grilling/dist"
   },
   "devDependencies": {
     "@mermaid-js/layout-elk": "^1.0.0",
