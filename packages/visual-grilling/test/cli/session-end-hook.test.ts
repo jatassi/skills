@@ -66,7 +66,7 @@ function runHook(box: Sandbox, command: string, sessionId: string): Promise<CliR
     const child = spawn(command, {
       shell: process.platform === 'win32' ? 'bash' : '/bin/sh',
       cwd: box.tmp,
-      env: { ...box.env, CLAUDE_PLUGIN_ROOT: pluginRoot, PLUGIN_ROOT: pluginRoot },
+      env: { ...box.env, CLAUDE_PLUGIN_ROOT: pluginRoot },
     });
     let stdout = '';
     let stderr = '';
@@ -133,23 +133,8 @@ describe('end --hook', () => {
   });
 
   it('refuses hook input without a usable session_id', async () => {
-    const box = open();
-    const result = await new Promise<CliResult>((done) => {
-      const child = spawn(process.execPath, [join(DIST, 'cli.mjs'), 'end', '--hook'], { env: box.env });
-      let stderr = '';
-      child.stderr.on('data', (chunk) => (stderr += chunk));
-      child.on('close', (code) => done({ code: code ?? 1, stdout: '', stderr }));
-      child.stdin.end('{"reason":"other"}');
-    });
+    const result = await open().cli(['end', '--hook'], [], '{"reason":"other"}');
     expect(result.code).toBe(2);
     expect(result.stderr).toContain('no usable "session_id"');
-  });
-});
-
-describe('end --session', () => {
-  it('does nothing when the folder is already gone', async () => {
-    const box = open();
-    const result = await box.cli(['end', '--session', 'long-gone']);
-    expect(result).toEqual({ code: 0, stdout: '', stderr: '' });
   });
 });

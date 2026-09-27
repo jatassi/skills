@@ -23,7 +23,7 @@ The CLI is `node ${CLAUDE_SKILL_DIR}/dist/cli.mjs`, where `${CLAUDE_SKILL_DIR}` 
 
 3. **Wait for the submission.**
    - On Claude Code, run `await` in the background and end your turn. The shell wakes you when it exits.
-   - Elsewhere, run `await --timeout 90` in the foreground, and run it again while it prints `pending`.
+   - Elsewhere, run `await --timeout <seconds>` in the foreground, keeping it under your shell's command time limit.
 
 4. **Read the outcome** on the first line of `await`'s output:
    - `submitted`: echo the `summary:` block verbatim to the user, then weigh the answers as grilling does. Unsure, comments-only and unanswered questions stay on the frontier; anchored comments and ⚠ warnings belong to the question they sit under.

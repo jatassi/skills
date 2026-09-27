@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { isAlive, postJson, Sandbox, STORAGE_ROUND, waitFor } from '../support/harness.ts';
+import { DIST, isAlive, postJson, Sandbox, STORAGE_ROUND, waitFor } from '../support/harness.ts';
 
 const URL_LINE = /^http:\/\/127\.0\.0\.1:(\d+)\/$/;
 
@@ -207,6 +207,14 @@ describe('session folder', () => {
     expect(statSync(dir).mode & 0o777).toBe(0o700);
     expect(statSync(join(dir, 'server.json')).mode & 0o777).toBe(0o600);
     expect(statSync(join(dir, 'rounds', 'round-1.md')).mode & 0o777).toBe(0o600);
+  });
+});
+
+describe('--help', () => {
+  it("ends with the absolute path of the round-file guide, beside the bundle's folder", async () => {
+    const result = await open().cli(['present', '--help']);
+    expect(result.code).toBe(0);
+    expect(result.stdout.trimEnd().split('\n').at(-1)).toBe(`Round-file guide: ${join(DIST, '..', 'round-file.md')}`);
   });
 });
 

@@ -145,6 +145,11 @@ describe('supersede', () => {
     await waitFor(() => !isAlive(pid));
   });
 
+  it('does nothing on end when the folder is already gone', async () => {
+    const box = open();
+    expect(await box.cli(['end', '--session', 'long-gone'])).toEqual({ code: 0, stdout: '', stderr: '' });
+  });
+
   it.skipIf(process.platform === 'win32')('stops a server that no longer answers on end', async () => {
     const box = open('sp4');
     await present(box);

@@ -25,13 +25,20 @@ import { call, isAlive, serverState, sweepDeadSessions, type HttpResponse } from
 const DEFAULT_AWAIT_SECONDS = 90;
 const SERVER_START_MS = 10_000;
 const STOP_MS = 5_000;
+
+/** How long `end` waits for the server: to answer a ping, then to stop once asked. */
+interface StopLimits {
+  pingMs?: number;
+  stopMs: number;
+}
+
+const END_LIMITS: StopLimits = { stopMs: STOP_MS };
 /**
- * `end --hook` runs as a session-end hook, which the host cancels after about
- * a second (1.5 s on Claude Code, 1 s by default on Codex): it pings and stops
- * the server on a much shorter leash, killing one that doesn't answer in time.
+ * `end --hook` runs as a session-end hook, which the host cancels after 1.5 s
+ * (Claude Code): it stops the server on a much shorter leash, killing one that
+ * doesn't answer in time.
  */
-const HOOK_PING_MS = 300;
-const HOOK_STOP_MS = 500;
+const HOOK_LIMITS: StopLimits = { pingMs: 250, stopMs: 400 };
 
 const EXIT_OK = 0;
 const EXIT_FAILURE = 1;
@@ -171,7 +178,7 @@ async function present(
       const { errors } = response.body as PresentRejection;
       for (const error of errors) io.err(formatRoundError(file, error));
       // A rejected first round leaves no grilling session behind.
-      if (newSession) await stopServer(server, paths);
+      if (newSession) await stopServer(server, paths, STOP_MS);
       return EXIT_FAILURE;
     }
     if (response.status !== 200) throw serverError(response);
@@ -284,8 +291,8 @@ async function end(options: { session: string | undefined; hook: boolean }): Pro
   if (!existsSync(paths.dir)) return EXIT_OK;
 
   const server = readServerInfo(paths);
-  const [pingMs, stopMs] = options.hook ? [HOOK_PING_MS, HOOK_STOP_MS] : [undefined, STOP_MS];
-  if (server && (await serverState(server, pingMs)) !== 'dead') await stopServer(server, paths, stopMs);
+  const limits = options.hook ? HOOK_LIMITS : END_LIMITS;
+  if (server && (await serverState(server, limits.pingMs)) !== 'dead') await stopServer(server, paths, limits.stopMs);
   rmSync(paths.dir, { recursive: true, force: true });
   io.out(`session ${id} ended`);
   return EXIT_OK;
@@ -315,7 +322,7 @@ async function hookSessionId(): Promise<string> {
  * Asks the server to end the session, then waits for it to exit and its folder
  * to go. A server that doesn't answer or doesn't exit in time is terminated.
  */
-async function stopServer(server: ServerInfo, paths: SessionPaths, stopMs = STOP_MS): Promise<void> {
+async function stopServer(server: ServerInfo, paths: SessionPaths, stopMs: number): Promise<void> {
   const answered = await call(server.port, '/control/end', {}, stopMs).then(
     () => true,
     () => false,

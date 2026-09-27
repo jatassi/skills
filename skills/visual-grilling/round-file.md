@@ -29,7 +29,7 @@ Each question's parts come in this order, and only ➡️ is required:
 
 1. **Prose**: GFM. Raw HTML shows as literal text. Use **bold** in place of headings.
 2. **Illustrations**: fences at the top level of the question (see below).
-3. **Options**: `- **A** - label`, one line each, letters A, B, C… with no gaps. Only the list right before ➡️ counts as the options; an earlier lettered list is prose.
+3. **Options**: `- **A** - label`, one line each, letters A, B, C… with no gaps. Only the list right before ➡️ counts as the options.
 4. **➡️ recommendation**: its own paragraph, running to the end of the question. When it opens with `**B**` it points at option B; otherwise it is free text.
 
 ### Mockups
@@ -48,7 +48,7 @@ A mockup is an `html` fence indented under its option, one per option. It takes 
 
 ## Illustrations
 
-Every fence in a question is an illustration. The info string is the language, then `key=value` attributes:
+Every fence in a question is an illustration; an indented code block stays prose. The info string is the language, then `key=value` attributes:
 
 ````
 ```mermaid id=flow title="Request flow"
@@ -77,7 +77,7 @@ Every fence in a question is an illustration. The info string is the language, t
 
 ## The design tree
 
-An optional `design-tree` fence before Q1 holds the whole tree as one nested GFM task list. Each round carries the whole tree, which replaces the previous one; without the fence the page hides the tree column.
+An optional `design-tree` fence before Q1 holds the whole tree as one nested GFM task list. Each round carries the whole tree, which replaces the previous one; without the fence the round page hides the tree column.
 
 - `[x]` marks a settled branch, optionally followed by `: gist`.
 - `[ ]` marks an open one.
