@@ -82,7 +82,7 @@ export class IllustrationFrame {
     this.toggle.setAttribute('aria-label', `Comment on ${subject.title}`);
     this.toggle.addEventListener('click', () => hooks.toggleCommenting());
 
-    this.backdropToggle = el('button', 'backdrop-toggle', 'Light backdrop');
+    this.backdropToggle = el('button', 'comment-toggle backdrop-toggle', 'Light backdrop');
     this.backdropToggle.type = 'button';
     this.backdropToggle.hidden = true;
     this.backdropToggle.setAttribute('aria-label', `Light backdrop for ${subject.title}`);

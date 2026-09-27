@@ -1411,6 +1411,14 @@ textarea[readonly] {
 /* Points are hollow by default: let a click inside one name it. */
 .vega-lite-block .mark-symbol.role-mark > path {
   pointer-events: visible;
+}
+
+/* The light backdrop, for a block whose own colours are unreadable on dark. */
+.illustration.light-backdrop .block-content {
+  background: #ffffff;
+  color: #1a1e26;
+}
+
 /* Agent HTML: a sandboxed frame, as wide as the illustration and as tall as its content. */
 .kind-html .block-content {
   width: auto;
@@ -1423,6 +1431,9 @@ textarea[readonly] {
   border: 0;
 }
 
-.backdrop-toggle {
-  font-size: 12px;
+/* Looks like the Comment toggle, but pressed is neutral: purple means comments. */
+.backdrop-toggle[aria-pressed='true'] {
+  color: var(--fg);
+  background: var(--hover);
+  border-color: var(--line-strong);
 }

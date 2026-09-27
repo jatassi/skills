@@ -441,5 +441,7 @@ server.listen(0, '127.0.0.1', () => {
   port = (server.address() as AddressInfo).port;
   const info: ServerInfo = { port, pid: process.pid, startTime };
   writePrivateFile(paths.serverJson, `${JSON.stringify(info)}\n`);
-  drawCheck.warm();
+  // Loading the libraries holds the event loop for a while; the CLI that
+  // started this server is still waiting to present, so that time isn't idle.
+  void drawCheck.warm().then(() => idle.touch());
 });

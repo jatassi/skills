@@ -40,7 +40,7 @@ export const FRAME_TOKENS: Record<ThemeName, Record<FrameToken, string>> = {
     'accent-green': '#49c27a',
     'accent-purple': '#ad93fb',
     'accent-amber': '#e5a843',
-    'accent-red': '#f07178',
+    'accent-red': '#f0655b',
   },
   light: {
     canvas: '#f4f5f7',
@@ -55,7 +55,7 @@ export const FRAME_TOKENS: Record<ThemeName, Record<FrameToken, string>> = {
     'accent-green': '#17784a',
     'accent-purple': '#6b43d4',
     'accent-amber': '#8f5e07',
-    'accent-red': '#c62f3a',
+    'accent-red': '#c62f2a',
   },
 };
 
