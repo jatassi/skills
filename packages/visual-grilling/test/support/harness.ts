@@ -4,6 +4,7 @@
 
 import { execFile } from 'node:child_process';
 import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -64,13 +65,75 @@ export class Sandbox {
   }
 }
 
-/** POSTs JSON to the server the way the round page does. */
+/** POSTs JSON to the server the way the round page does, from the page's own origin. */
 export async function postJson(url: string, body: unknown): Promise<Response> {
   return fetch(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', origin: new URL(url).origin },
     body: JSON.stringify(body),
   });
+}
+
+export interface RawResponse {
+  status: number;
+  /** Header names lower-cased; repeated headers joined with ", ". */
+  headers: Record<string, string>;
+  body: string;
+}
+
+/**
+ * Sends one hand-written HTTP/1.1 request over a socket, so a test controls
+ * every header (Host, Origin, Sec-Fetch-*) exactly. `headers` go out as given;
+ * pass `host: null` to send no Host at all.
+ */
+export function rawRequest(
+  port: number,
+  method: string,
+  path: string,
+  headers: Record<string, string | null> = {},
+  body = '',
+): Promise<RawResponse> {
+  const all: Record<string, string | null> = { host: `127.0.0.1:${port}`, ...headers };
+  const lines = [`${method} ${path} HTTP/1.1`];
+  for (const [name, value] of Object.entries(all)) if (value !== null) lines.push(`${name}: ${value}`);
+  lines.push(`content-length: ${Buffer.byteLength(body)}`, 'connection: close', '', body);
+  return new Promise((done, fail) => {
+    const socket = connect(port, '127.0.0.1');
+    const chunks: Buffer[] = [];
+    socket.on('data', (chunk) => chunks.push(chunk));
+    socket.on('error', fail);
+    socket.on('end', () => done(parseRaw(Buffer.concat(chunks).toString('utf8'))));
+    // Write without half-closing: the server treats a client FIN as a hang-up
+    // (which cancels a long-poll await). `connection: close` ends the exchange.
+    socket.write(lines.join('\r\n'));
+  });
+}
+
+function parseRaw(text: string): RawResponse {
+  const split = text.indexOf('\r\n\r\n');
+  const [statusLine, ...headerLines] = text.slice(0, split).split('\r\n');
+  const headers: Record<string, string> = {};
+  for (const line of headerLines) {
+    const colon = line.indexOf(':');
+    const name = line.slice(0, colon).trim().toLowerCase();
+    const value = line.slice(colon + 1).trim();
+    headers[name] = name in headers ? `${headers[name]}, ${value}` : value;
+  }
+  let body = text.slice(split + 4);
+  if (headers['transfer-encoding'] === 'chunked') body = unchunk(body);
+  return { status: Number(statusLine!.split(' ')[1]), headers, body };
+}
+
+function unchunk(text: string): string {
+  let out = '';
+  let rest = text;
+  for (;;) {
+    const eol = rest.indexOf('\r\n');
+    const size = parseInt(rest.slice(0, eol), 16);
+    if (!size) return out;
+    out += rest.slice(eol + 2, eol + 2 + size);
+    rest = rest.slice(eol + 2 + size + 2);
+  }
 }
 
 export function isAlive(pid: number): boolean {

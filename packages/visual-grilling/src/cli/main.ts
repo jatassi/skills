@@ -20,6 +20,7 @@ import { formatRoundError } from '../core/round.ts';
 import {
   isValidSessionId,
   makeDir,
+  preparePrivateSessionDir,
   readServerInfo,
   sessionDir,
   sessionPaths,
@@ -144,6 +145,7 @@ async function present(
   const session = resolveSession(options.session, true);
   const paths = sessionPaths(sessionDir(session.id));
   const newSession = !existsSync(paths.dir);
+  preparePrivateSessionDir(paths);
   const server = await ensureServer(paths, options.distDir);
   const response = await call(server.port, '/control/present', { source });
   if (response.status === 422) {
