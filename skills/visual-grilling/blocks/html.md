@@ -4,7 +4,7 @@ Raw HTML isn't a block. It is an illustration you write in full, for what no blo
 
 ## Fit and readability
 
-- Keep it self-contained, with inline styles, scripts, SVG and data. Grilling works offline, so a CDN script, font or image may fail to load, and the script errors that follow reach you as ⚠ warnings under the question. If you do load a CDN script, give it `crossorigin`, or its errors arrive only as "Script error.".
+- Keep it self-contained, with inline styles, scripts, SVG and data, and images as `data:` URIs. Claude's built-in browser blocks every network request a frame makes, and grilling works offline, so a CDN script, font or image never loads there and may fail elsewhere. The script errors that follow reach you as ⚠ warnings under the question. If you do load a CDN script, give it `crossorigin`, or its errors arrive only as "Script error.".
 - The frame has an opaque origin, so `localStorage`, `sessionStorage`, IndexedDB and cookies throw. Keep state in variables.
 - Let the content set the height. The frame grows to fit, so `h-screen` and `100vh` measure the frame rather than the page. Keep it about a screen tall or less.
 - Tailwind's preflight reset applies: headings are unstyled, lists have no bullets, and buttons have no chrome. Style what you show with Tailwind classes.

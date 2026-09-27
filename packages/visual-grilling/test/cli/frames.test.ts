@@ -117,8 +117,9 @@ describe('the frame document', () => {
     expect(body).toContain('<html data-vg-theme="dark">');
     expect(body).toContain('--vg-surface: #151820;');
     expect(body).toContain('--color-surface: var(--vg-surface);');
-    // The frame script comes before Tailwind and the agent's HTML.
-    const order = ['/frame/assets/inject.js', '/frame/assets/tailwind.js', '<div data-anchor="banner"'].map((part) =>
+    // The frame script comes before Tailwind and the agent's HTML, both inline: nothing for the frame to fetch.
+    expect(body).not.toContain('<script src=');
+    const order = ['<script id="vg-inject">', '<script id="vg-tailwind">', '<div data-anchor="banner"'].map((part) =>
       body.indexOf(part),
     );
     expect(order.every((at) => at > 0)).toBe(true);
@@ -129,7 +130,7 @@ describe('the frame document', () => {
     const { status, body } = await rawRequest(port, 'GET', '/frame/r1/plain?theme=light');
     expect(status).toBe(200);
     expect(body).toContain('<html data-vg-theme="light">');
-    expect(body).toContain('/frame/assets/inject.js');
+    expect(body).toContain('<script id="vg-inject">');
     expect(body).not.toContain('tailwind');
     expect(body).toContain('<html lang="en"><head><title>Plain</title></head><body><p>plain</p></body></html>');
   });
@@ -139,8 +140,8 @@ describe('the frame document', () => {
     expect(tabs.status).toBe(200);
     expect(tabs.headers['content-security-policy']).toBe(FRAME_CSP);
     expect(tabs.body).toContain('<html data-vg-theme="dark">');
-    expect(tabs.body).toContain('/frame/assets/inject.js');
-    expect(tabs.body).toContain('/frame/assets/tailwind.js');
+    expect(tabs.body).toContain('<script id="vg-inject">');
+    expect(tabs.body).toContain('<script id="vg-tailwind">');
     expect(tabs.body).toContain('<nav data-anchor="tabs" class="flex gap-2">Tabs</nav>');
 
     const drawer = await rawRequest(port, 'GET', '/frame/r1/q3/B?theme=light');
@@ -181,14 +182,10 @@ describe('the frame document', () => {
     expect((await rawRequest(port, 'GET', path)).status).toBe(404);
   });
 
-  it('serves the frame scripts from the local server, and nothing else under /frame/assets', async () => {
-    for (const file of ['inject.js', 'tailwind.js']) {
-      const response = await rawRequest(port, 'GET', `/frame/assets/${file}`);
-      expect(response.status, file).toBe(200);
-      expect(response.headers['content-type']).toBe('text/javascript; charset=utf-8');
+  it('serves no frame scripts by URL: every frame has them inline', async () => {
+    for (const file of ['inject.js', 'tailwind.js', 'app.js', '..%2Fserver.mjs']) {
+      expect((await rawRequest(port, 'GET', `/frame/assets/${file}`)).status, file).toBe(404);
     }
-    expect((await rawRequest(port, 'GET', '/frame/assets/app.js')).status).toBe(404);
-    expect((await rawRequest(port, 'GET', '/frame/assets/..%2Fserver.mjs')).status).toBe(404);
   });
 
   it("refuses writes from a frame's opaque origin", async () => {

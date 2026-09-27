@@ -5,13 +5,22 @@
 // The agent's HTML may be a fragment or a whole document. The HTML parser
 // ignores its doctype, merges its <html> attributes into ours and folds its
 // <head> into ours, so either way the injected parts come first.
+//
+// The frame's scripts are written inline, never fetched by URL: some browsers
+// (Claude's built-in one among them) refuse every request from an opaque
+// origin, and the frame's document is one.
 
 import { FRAME_THEME_ATTRIBUTE, frameTokenCss, tailwindThemeCss, type ThemeName } from '../core/frame-tokens.ts';
 
-/** The frame's scripts, served from the local server (never a CDN) at /frame/assets/<file>. */
+/** The frame's scripts, built into the bundle's frame/ folder and inlined into every frame. */
 export const FRAME_ASSETS = ['inject.js', 'tailwind.js'] as const;
 
-export function frameDocument(source: string, options: { tailwind: boolean; theme: ThemeName }): string {
+export type FrameScripts = Record<(typeof FRAME_ASSETS)[number], string>;
+
+export function frameDocument(
+  source: string,
+  options: { tailwind: boolean; theme: ThemeName; scripts: FrameScripts },
+): string {
   const head = [
     '<!doctype html>',
     `<html ${FRAME_THEME_ATTRIBUTE}="${options.theme}">`,
@@ -20,14 +29,19 @@ export function frameDocument(source: string, options: { tailwind: boolean; them
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     `<style id="vg-tokens">\n${frameTokenCss()}\n</style>`,
     // First, so its error and click listeners come before anything the agent wrote.
-    '<script src="/frame/assets/inject.js"></script>',
+    inlineScript('vg-inject', options.scripts['inject.js']),
     ...(options.tailwind
       ? [
           `<style type="text/tailwindcss">\n${tailwindThemeCss()}\n</style>`,
-          '<script src="/frame/assets/tailwind.js"></script>',
+          inlineScript('vg-tailwind', options.scripts['tailwind.js']),
         ]
       : []),
     '</head>',
   ];
   return `${head.join('\n')}\n${source}\n`;
+}
+
+/** A script element holding `code`, with any `</script` in it escaped so it can't close the element early. */
+function inlineScript(id: string, code: string): string {
+  return `<script id="${id}">\n${code.replace(/<\/(script)/gi, '<\\/$1')}\n</script>`;
 }

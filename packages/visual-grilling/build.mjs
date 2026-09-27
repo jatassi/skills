@@ -98,7 +98,7 @@ const results = await Promise.all([
   esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/code.ts')], outfile: join(out, 'page/code.js'), plugins: [shikiCore(join(here, 'src/chunks/shiki.ts'))] }),
 ]);
 
-// Served from the local server into every frame (unless tailwind=false), never from a CDN.
+// Inlined by the server into every frame (unless tailwind=false), never loaded from a CDN.
 const require = createRequire(import.meta.url);
 const tailwind = require.resolve('@tailwindcss/browser');
 copyFileSync(tailwind, join(out, 'frame/tailwind.js'));

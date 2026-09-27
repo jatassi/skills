@@ -2,7 +2,7 @@
 //
 // A frame never shares the page's origin: it is served by URL
 // (/frame/r<N>/<illustration-id>, or /frame/r<N>/q<M>/<option> for a
-// mockup) with the sandbox below and no
+// mockup) with a CSP carrying the sandbox below and no
 // allow-same-origin, so all it can do is postMessage. The page accepts a
 // message only when event.source is one of its own frames, and reads it with
 // readFrameMessage: plain data of a known shape, never markup or code.
@@ -10,7 +10,7 @@
 import type { Box, Snapshot, SnapshotElement } from './anchor.ts';
 import type { ThemeName } from './frame-tokens.ts';
 
-/** Exactly what the iframe's sandbox attribute and the frame's CSP `sandbox` directive allow. */
+/** Exactly what the frame's CSP `sandbox` directive allows. */
 export const FRAME_SANDBOX =
   'allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads';
 

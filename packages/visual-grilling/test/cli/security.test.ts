@@ -241,12 +241,13 @@ describe('round page headers', () => {
     expect(response.headers['x-content-type-options']).toBe('nosniff');
   });
 
-  it('sends no referrer and nosniff with every other response too', async () => {
+  it('sends no referrer and nosniff with every other response too, and lets none of them be framed', async () => {
     const { port } = await presented('r2');
     for (const path of ['/assets/app.js', '/assets/app.css', '/api/rounds/latest', '/nothing-here']) {
       const response = await rawRequest(port, 'GET', path);
       expect(response.headers['referrer-policy'], path).toBe('no-referrer');
       expect(response.headers['x-content-type-options'], path).toBe('nosniff');
+      expect(response.headers['content-security-policy'], path).toBe("frame-ancestors 'none'");
     }
   });
 });

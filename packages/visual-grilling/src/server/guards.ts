@@ -22,10 +22,16 @@ export interface Rejection {
   error: string;
 }
 
-/** Headers every response carries. */
+/**
+ * Headers every response carries. Nothing but a frame document may be framed:
+ * the round page's iframes have no sandbox attribute (the frame's own CSP
+ * sandboxes it), so a frame that navigated itself to any other response here
+ * would get the page's origin. The page and frame headers set their own CSP.
+ */
 export const BASE_HEADERS: OutgoingHttpHeaders = {
   'referrer-policy': 'no-referrer',
   'x-content-type-options': 'nosniff',
+  'content-security-policy': "frame-ancestors 'none'",
 };
 
 const ROUND_PAGE_CSP = [
@@ -51,9 +57,10 @@ export const ROUND_PAGE_HEADERS: OutgoingHttpHeaders = {
 /**
  * An agent-HTML frame's own policy: permissive, since the agent may write any
  * HTML (any script, eval included; any style; images, fonts and connections
- * from anywhere), and sandboxed by the response itself as well as by the
- * iframe, so the document never gets the page's origin even when opened on
- * its own.
+ * from anywhere), and sandboxed by the response itself, so the document never
+ * gets the page's origin, in the page's iframe or opened on its own. The
+ * iframe carries no sandbox attribute: some browsers (Claude's built-in one
+ * among them) refuse to load an iframe that has one.
  */
 const FRAME_CSP = [
   "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'",
