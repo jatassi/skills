@@ -6,22 +6,13 @@
 
 import type * as GraphvizChunk from '../../chunks/graphviz.ts';
 import { checkDrawing } from '../readability.ts';
+import { chunkLoader } from './chunk.ts';
 import { diagramView, readTokens } from './diagram-view.ts';
 import { dotAnchor } from './dot-anchor.ts';
 import type { BlockRenderer } from './registry.ts';
 import { overridesTheme } from './theme-override.ts';
 
-/** The chunk's URL on the server. Kept out of the page bundle on purpose. */
-const CHUNK_URL = '/assets/graphviz.js';
-
-let chunk: Promise<typeof GraphvizChunk> | undefined;
-function loadChunk(): Promise<typeof GraphvizChunk> {
-  chunk ??= (import(CHUNK_URL) as Promise<typeof GraphvizChunk>).catch((error: unknown) => {
-    chunk = undefined;
-    throw error;
-  });
-  return chunk;
-}
+const loadChunk = chunkLoader<typeof GraphvizChunk>('/assets/graphviz.js');
 
 let drawCount = 0;
 

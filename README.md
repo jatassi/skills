@@ -47,4 +47,7 @@ Keep `version` in `plugin.json` and `.claude-plugin/plugin.json` in sync when re
 npm install
 npx playwright install chromium   # once, for the round page tests
 npm test                          # type-check, build into packages/visual-grilling/.test-dist, run every test against it
+npm run try                       # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
 ```
+
+The `npm run try` output is gitignored and never committed. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.

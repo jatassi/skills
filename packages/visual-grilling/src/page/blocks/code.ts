@@ -12,19 +12,10 @@
 import type * as CodeChunk from '../../chunks/code.ts';
 import type { AdapterMatch, Snapshot } from '../../core/anchor.ts';
 import type { PageIllustration } from '../../core/protocol.ts';
+import { chunkLoader } from './chunk.ts';
 import type { BlockRenderer } from './registry.ts';
 
-/** The chunk's URL on the server. Kept out of the page bundle on purpose. */
-const CHUNK_URL = '/assets/code.js';
-
-let chunk: Promise<typeof CodeChunk> | undefined;
-function loadChunk(): Promise<typeof CodeChunk> {
-  chunk ??= (import(CHUNK_URL) as Promise<typeof CodeChunk>).catch((error: unknown) => {
-    chunk = undefined;
-    throw error;
-  });
-  return chunk;
-}
+const loadChunk = chunkLoader<typeof CodeChunk>('/assets/code.js');
 
 /** Highlighted output by source, so a redraw (a theme flip) doesn't highlight again. */
 const highlighted = new Map<string, Promise<unknown>>();
