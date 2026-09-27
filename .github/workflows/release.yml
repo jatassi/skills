@@ -211,11 +211,13 @@ jobs:
       - name: Create the GitHub Release
         # The notes and sizes come first, then GitHub's list of changes.
         run: gh release create "v$VERSION" --title "v$VERSION" --notes-file "$RUNNER_TEMP/release.md" --generate-notes --verify-tag
-      # So the next pull request from dev starts from the release. Not a
-      # failure if dev has moved on: the release commit reaches it through
-      # that pull request's merge instead.
+      # So the next pull request from dev starts from the release. Through the
+      # API, which checks the fast-forward itself: the shallow checkout has no
+      # history for git to check it with. Not a failure if dev has moved on:
+      # the release commit reaches it through that pull request's merge.
       - name: Fast-forward dev to the release
         run: |
-          if ! git push origin "HEAD:refs/heads/dev"; then
+          if ! gh api --silent -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/heads/dev" \
+              -f sha="$(git rev-parse HEAD)" -F force=false; then
             echo "::notice::dev has moved on from main, so it was not fast-forwarded to v$VERSION"
           fi
