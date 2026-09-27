@@ -302,8 +302,9 @@ function fenced(text: string): string {
 }
 
 /**
- * Graphviz (EPL-2.0) and expat (MIT), compiled into @viz-js/viz's
- * WebAssembly, at the versions its lib/provenance.json says it was built from.
+ * Graphviz (EPL-2.0), expat (MIT) and the Emscripten runtime (MIT or NCSA),
+ * compiled into @viz-js/viz's WebAssembly, at the versions its
+ * lib/provenance.json says it was built from.
  */
 export function vizWasmEntries(provenance: string): ExplicitEntry[] {
   const version = (pattern: RegExp, what: string): string => {
@@ -328,6 +329,15 @@ export function vizWasmEntries(provenance: string): ExplicitEntry[] {
       note,
       source: 'https://github.com/libexpat/libexpat',
       text: EXPAT_LICENCE,
+    },
+    {
+      name: 'Emscripten',
+      // The emsdk image it was built with, when the provenance names one.
+      version: /emscripten\/emsdk[@:]([\d.]+)/.exec(provenance)?.[1] ?? 'unknown',
+      licence: 'MIT OR NCSA',
+      note: 'Its runtime is compiled into the WebAssembly of @viz-js/viz and its JavaScript glue, bundled in page/graphviz.js. Emscripten is dual-licensed under the MIT licence and the University of Illinois/NCSA Open Source License; it is used here under the MIT licence.',
+      source: 'https://github.com/emscripten-core/emscripten',
+      text: `Copyright (c) 2010-2014 Emscripten authors, see AUTHORS file.\n\n${STANDARD_TEXTS.MIT}\n\nThe University of Illinois/NCSA Open Source License: https://github.com/emscripten-core/emscripten/blob/main/LICENSE`,
     },
   ];
 }

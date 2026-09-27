@@ -48,15 +48,37 @@ describe('packageRoots', () => {
 
 describe('vizWasmEntries', () => {
   it('reads the Graphviz and expat versions from the provenance', () => {
+    const sources = [
+      'https://github.com/libexpat/libexpat/releases/download/R_2_8_4/expat-2.8.4.tar.gz',
+      'https://gitlab.com/api/v4/projects/1/packages/generic/graphviz-releases/16.0.0/graphviz-16.0.0.tar.gz',
+    ];
+    const provenance = JSON.stringify(['pkg:docker/emscripten/emsdk@5.0.7?platform=linux%2Famd64', ...sources]);
+    expect(vizWasmEntries(provenance).map((entry) => [entry.name, entry.version, entry.licence])).toEqual([
+      ['Graphviz', '16.0.0', 'EPL-2.0'],
+      ['expat', '2.8.4', 'MIT'],
+      ['Emscripten', '5.0.7', 'MIT OR NCSA'],
+    ]);
+    expect(() => vizWasmEntries('{}')).toThrow(/Graphviz version not found/);
+  });
+
+  it('keeps the Emscripten entry, unversioned, when the provenance names no emsdk', () => {
     const provenance = JSON.stringify([
       'https://github.com/libexpat/libexpat/releases/download/R_2_8_4/expat-2.8.4.tar.gz',
       'https://gitlab.com/api/v4/projects/1/packages/generic/graphviz-releases/16.0.0/graphviz-16.0.0.tar.gz',
     ]);
-    expect(vizWasmEntries(provenance).map((entry) => [entry.name, entry.version, entry.licence])).toEqual([
-      ['Graphviz', '16.0.0', 'EPL-2.0'],
-      ['expat', '2.8.4', 'MIT'],
+    const emscripten = vizWasmEntries(provenance).find((entry) => entry.name === 'Emscripten');
+    expect(emscripten?.version).toBe('unknown');
+  });
+
+  it('writes the Emscripten entry as allowed, with its MIT text', () => {
+    const provenance = JSON.stringify([
+      'pkg:docker/emscripten/emsdk@5.0.7',
+      'https://github.com/libexpat/libexpat/releases/download/R_2_8_4/expat-2.8.4.tar.gz',
+      'https://gitlab.com/api/v4/projects/1/packages/generic/graphviz-releases/16.0.0/graphviz-16.0.0.tar.gz',
     ]);
-    expect(() => vizWasmEntries('{}')).toThrow(/Graphviz version not found/);
+    const text = thirdPartyLicences([], { explicit: vizWasmEntries(provenance) });
+    expect(text).toMatch(/## Emscripten@5\.0\.7\n\nLicence: MIT OR NCSA\n\n.*University of Illinois\/NCSA/);
+    expect(text).toContain('Copyright (c) 2010-2014 Emscripten authors');
   });
 });
 

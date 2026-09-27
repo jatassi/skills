@@ -15,6 +15,7 @@ describe('THIRD_PARTY_LICENSES.md', () => {
     expect(text).toMatch(/## Graphviz@[\d.]+\n\nLicence: EPL-2.0/);
     expect(text).toMatch(/Source available at https:\/\/gitlab\.com\/graphviz\/graphviz @ [\d.]+/);
     expect(text).toMatch(/## expat@[\d.]+\n\nLicence: MIT/);
+    expect(text).toMatch(/## Emscripten@[\d.]+\n\nLicence: MIT OR NCSA/);
   });
 
   it('gives the EPL package elkjs a source line', () => {
