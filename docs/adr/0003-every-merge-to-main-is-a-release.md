@@ -16,3 +16,4 @@ The merge is not tested again. The pull request's run keeps its bundle under the
 - If `main` moves between a pull request's last run and its merge, the merged tree was never tested and the release fails. Dispatch Release on `main` to test and release it as it is.
 - Tested bundles are kept 30 days. A pull request merged later than that needs a new push, or a dispatch after the merge.
 - A push to `main` made with the workflow's token (the release commit) does not start another run.
+- Nothing makes `main` take only tested pull requests. On a personal repo, a ruleset can't let GitHub Actions bypass it, and requiring pull requests would block the release commit. The ruleset on `main` only blocks deletion and force-pushes. The tree check is what stops an untested push from being released, but that push still reaches skills.sh and Agent Plugins clients until it is fixed.
