@@ -1,21 +1,46 @@
-// The round page: one question per step, tabs Q1…Qn and Review, and one
-// round submission sent from the Review step.
+// The round page: a sticky review bar, one question per step (tabs Q1…Qn and
+// Review), the design tree beside them, and one round submission sent from the
+// Review step. Past rounds of the session open read-only from the bar.
+//
+// A round's question panels are built once while it is on screen and updated
+// in place, so illustrations (and their frames) are never rebuilt by answering.
+// Steps that aren't showing stay mounted, just hidden. Each illustration and
+// mockup sits in an IllustrationFrame (frame.ts), which draws its block and
+// holds its pinned comments.
 
-import type { PageEvents, PageQuestion, PageRound } from '../core/protocol.ts';
+import type {
+  PageEvents,
+  PageQuestion,
+  PageRound,
+  RoundIndex,
+  RoundSummary,
+} from '../core/protocol.ts';
 import type { PageAnswer, PageComment, PageSubmission, PageWarning, Verdict } from '../core/submission.ts';
+import { fill, h, html, icon, kbd, plain, type Child, type IconName } from './dom.ts';
 import { IllustrationFrame, type FrameSubject } from './frame.ts';
+import { keyCommand, type KeyCommand } from './keys.ts';
+import { currentTheme, initTheme, toggleTheme } from './theme.ts';
+import { designTree } from './tree.ts';
 
 type Draft = PageAnswer & { ownText?: string; writing?: boolean };
 
-interface State {
-  round?: PageRound;
-  /** Index into the steps: 0…n-1 are questions, n is Review. */
-  step: number;
+/** One round as this page holds it: the round, the user's drafts, and the step on screen. */
+interface RoundView {
+  round: PageRound;
   drafts: Map<number, Draft>;
   /** Anchored comments by question number, in the order they were made. */
   comments: Map<number, PageComment[]>;
-  /** Comment mode: a click on an illustration pins a comment instead of acting. */
-  commenting: boolean;
+  /** Index into the steps: 0…n-1 are questions, n is Review. */
+  step: number;
+}
+
+interface State {
+  /** The newest round of the session: the only one that can be answered. */
+  latest: number;
+  /** The round on screen. */
+  shown?: number;
+  views: Map<number, RoundView>;
+  index: RoundSummary[];
   submitting: boolean;
   error?: string;
   /**
@@ -24,47 +49,84 @@ interface State {
    * nothing can be sent, but the round and its drafts stay on screen.
    */
   connection: 'open' | 'finished' | 'stopped';
+  drawer: boolean;
+  menu: boolean;
+  /** Comment mode: a click on an illustration pins a comment instead of acting. */
+  commenting: boolean;
 }
 
 const state: State = {
-  step: 0,
-  drafts: new Map(),
-  comments: new Map(),
-  commenting: false,
+  latest: 0,
+  views: new Map(),
+  index: [],
   submitting: false,
   connection: 'open',
+  drawer: false,
+  menu: false,
+  commenting: false,
 };
 
 /** Whether the round can still be answered and sent from this page. */
 function canSend(round: PageRound): boolean {
-  return !round.submitted && !round.answeredInTerminal && state.connection === 'open';
+  return (
+    round.number === state.latest && !round.submitted && !round.answeredInTerminal && state.connection === 'open'
+  );
 }
-const app = document.getElementById('app')!;
-/** One frame per illustration and mockup of the shown round, kept across re-renders. */
-let frames = new Map<string, IllustrationFrame>();
+
+function shownView(): RoundView | undefined {
+  return state.shown === undefined ? undefined : state.views.get(state.shown);
+}
+
+const SUBMIT_KEY = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘↵' : 'Ctrl ↵';
 
 // ----------------------------------------------------------------- loading
 
-async function loadRound(which: number | 'latest'): Promise<void> {
-  const response = await fetch(`/api/rounds/${which}`);
-  if (response.status === 404) return;
+async function refreshIndex(): Promise<void> {
+  const response = await fetch('/api/rounds');
+  if (!response.ok) return;
+  state.index = ((await response.json()) as RoundIndex).rounds;
+  state.latest = Math.max(state.latest, ...state.index.map((round) => round.number));
+}
+
+/** Puts round `n` on screen, keeping any drafts this page already holds for it. */
+async function showRound(n: number, step?: number): Promise<void> {
+  const response = await fetch(`/api/rounds/${n}`);
+  if (!response.ok) return;
   const round = (await response.json()) as PageRound;
-  state.round = round;
-  state.step = 0;
+  let view = state.views.get(n);
+  if (!view) {
+    view = { round, drafts: draftsFrom(round), comments: commentsFrom(round), step: 0 };
+    state.views.set(n, view);
+  } else {
+    view.round = round;
+    if (round.submitted) {
+      view.drafts = draftsFrom(round);
+      view.comments = commentsFrom(round);
+    }
+  }
+  if (step !== undefined) view.step = step;
+  const moved = state.shown !== n;
+  if (moved) state.commenting = false;
+  state.shown = n;
+  state.menu = false;
+  state.drawer = false;
   state.error = undefined;
-  state.drafts = new Map(
-    round.questions.map((question) => [question.number, draftFrom(round.submitted?.[question.number])]),
-  );
-  state.comments = new Map(
+  document.title = roundHeading(round);
+  render();
+  if (moved) window.scrollTo({ top: 0 });
+}
+
+function commentsFrom(round: PageRound): Map<number, PageComment[]> {
+  return new Map(
     round.questions.map((question) => [
       question.number,
       (round.comments?.[question.number] ?? []).map(({ question: _question, crop: _crop, ...comment }) => comment),
     ]),
   );
-  state.commenting = false;
-  frames = new Map();
-  document.title = roundHeading(round);
-  render();
+}
+
+function draftsFrom(round: PageRound): Map<number, Draft> {
+  return new Map(round.questions.map((question) => [question.number, draftFrom(round.submitted?.[question.number])]));
 }
 
 function draftFrom(verdict: Verdict | undefined): Draft {
@@ -86,12 +148,15 @@ function listen(): void {
   const events = new EventSource('/events');
   events.addEventListener('round', (event) => {
     const { round } = JSON.parse((event as MessageEvent).data) as PageEvents['round'];
-    if (round !== state.round?.number) void loadRound(round);
+    if (round <= state.latest && state.views.has(round)) return;
+    state.latest = Math.max(state.latest, round);
+    void refreshIndex().then(() => showRound(round));
   });
   events.addEventListener('terminal', (event) => {
     const { round } = JSON.parse((event as MessageEvent).data) as PageEvents['terminal'];
-    if (state.round?.number !== round) return;
-    state.round.answeredInTerminal = true;
+    const view = state.views.get(round);
+    if (view) view.round.answeredInTerminal = true;
+    for (const summary of state.index) if (summary.number === round) summary.state = 'terminal';
     render();
   });
   events.addEventListener('finished', () => {
@@ -130,83 +195,159 @@ function watchActivity(): void {
   }
 }
 
-// --------------------------------------------------------------- rendering
+// ------------------------------------------------------------------ shell
 
-type Child = Node | string | false | undefined;
+const root = document.getElementById('app')!;
+const bar = h('header', { class: 'bar' });
+const notices = h('div', { class: 'notices' });
+const tabs = h('nav', { class: 'steps', role: 'tablist', 'aria-label': 'Questions' });
+const stepHost = h('div', { class: 'step-host' });
+const stepNav = h('div', { class: 'stepnav' });
+const side = h('aside', { class: 'side', 'aria-label': 'Design tree' });
+const shell = h(
+  'div',
+  { class: 'shell' },
+  h('main', { class: 'main' }, h('div', { class: 'col' }, notices, tabs, stepHost, stepNav)),
+  side,
+);
+const scrim = h('div', { class: 'scrim', onclick: () => setDrawer(false) });
+const drawer = h('aside', { class: 'drawer', id: 'tree-drawer', 'aria-label': 'Design tree' });
+const menu = h('div', { class: 'pop menu', role: 'menu', 'aria-label': 'Rounds', hidden: true });
 
-function h<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  props: Partial<Record<string, string | boolean | ((event: Event) => void)>> = {},
-  ...children: Child[]
-): HTMLElementTagNameMap[K] {
-  const element = document.createElement(tag);
-  for (const [key, value] of Object.entries(props)) {
-    if (typeof value === 'function') element.addEventListener(key.replace(/^on/, ''), value);
-    else if (value === true) element.setAttribute(key, '');
-    else if (typeof value === 'string') element.setAttribute(key, value);
-  }
-  for (const child of children) {
-    if (child === false || child === undefined) continue;
-    element.append(child);
-  }
-  return element;
+// ------------------------------------------------------------- rendering
+
+/** The question panels of the round on screen, built once per showing. */
+interface Mounted {
+  view: RoundView;
+  panels: QuestionPanel[];
+  review: HTMLElement;
+  /** Every illustration and mockup frame of the round. */
+  frames: IllustrationFrame[];
 }
-
-function html(className: string, markup: string): HTMLDivElement {
-  const element = h('div', { class: className });
-  // Rendered by the server from Markdown with raw HTML escaped.
-  element.innerHTML = markup;
-  return element;
-}
+let mounted: Mounted | undefined;
 
 function render(): void {
-  const notice = serverNotice();
-  const round = state.round;
-  if (!round) {
-    if (notice) app.replaceChildren(notice);
+  const view = shownView();
+  if (!view) {
+    const notice = serverNotice();
+    if (notice) root.replaceChildren(notice);
     return;
   }
-  const readOnly = !canSend(round);
-  const reviewStep = round.questions.length;
+  if (!root.contains(bar)) root.replaceChildren(bar, shell, scrim, drawer, menu);
 
-  const tabs = h(
-    'nav',
-    { class: 'tabs', role: 'tablist', 'aria-label': 'Questions' },
-    ...round.questions.map((question, index) =>
+  // Controls rebuilt below get their focus back through data-key.
+  const focusKey = document.activeElement?.getAttribute('data-key');
+
+  if (mounted?.view !== view) mount(view);
+  const readOnly = !canSend(view.round);
+  const reviewStep = view.round.questions.length;
+
+  fill(bar, barContent(view, readOnly));
+  fill(notices, [serverNotice(), roundBanner(view)]);
+  tabs.replaceChildren(...stepTabs(view));
+  mounted!.panels.forEach((panel, index) => {
+    panel.el.hidden = view.step !== index;
+    panel.update();
+  });
+  mounted!.review.hidden = view.step !== reviewStep;
+  fill(mounted!.review, reviewContent(view, readOnly));
+  fill(stepNav, stepNavContent(view));
+  renderTree(view);
+  renderMenu();
+
+  const active = document.activeElement;
+  if (focusKey && (!active || active === document.body || !root.contains(active))) {
+    root.querySelector<HTMLElement>(`[data-key="${focusKey}"]`)?.focus();
+  }
+}
+
+function mount(view: RoundView): void {
+  const panels = view.round.questions.map((question) => questionPanel(view, question));
+  const review = h('section', { class: 'review', id: 'review', 'aria-label': 'Review' });
+  stepHost.replaceChildren(...panels.map((panel) => panel.el), review);
+  mounted = { view, panels, review, frames: panels.flatMap((panel) => panel.frames) };
+}
+
+function barContent(view: RoundView, readOnly: boolean): Child[] {
+  const round = view.round;
+  const answered = countAnswered(view);
+  const tree = Boolean(round.designTree);
+  const current = round.number === state.latest;
+  return [
+    tree &&
       h(
         'button',
         {
-          role: 'tab',
-          'aria-selected': String(state.step === index),
-          onclick: () => go(index),
+          class: 'btn ghost icon-btn tree-toggle',
+          'aria-label': 'Design tree',
+          'aria-expanded': String(state.drawer),
+          'aria-controls': 'tree-drawer',
+          'data-key': 'tree-toggle',
+          onclick: () => setDrawer(!state.drawer),
         },
-        `Q${question.number}`,
+        icon('tree'),
       ),
+    h(
+      'h1',
+      { class: 'round-h' },
+      h(
+        'button',
+        {
+          class: 'btn ghost round-btn',
+          'aria-haspopup': 'menu',
+          'aria-expanded': String(state.menu),
+          'data-key': 'rounds',
+          onclick: () => void setMenu(!state.menu),
+        },
+        `Round ${round.number}`,
+        icon('down'),
+      ),
+      round.title && h('span', { class: 'subject' }, ` · ${round.title}`),
     ),
-    h('button', { role: 'tab', 'aria-selected': String(state.step === reviewStep), onclick: () => go(reviewStep) }, 'Review'),
-  );
-
-  const question = round.questions[state.step];
-  const body = question ? questionPanel(question, readOnly) : reviewPanel(round, readOnly);
-
-  const roundState = round.answeredInTerminal
-    ? 'Answered in the terminal'
-    : round.submitted
-      ? state.connection === 'open'
-        ? 'Round submitted · waiting for the next round'
-        : 'Round submitted'
-      : undefined;
-  const comments = commentCount();
-  app.replaceChildren(
-    ...(notice ? [notice] : []),
-    h('h1', {}, roundHeading(round)),
-    ...(comments > 0
-      ? [h('p', { class: 'review-bar muted' }, h('span', { class: 'comment-count' }, count(comments, 'comment')))]
-      : []),
-    ...(roundState ? [h('p', { class: 'banner', role: 'status' }, roundState)] : []),
-    tabs,
-    body,
-  );
+    h('span', { class: 'grow' }),
+    h(
+      'span',
+      { class: 'count' },
+      h('b', {}, String(answered)),
+      ` / ${round.questions.length}`,
+      h('span', { class: 'w' }, ' answered'),
+    ),
+    commentTotal(view) > 0 &&
+      h(
+        'span',
+        { class: 'comment-count', title: 'Anchored comments' },
+        icon('comment'),
+        String(commentTotal(view)),
+        h('span', { class: 'w' }, commentTotal(view) === 1 ? ' comment' : ' comments'),
+      ),
+    h(
+      'button',
+      {
+        class: 'btn ghost icon-btn',
+        'aria-label': `Switch to ${currentTheme() === 'dark' ? 'light' : 'dark'} theme`,
+        'data-key': 'theme',
+        onclick: () => {
+          toggleTheme();
+          render();
+        },
+      },
+      icon(currentTheme() === 'dark' ? 'sun' : 'moon'),
+    ),
+    current &&
+      h(
+        'button',
+        {
+          class: 'btn primary',
+          'aria-keyshortcuts': 'Meta+Enter Control+Enter',
+          'data-key': 'submit',
+          disabled: readOnly || state.submitting,
+          onclick: () => requestSubmit(view),
+        },
+        ...(round.submitted
+          ? [icon('check'), 'Submitted']
+          : [icon('up'), 'Submit round', !readOnly && kbd(SUBMIT_KEY)]),
+      ),
+  ];
 }
 
 function serverNotice(): HTMLElement | undefined {
@@ -216,172 +357,351 @@ function serverNotice(): HTMLElement | undefined {
     case 'finished':
       return h(
         'div',
-        { class: 'notice', role: 'alert' },
-        h('strong', {}, 'Grilling finished'),
-        ' · no more rounds are coming.',
+        { class: 'banner notice', role: 'alert' },
+        h('span', {}, h('b', {}, 'Grilling finished'), ' · no more rounds are coming.'),
       );
     case 'stopped':
       return h(
         'div',
-        { class: 'notice stopped', role: 'alert' },
-        h('strong', {}, 'Server stopped'),
-        ' · this round can no longer be sent. Your answers stay here to copy.',
+        { class: 'banner notice stopped', role: 'alert' },
+        h('span', {}, h('b', {}, 'Server stopped'), ' · this round can no longer be sent. Your answers stay here to copy.'),
       );
   }
 }
 
-function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
-  const draft = state.drafts.get(question.number)!;
-  const set = (next: Draft) => {
-    state.drafts.set(question.number, { ...next, ownText: draft.ownText });
-    render();
-  };
-
-  const optionItems = question.options.map((option) => {
-    const label = h('span');
-    label.innerHTML = option.labelHtml;
+function roundBanner(view: RoundView): HTMLElement | undefined {
+  const round = view.round;
+  if (round.number !== state.latest) {
+    const how = round.submitted ? ' was submitted' : round.answeredInTerminal ? ' was answered in the terminal' : '';
     return h(
-      'li',
-      {},
+      'div',
+      { class: 'banner past' },
+      icon('lock'),
+      h('span', {}, `Round ${round.number}${how}. It is read-only.`),
+      h('span', { class: 'grow' }),
       h(
         'button',
-        {
-          'aria-pressed': String(draft.mode === 'picked' && draft.option === option.letter),
-          'aria-label': `Option ${option.letter}: ${label.textContent ?? ''}`,
-          disabled: readOnly,
-          onclick: () => set({ mode: 'picked', option: option.letter }),
-        },
-        h('span', { class: 'key' }, option.letter),
-        label,
+        { class: 'btn sm', 'data-key': 'back', onclick: () => void showRound(state.latest) },
+        `Back to round ${state.latest}`,
       ),
-      option.mockup &&
-        frameFor(question, readOnly, {
-          illustration: {
-            id: `mockup-${option.letter.toLowerCase()}`,
-            kind: 'html',
-            fence: 'html',
-            source: option.mockup.source,
-            tailwind: option.mockup.tailwind,
-          },
-          option: option.letter,
-          title: `Mockup ${option.letter}`,
-          kindLabel: 'html mockup',
-        }),
     );
-  });
-
-  const writing = draft.writing || draft.mode === 'own' || Boolean(readOnly && draft.ownText?.trim());
-  // Read-only rather than disabled, so a draft stays selectable and copyable.
-  const textarea = h('textarea', {
-    'aria-label': `Your answer to Q${question.number}`,
-    readonly: readOnly,
-    oninput: (event) => {
-      const text = (event.target as HTMLTextAreaElement).value;
-      const next: Draft = text.trim() ? { mode: 'own', text } : { mode: 'none' };
-      state.drafts.set(question.number, { ...next, ownText: text, writing: true });
-    },
-  });
-  textarea.value = draft.ownText ?? '';
-
-  const isLast = state.step === (state.round?.questions.length ?? 0) - 1;
-  return h(
-    'section',
-    { class: 'panel', 'aria-label': `Q${question.number}` },
-    h(
-      'h2',
-      {},
-      `Q${question.number} · ${question.title} `,
-      h('span', { class: 'muted' }, `(${stateLabel(draft, commentsOn(question))})`),
-    ),
-    html('prose', question.proseHtml),
-    h(
+  }
+  if (round.answeredInTerminal) {
+    return h('div', { class: 'banner' }, icon('terminal'), h('span', { role: 'status' }, 'Answered in the terminal'));
+  }
+  if (round.submitted) {
+    const waiting = state.connection === 'open';
+    return h(
       'div',
-      { class: 'recommendation' },
-      h('strong', {}, 'Recommendation'),
-      html('prose', question.recommendation.html),
-      h(
-        'button',
-        {
-          'aria-pressed': String(draft.mode === 'accepted'),
-          disabled: readOnly,
-          onclick: () => set({ mode: 'accepted' }),
-        },
-        'Accept',
-      ),
-    ),
-    ...question.illustrations.map((illustration) =>
-      frameFor(question, readOnly, {
-        illustration,
-        title: illustration.title ?? illustration.id,
-        kindLabel: illustration.kind,
-      }),
-    ),
-    optionItems.length > 0 && h('ul', { class: 'options', 'aria-label': 'Options' }, ...optionItems),
-    h(
-      'div',
-      { class: 'actions' },
-      h(
-        'button',
-        {
-          'aria-pressed': String(writing),
-          disabled: readOnly,
-          onclick: () => {
-            const text = draft.ownText ?? '';
-            set(text.trim() ? { mode: 'own', text, writing: true } : { mode: 'none', writing: true });
-          },
-        },
-        'Write my own answer',
-      ),
-      h(
-        'button',
-        {
-          'aria-pressed': String(draft.mode === 'unsure'),
-          disabled: readOnly,
-          onclick: () => set(draft.mode === 'unsure' ? { mode: 'none' } : { mode: 'unsure' }),
-        },
-        'Unsure',
-      ),
-      h('button', { onclick: () => go(state.step + 1) }, isLast ? 'Review' : 'Next'),
-    ),
-    writing && textarea,
-  );
+      { class: 'banner sent' },
+      waiting && h('span', { class: 'wait-dot', 'aria-hidden': 'true' }),
+      h('span', { role: 'status' }, waiting ? 'Round submitted · waiting for the next round' : 'Round submitted'),
+    );
+  }
+  return undefined;
 }
 
-/** The illustration's frame (its block drawn by the block registry), synced with the question's comments. */
-function frameFor(question: PageQuestion, readOnly: boolean, subject: FrameSubject): HTMLElement {
-  const key = `${question.number}:${subject.option ? `option ${subject.option}` : subject.illustration.id}`;
-  let frame = frames.get(key);
-  if (!frame) {
-    frame = new IllustrationFrame(subject, {
+function stepTabs(view: RoundView): HTMLElement[] {
+  const reviewStep = view.round.questions.length;
+  return [
+    ...view.round.questions.map((question, index) =>
+      h(
+        'button',
+        {
+          class: 'step',
+          role: 'tab',
+          'aria-selected': String(view.step === index),
+          'aria-controls': `q${question.number}`,
+          'data-key': `tab-${index}`,
+          onclick: () => go(view, index),
+        },
+        stateIcon(questionState(view, question.number)),
+        `Q${question.number}`,
+      ),
+    ),
+    h(
+      'button',
+      {
+        class: 'step',
+        role: 'tab',
+        'aria-selected': String(view.step === reviewStep),
+        'aria-controls': 'review',
+        'data-key': 'tab-review',
+        onclick: () => go(view, reviewStep),
+      },
+      icon('up'),
+      'Review',
+    ),
+  ];
+}
+
+function stepNavContent(view: RoundView): Child[] {
+  const last = view.round.questions.length;
+  if (view.step === last) return [];
+  return [
+    h(
+      'button',
+      { class: 'btn ghost nav', 'data-key': 'previous', disabled: view.step === 0, onclick: () => go(view, view.step - 1) },
+      icon('left'),
+      'Previous',
+      kbd('K'),
+    ),
+    h('span', { class: 'grow' }),
+    h(
+      'button',
+      { class: 'btn nav', 'data-key': 'next', onclick: () => go(view, view.step + 1) },
+      view.step === last - 1 ? 'Review round' : 'Next',
+      icon('right'),
+      kbd('J'),
+    ),
+  ];
+}
+
+// --------------------------------------------------------- question panel
+
+interface QuestionPanel {
+  el: HTMLElement;
+  /** Brings the panel's answer parts in line with the draft. */
+  update(): void;
+  /** Focuses the own-answer box. */
+  focusAnswer(): void;
+  frames: IllustrationFrame[];
+}
+
+function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
+  const n = question.number;
+  const frames: { frame: IllustrationFrame; subject: FrameSubject }[] = [];
+  const comments = () => view.comments.get(n)!;
+  const frame = (subject: FrameSubject): HTMLElement => {
+    const made = new IllustrationFrame(subject, {
       toggleCommenting,
       addComment: (comment) => {
-        state.comments.get(question.number)!.push(comment);
+        comments().push(comment);
         render();
       },
       removeComment: (comment) => {
-        const list = state.comments.get(question.number)!;
-        list.splice(list.indexOf(comment), 1);
+        comments().splice(comments().indexOf(comment), 1);
         render();
       },
       reportFailure: (message) => {
         // Mockups have no illustration id; their script errors travel another way.
-        if (!subject.option) void reportDrawFailure(question.number, subject.illustration.id, message);
+        if (!subject.option) void reportDrawFailure(view.round, n, subject.illustration.id, message);
       },
     });
-    frames.set(key, frame);
-  }
-  const all = state.comments.get(question.number) ?? [];
-  frame.sync({
-    comments: all
-      .map((comment, index) => ({ number: index + 1, comment }))
-      .filter(({ comment }) =>
-        subject.option ? comment.option === subject.option : !comment.option && comment.illustration?.id === subject.illustration.id,
-      ),
-    nextNumber: all.length + 1,
-    commenting: state.commenting,
-    readOnly,
+    frames.push({ frame: made, subject });
+    return made.element;
+  };
+  const header = h('header', { class: 'qp-h' });
+  const recommendation = h('div', { class: 'rec-slot' });
+
+  const optionButtons = question.options.map((option) => {
+    const label = h('span', { class: 'opt-l' });
+    label.innerHTML = option.labelHtml;
+    return h(
+      'button',
+      {
+        class: 'opt',
+        'aria-label': `Option ${option.letter}: ${plain(option.labelHtml)}`,
+        'aria-keyshortcuts': option.letter,
+        'data-key': `option-${n}-${option.letter}`,
+        onclick: () => act(view, n, { kind: 'pick', letter: option.letter }),
+      },
+      h('span', { class: 'radio', 'aria-hidden': 'true' }),
+      h('span', { class: 'opt-k', 'aria-hidden': 'true' }, option.letter),
+      label,
+    );
   });
-  return frame.element;
+  const options =
+    question.options.length > 0 &&
+    h(
+      'div',
+      { class: 'opts', role: 'group', 'aria-label': 'Options' },
+      ...question.options.map((option, index) =>
+        h(
+          'div',
+          { class: 'opt-row' },
+          optionButtons[index],
+          option.mockup &&
+            frame({
+              illustration: {
+                id: `mockup-${option.letter.toLowerCase()}`,
+                kind: 'html',
+                fence: 'html',
+                source: option.mockup.source,
+                tailwind: option.mockup.tailwind,
+              },
+              option: option.letter,
+              title: `Mockup ${option.letter}`,
+              kindLabel: 'html mockup',
+            }),
+        ),
+      ),
+    );
+
+  // Read-only rather than disabled, so a draft stays selectable and copyable.
+  const textarea = h('textarea', {
+    'aria-label': `Your answer to Q${n}`,
+    placeholder: 'Your answer, in your own words. It replaces the recommendation.',
+    rows: '3',
+    oninput: () => {
+      const text = textarea.value;
+      const next: Draft = text.trim() ? { mode: 'own', text } : { mode: 'none' };
+      view.drafts.set(n, { ...next, ownText: text, writing: true });
+      render();
+    },
+  });
+  const note = h('div');
+  const foot = h('div', { class: 'ans-foot' });
+
+  const el = h(
+    'section',
+    { class: 'qp', id: `q${n}`, 'aria-label': `Q${n}` },
+    header,
+    h(
+      'div',
+      { class: 'qp-b' },
+      html('prose', question.proseHtml),
+      recommendation,
+      ...question.illustrations.map((illustration) =>
+        frame({ illustration, title: illustration.title ?? illustration.id, kindLabel: illustration.kind }),
+      ),
+      options,
+      textarea,
+      note,
+      foot,
+    ),
+  );
+
+  function update(): void {
+    const draft = view.drafts.get(n)!;
+    const readOnly = !canSend(view.round);
+    const accepted = draft.mode === 'accepted';
+    const all = comments();
+
+    fill(header, [
+      stateIcon(questionState(view, n)),
+      h('span', { class: 'num' }, `Q${n}`),
+      h('h2', { class: 'qp-title' }, question.title),
+      h('span', { class: 'grow' }),
+      draft.mode !== 'none' && all.length > 0 && commentCount(all.length),
+      stateChip(questionState(view, n), draft, all.length),
+    ]);
+
+    for (const { frame: each, subject } of frames) {
+      each.sync({
+        comments: all
+          .map((comment, index) => ({ number: index + 1, comment }))
+          .filter(({ comment }) =>
+            subject.option
+              ? comment.option === subject.option
+              : !comment.option && comment.illustration?.id === subject.illustration.id,
+          ),
+        nextNumber: all.length + 1,
+        commenting: state.commenting,
+        readOnly,
+      });
+    }
+
+    recommendation.replaceChildren(
+      h(
+        'div',
+        { class: `rec${accepted ? ' is-on' : ''}` },
+        h(
+          'div',
+          { class: 'rec-t' },
+          h('span', { class: 'rec-k' }, accepted ? 'Accepted' : 'Recommended'),
+          question.recommendation.option && h('span', { class: 'ref' }, question.recommendation.option),
+          html('prose', question.recommendation.html),
+        ),
+        h(
+          'button',
+          {
+            class: `btn sm${accepted ? ' ok' : ''}`,
+            'aria-pressed': String(accepted),
+            'aria-keyshortcuts': 'Enter',
+            'data-key': `accept-${n}`,
+            disabled: readOnly,
+            onclick: () => act(view, n, { kind: 'accept' }),
+          },
+          ...(accepted ? [icon('check'), 'Accepted'] : ['Accept']),
+          !readOnly && kbd('↵'),
+        ),
+      ),
+    );
+
+    question.options.forEach((option, index) => {
+      const button = optionButtons[index]!;
+      const on =
+        (draft.mode === 'picked' && draft.option === option.letter) ||
+        (accepted && question.recommendation.option === option.letter);
+      button.classList.toggle('on', on);
+      button.setAttribute('aria-pressed', String(on));
+      button.disabled = readOnly;
+    });
+
+    const ownText = draft.ownText ?? '';
+    textarea.hidden = !(draft.writing || draft.mode === 'own' || (readOnly && ownText.trim()));
+    textarea.readOnly = readOnly;
+    if (textarea.value !== ownText) textarea.value = ownText;
+
+    note.replaceChildren(
+      ...(draft.mode === 'unsure'
+        ? [
+            h(
+              'p',
+              { class: 'note un' },
+              icon('help'),
+              h('span', {}, 'Unsure. This stays on the frontier and comes back in a later round.'),
+            ),
+          ]
+        : []),
+    );
+
+    const writing = !textarea.hidden;
+    foot.hidden = readOnly;
+    foot.replaceChildren(
+      ...(readOnly
+        ? []
+        : [
+            h(
+              'button',
+              {
+                class: 'btn ghost sm',
+                'aria-pressed': String(writing),
+                'aria-keyshortcuts': 'W',
+                'data-key': `write-${n}`,
+                onclick: () =>
+                  writing
+                    ? answer(view, n, { mode: 'none', ownText: '', writing: false })
+                    : act(view, n, { kind: 'write' }),
+              },
+              icon(writing ? 'x' : 'pen'),
+              writing ? 'Discard my answer' : 'Write my own answer',
+              !writing && kbd('W'),
+            ),
+            h(
+              'button',
+              {
+                class: `btn ghost sm${draft.mode === 'unsure' ? ' on-un' : ''}`,
+                'aria-pressed': String(draft.mode === 'unsure'),
+                'aria-keyshortcuts': 'U',
+                'data-key': `unsure-${n}`,
+                onclick: () => act(view, n, { kind: 'unsure' }),
+              },
+              icon('help'),
+              'Unsure',
+              kbd('U'),
+            ),
+          ]),
+    );
+  }
+
+  return {
+    el,
+    update,
+    focusAnswer: () => textarea.focus(),
+    frames: frames.map(({ frame: each }) => each),
+  };
 }
 
 /**
@@ -389,9 +709,8 @@ function frameFor(question: PageQuestion, readOnly: boolean, subject: FrameSubje
  * submission, where the agent reads it as a warning. Failing to report is
  * fine; the frame still shows the error.
  */
-async function reportDrawFailure(question: number, illustration: string, message: string): Promise<void> {
-  const round = state.round;
-  if (!round || round.submitted) return;
+async function reportDrawFailure(round: PageRound, question: number, illustration: string, message: string): Promise<void> {
+  if (!canSend(round)) return;
   const warning: PageWarning = { question, illustration, kind: 'draw', message };
   await fetch(`/api/rounds/${round.number}/warnings`, {
     method: 'POST',
@@ -405,116 +724,378 @@ function toggleCommenting(): void {
   render();
 }
 
-function commentCount(): number {
-  let total = 0;
-  for (const list of state.comments.values()) total += list.length;
-  return total;
-}
+// ------------------------------------------------------------ Review step
 
-function reviewPanel(round: PageRound, readOnly: boolean): HTMLElement {
-  const unanswered = round.questions.filter(
-    (question) => state.drafts.get(question.number)!.mode === 'none' && commentsOn(question) === 0,
-  );
-  return h(
-    'section',
-    { class: 'panel', 'aria-label': 'Review' },
-    h('h2', {}, 'Review'),
+function reviewContent(view: RoundView, readOnly: boolean): Child[] {
+  const round = view.round;
+  const unanswered = round.questions.filter((question) => questionState(view, question.number) === 'none').length;
+  return [
     h(
-      'ul',
-      { class: 'review' },
-      ...round.questions.map((question, index) =>
-        h(
-          'li',
-          {},
-          h('span', {}, `Q${question.number} ${question.title} · ${summary(question, state.drafts.get(question.number)!)}`),
-          !readOnly && h('button', { onclick: () => go(index), 'aria-label': `Edit Q${question.number}` }, 'Edit'),
-        ),
-      ),
-    ),
-    !readOnly &&
-      unanswered.length > 0 &&
+      'div',
+      { class: 'review-h' },
+      h('h2', {}, `Review round ${round.number}`),
       h(
         'p',
-        { class: 'warning' },
-        `${unanswered.length === 1 ? '1 question has' : `${unanswered.length} questions have`} no answer and will be sent as unsure.`,
+        {},
+        `${countAnswered(view)} of ${round.questions.length} answered.`,
+        !readOnly && ' The whole round goes back to the agent at once.',
       ),
-    state.error && h('p', { class: 'warning', role: 'alert' }, state.error),
+    ),
+    h(
+      'ul',
+      { class: 'rv-list' },
+      ...round.questions.map((question, index) => {
+        const draft = view.drafts.get(question.number)!;
+        const questionComments = view.comments.get(question.number)!.length;
+        const verb = readOnly ? 'View' : 'Edit';
+        return h(
+          'li',
+          { class: 'rv' },
+          stateIcon(questionState(view, question.number)),
+          h('span', { class: 'num' }, `Q${question.number}`),
+          h('span', { class: 'rv-t' }, question.title),
+          h(
+            'button',
+            {
+              class: 'btn ghost sm nav',
+              'aria-label': `${verb} Q${question.number}`,
+              'data-key': `edit-${question.number}`,
+              onclick: () => go(view, index),
+            },
+            verb,
+          ),
+          h('span', { class: 'rv-a' }, summaryLine(question, draft, questionComments)),
+        );
+      }),
+    ),
+    h(
+      'div',
+      { class: 'review-f' },
+      !readOnly &&
+        unanswered > 0 &&
+        h(
+          'p',
+          { class: 'warn' },
+          icon('help'),
+          `${unanswered} unanswered question${unanswered === 1 ? '' : 's'} will be sent as unsure.`,
+        ),
+      state.error && h('p', { class: 'warn', role: 'alert' }, state.error),
+      !readOnly && h('p', { class: 'hint' }, 'Send it with Submit round in the bar, or ', kbd(SUBMIT_KEY), '.'),
+    ),
+  ];
+}
+
+function summaryLine(question: PageQuestion, draft: Draft, comments: number): string {
+  const verdict = verdictLine(question, draft);
+  if (draft.mode === 'none') return comments > 0 ? `Comments only · ${plural(comments, 'comment')}, no verdict` : verdict;
+  return comments > 0 ? `${verdict} · ${plural(comments, 'comment')}` : verdict;
+}
+
+function plural(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`;
+}
+
+function verdictLine(question: PageQuestion, draft: Draft): string {
+  const optionLabel = (letter: string) => {
+    const option = question.options.find((candidate) => candidate.letter === letter);
+    return option ? `${letter}: ${plain(option.labelHtml)}` : letter;
+  };
+  switch (draft.mode) {
+    case 'accepted': {
+      const letter = question.recommendation.option;
+      return letter ? `Accepted ${optionLabel(letter)}` : `Accepted: ${firstSentence(plain(question.recommendation.html))}`;
+    }
+    case 'picked':
+      return `Picked ${optionLabel(draft.option)}`;
+    case 'own':
+      return `Own answer: “${draft.text.trim()}”`;
+    case 'unsure':
+      return 'Unsure, stays on the frontier';
+    case 'none':
+      return 'No answer';
+  }
+}
+
+function firstSentence(text: string): string {
+  const sentence = /^.*?[.!?](?=\s|$)/.exec(text)?.[0] ?? text;
+  return sentence.length > 80 ? `${sentence.slice(0, 79).trimEnd()}…` : sentence;
+}
+
+// ------------------------------------------------------------ design tree
+
+function renderTree(view: RoundView): void {
+  const nodes = view.round.designTree;
+  side.hidden = drawer.hidden = scrim.hidden = !nodes;
+  if (!nodes) return;
+  const current = view.round.questions[view.step]?.number;
+  const open = (question: number) => {
+    const index = view.round.questions.findIndex((candidate) => candidate.number === question);
+    state.drawer = false;
+    if (index >= 0) go(view, index);
+  };
+  side.replaceChildren(designTree(nodes, { current, open, keyPrefix: 'side' }));
+  drawer.replaceChildren(
     h(
       'button',
-      { class: 'primary', disabled: readOnly || state.submitting, onclick: () => void submit() },
-      'Submit round',
+      {
+        class: 'btn ghost icon-btn drawer-close',
+        'aria-label': 'Close design tree',
+        'data-key': 'drawer-close',
+        onclick: () => setDrawer(false),
+      },
+      icon('x'),
+    ),
+    designTree(nodes, { current, open, keyPrefix: 'drawer' }),
+  );
+  drawer.classList.toggle('open', state.drawer);
+  scrim.classList.toggle('open', state.drawer);
+}
+
+function setDrawer(open: boolean): void {
+  state.drawer = open;
+  render();
+  if (open) drawer.querySelector<HTMLElement>('.qref, .drawer-close')?.focus();
+}
+
+// ---------------------------------------------------------- round switcher
+
+async function setMenu(open: boolean): Promise<void> {
+  if (open) await refreshIndex();
+  state.menu = open;
+  render();
+  if (open) menu.querySelector<HTMLElement>('[aria-checked="true"], [role="menuitemradio"]')?.focus();
+}
+
+function renderMenu(): void {
+  menu.hidden = !state.menu;
+  if (!state.menu) return;
+  const anchor = bar.querySelector('.round-btn')?.getBoundingClientRect();
+  menu.style.left = `${Math.max(12, anchor?.left ?? 12)}px`;
+  menu.replaceChildren(
+    ...[...state.index].reverse().map((summary) =>
+      h(
+        'button',
+        {
+          class: 'rm',
+          role: 'menuitemradio',
+          'aria-checked': String(summary.number === state.shown),
+          'data-key': `round-${summary.number}`,
+          onclick: () => void showRound(summary.number),
+        },
+        summary.number === state.shown ? icon('check') : h('span'),
+        h(
+          'span',
+          {},
+          `Round ${summary.number}`,
+          summary.title && h('span', { class: 'rm-t' }, ` · ${summary.title}`),
+          h('small', {}, roundStatus(summary)),
+        ),
+        h('span', { class: 'meta' }, `${summary.questions} Q`),
+      ),
     ),
   );
+}
+
+function roundStatus(summary: RoundSummary): string {
+  const how = { open: '', submitted: 'Submitted', terminal: 'Answered in the terminal' }[summary.state];
+  if (summary.number === state.latest) return how ? `Current round · ${how.toLowerCase()}` : 'Current round';
+  return `${how} · read-only`;
+}
+
+// ---------------------------------------------------------------- answers
+
+function answer(view: RoundView, n: number, next: Draft): void {
+  const previous = view.drafts.get(n)!;
+  view.drafts.set(n, { ...next, ownText: next.ownText ?? previous.ownText });
+  render();
+}
+
+function act(view: RoundView, n: number, command: KeyCommand): boolean {
+  if (!canSend(view.round)) return false;
+  const question = view.round.questions.find((candidate) => candidate.number === n)!;
+  const draft = view.drafts.get(n)!;
+  switch (command.kind) {
+    case 'accept':
+      answer(view, n, { mode: 'accepted' });
+      return true;
+    case 'pick':
+      if (!question.options.some((option) => option.letter === command.letter)) return false;
+      answer(view, n, { mode: 'picked', option: command.letter });
+      return true;
+    case 'unsure':
+      answer(view, n, draft.mode === 'unsure' ? { mode: 'none' } : { mode: 'unsure' });
+      return true;
+    case 'write': {
+      const text = draft.ownText ?? '';
+      if (!draft.writing && draft.mode !== 'own') {
+        answer(view, n, text.trim() ? { mode: 'own', text, writing: true } : { mode: 'none', writing: true });
+      }
+      mounted?.panels.find((panel) => panel.el.id === `q${n}`)?.focusAnswer();
+      return true;
+    }
+    default:
+      return false;
+  }
+}
+
+function go(view: RoundView, step: number): void {
+  const next = Math.max(0, Math.min(step, view.round.questions.length));
+  const moved = next !== view.step;
+  view.step = next;
+  render();
+  if (moved) window.scrollTo({ top: 0 });
+}
+
+function onKey(event: KeyboardEvent): void {
+  const command = keyCommand(event);
+  const view = shownView();
+  if (!command || !view) return;
+
+  if (command.kind === 'escape') {
+    // Innermost first: an unsaved comment, comment mode, then the menu, drawer or answer box.
+    if (mounted?.frames.some((frame) => frame.cancel())) return;
+    if (state.commenting) toggleCommenting();
+    else if (state.menu) void setMenu(false).then(() => bar.querySelector<HTMLElement>('.round-btn')?.focus());
+    else if (state.drawer) setDrawer(false);
+    else if (document.activeElement instanceof HTMLTextAreaElement) document.activeElement.blur();
+    return;
+  }
+  if (state.menu) return;
+
+  switch (command.kind) {
+    case 'submit':
+      event.preventDefault();
+      requestSubmit(view);
+      return;
+    case 'next':
+      go(view, view.step + 1);
+      return;
+    case 'previous':
+      go(view, view.step - 1);
+      return;
+    case 'comment':
+      if (!canSend(view.round)) return;
+      event.preventDefault();
+      toggleCommenting();
+      return;
+  }
+  const question = view.round.questions[view.step];
+  if (question && act(view, question.number, command)) event.preventDefault();
+}
+
+/** Submit round (bar or ⌘↵): from a question it opens the Review step; from Review it sends. */
+function requestSubmit(view: RoundView): void {
+  if (!canSend(view.round) || state.submitting) return;
+  const reviewStep = view.round.questions.length;
+  if (view.step !== reviewStep) {
+    go(view, reviewStep);
+    return;
+  }
+  void submit(view);
+}
+
+// Arrow keys move through the round switcher's items.
+menu.addEventListener('keydown', (event) => {
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+  event.preventDefault();
+  const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
+  const at = items.indexOf(document.activeElement as HTMLElement);
+  items[(at + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+});
+
+document.addEventListener('click', (event) => {
+  const target = event.target as Element;
+  // A mouse click on a control leaves no focus behind, so Enter goes on
+  // accepting rather than pressing that control again. (The control itself
+  // may already be replaced by the render the click caused.) Controls that
+  // open something move focus into it, and W moves it to the answer box.
+  if (event.detail > 0 && target.closest('button, a') && !target.closest('.round-btn, .tree-toggle, .menu')) {
+    queueMicrotask(() => {
+      const active = document.activeElement;
+      if (active instanceof HTMLButtonElement || active instanceof HTMLAnchorElement) active.blur();
+    });
+  }
+  if (state.menu && !target.closest('.menu, .round-btn')) void setMenu(false);
+});
+
+// ------------------------------------------------------------------ status
+
+/** A question's state: its verdict, or `comments` when it has only comments. */
+type QuestionState = Draft['mode'] | 'comments';
+
+function questionState(view: RoundView, n: number): QuestionState {
+  const mode = view.drafts.get(n)!.mode;
+  return mode === 'none' && view.comments.get(n)!.length > 0 ? 'comments' : mode;
+}
+
+/** How each state shows: its tone (green decided, purple commented, amber unsure) and icons. */
+const STATE_LOOK: Record<QuestionState, { tone?: 'ok' | 'cm' | 'un'; icon: IconName; chipIcon?: IconName }> = {
+  accepted: { tone: 'ok', icon: 'done', chipIcon: 'check' },
+  picked: { tone: 'ok', icon: 'done', chipIcon: 'check' },
+  own: { tone: 'ok', icon: 'done', chipIcon: 'check' },
+  unsure: { tone: 'un', icon: 'help', chipIcon: 'help' },
+  comments: { tone: 'cm', icon: 'comment', chipIcon: 'comment' },
+  none: { icon: 'open' },
+};
+
+function countAnswered(view: RoundView): number {
+  return view.round.questions.filter((question) => questionState(view, question.number) !== 'none').length;
+}
+
+function commentTotal(view: RoundView): number {
+  let total = 0;
+  for (const list of view.comments.values()) total += list.length;
+  return total;
 }
 
 function roundHeading(round: PageRound): string {
   return `Round ${round.number}${round.title ? ` · ${round.title}` : ''}`;
 }
 
-function stateLabel(draft: Draft, comments: number): string {
-  switch (draft.mode) {
-    case 'accepted':
-    case 'picked':
-    case 'own':
-      return 'answered';
-    case 'unsure':
-      return 'unsure';
-    case 'none':
-      return comments > 0 ? 'comments only' : 'open';
-  }
+function stateIcon(questionState: QuestionState): HTMLElement {
+  const look = STATE_LOOK[questionState];
+  return h('span', { class: `st${look.tone ? ` ${look.tone}` : ''}` }, icon(look.icon));
 }
 
-function commentsOn(question: PageQuestion): number {
-  return state.comments.get(question.number)?.length ?? 0;
+function stateChip(questionState: QuestionState, draft: Draft, comments: number): HTMLElement {
+  const label = {
+    accepted: 'Accepted',
+    picked: `Picked ${draft.mode === 'picked' ? draft.option : ''}`,
+    own: 'Own answer',
+    unsure: 'Unsure',
+    comments: `Comments only · ${comments}`,
+    none: 'No answer',
+  }[questionState];
+  const look = STATE_LOOK[questionState];
+  return h(
+    'span',
+    { class: `chip${look.tone ? ` tone-${look.tone}` : ''}` },
+    look.chipIcon && icon(look.chipIcon),
+    label,
+  );
 }
 
-function count(n: number, noun: string): string {
-  return `${n} ${noun}${n === 1 ? '' : 's'}`;
-}
-
-function summary(question: PageQuestion, draft: Draft): string {
-  const comments = commentsOn(question);
-  const verdict = verdictSummary(question, draft, comments);
-  return comments > 0 && draft.mode !== 'none' ? `${verdict} · ${count(comments, 'comment')}` : verdict;
-}
-
-function verdictSummary(question: PageQuestion, draft: Draft, comments: number): string {
-  switch (draft.mode) {
-    case 'accepted':
-      return question.recommendation.option ? `accepted ${question.recommendation.option}` : 'accepted';
-    case 'picked':
-      return `picked ${draft.option}`;
-    case 'own':
-      return `own answer: “${draft.text.trim()}”`;
-    case 'unsure':
-      return 'unsure';
-    case 'none':
-      return comments > 0 ? `comments only · ${count(comments, 'comment')}` : 'no answer';
-  }
-}
-
-function go(step: number): void {
-  const last = state.round?.questions.length ?? 0;
-  state.step = Math.max(0, Math.min(step, last));
-  render();
+/** A question's comment count beside its verdict chip. */
+function commentCount(n: number): HTMLElement {
+  return h('span', { class: 'cm-count', title: plural(n, 'comment') }, icon('comment'), String(n));
 }
 
 // ------------------------------------------------------------- submission
 
-async function submit(): Promise<void> {
-  const round = state.round;
-  if (!round || !canSend(round)) return;
+async function submit(view: RoundView): Promise<void> {
+  const round = view.round;
+  if (!canSend(round)) return;
   const payload: PageSubmission = {
     round: round.number,
     answers: round.questions.map((question) => {
-      const draft = state.drafts.get(question.number)!;
+      const draft = view.drafts.get(question.number)!;
       const answer: PageAnswer =
         draft.mode === 'picked'
           ? { mode: 'picked', option: draft.option }
           : draft.mode === 'own'
             ? { mode: 'own', text: draft.text }
             : { mode: draft.mode };
-      return { question: question.number, ...answer, comments: state.comments.get(question.number) ?? [] };
+      return { question: question.number, ...answer, comments: view.comments.get(question.number) ?? [] };
     }),
   };
 
@@ -531,8 +1112,8 @@ async function submit(): Promise<void> {
       const body = (await response.json().catch(() => ({}))) as { error?: string };
       throw new Error(body.error ?? `the server answered ${response.status}`);
     }
-    await loadRound(round.number);
-    state.step = round.questions.length;
+    await showRound(round.number, round.questions.length);
+    void refreshIndex();
   } catch (error) {
     state.error = `Couldn't submit: ${(error as Error).message}`;
   } finally {
@@ -541,28 +1122,14 @@ async function submit(): Promise<void> {
   }
 }
 
-// M toggles comment mode; Escape drops an unsaved comment, then leaves comment mode.
-document.addEventListener('keydown', (event) => {
-  if (event.metaKey || event.ctrlKey || event.altKey || typingIn(event.target)) return;
-  if (event.key === 'm' || event.key === 'M') {
-    if (!state.round || !canSend(state.round)) return;
-    event.preventDefault();
-    toggleCommenting();
-  } else if (event.key === 'Escape') {
-    const cancelled = [...frames.values()].some((frame) => frame.cancel());
-    if (!cancelled && state.commenting) toggleCommenting();
-  }
-});
+// ------------------------------------------------------------------- start
 
-function typingIn(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement && (target.isContentEditable || /^(input|textarea|select)$/i.test(target.tagName));
-}
-
+initTheme();
 // Blocks draw with the theme's tokens: a theme change (data-theme on <html>) redraws them.
 new MutationObserver(() => {
-  for (const frame of frames.values()) void frame.draw();
+  for (const frame of mounted?.frames ?? []) void frame.draw();
 }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-
-void loadRound('latest');
+document.addEventListener('keydown', onKey);
+void refreshIndex().then(() => (state.latest > 0 ? showRound(state.latest) : undefined));
 listen();
 watchActivity();

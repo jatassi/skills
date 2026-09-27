@@ -10,6 +10,7 @@
 //   GET  /                                 the round page
 //   GET  /assets/<file>                    page scripts and styles
 //   GET  /events                           server-sent events: `round`, `terminal`, `finished`
+//   GET  /api/rounds                       → RoundIndex (every round of the session, oldest first)
 //   GET  /api/rounds/latest | /api/rounds/<n>   → PageRound (404 before the first round)
 //   POST /api/rounds/<n>/submission  PageSubmission → {}  (409: submitted or answered in the terminal)
 //   POST /api/activity                     → {}  the user is interacting (keeps the server from idling out)
@@ -88,6 +89,18 @@ export interface PageRound {
   answeredInTerminal?: true;
   /** Present once the round has been submitted: each question's anchored comments by number. */
   comments?: Record<number, CommentRecord[]>;
+}
+
+/** A round as the page's round switcher lists it. */
+export interface RoundSummary {
+  number: number;
+  title?: string;
+  questions: number;
+  state: 'open' | 'submitted' | 'terminal';
+}
+
+export interface RoundIndex {
+  rounds: RoundSummary[];
 }
 
 /** Server-sent event payloads, keyed by event name. */
