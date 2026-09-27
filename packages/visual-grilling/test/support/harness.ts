@@ -40,9 +40,9 @@ export class Sandbox {
     return file;
   }
 
-  cli(args: string[], nodeArgs: string[] = [], stdin?: string): Promise<CliResult> {
+  cli(args: string[], nodeArgs: string[] = []): Promise<CliResult> {
     return new Promise((done) => {
-      const child = execFile(
+      execFile(
         process.execPath,
         [...nodeArgs, CLI, ...args],
         // Roomy on purpose: this spawns a real server and, on a busy machine
@@ -56,7 +56,6 @@ export class Sandbox {
           done({ code, stdout, stderr });
         },
       );
-      if (stdin !== undefined) child.stdin!.end(stdin);
     });
   }
 

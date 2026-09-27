@@ -26,20 +26,6 @@ const DEFAULT_AWAIT_SECONDS = 90;
 const SERVER_START_MS = 10_000;
 const STOP_MS = 5_000;
 
-/** How long `end` waits for the server: to answer a ping, then to stop once asked. */
-interface StopLimits {
-  pingMs?: number;
-  stopMs: number;
-}
-
-const END_LIMITS: StopLimits = { stopMs: STOP_MS };
-/**
- * `end --hook` runs as a session-end hook, which the host cancels after 1.5 s
- * (Claude Code): it stops the server on a much shorter leash, killing one that
- * doesn't answer in time.
- */
-const HOOK_LIMITS: StopLimits = { pingMs: 250, stopMs: 400 };
-
 const EXIT_OK = 0;
 const EXIT_FAILURE = 1;
 const EXIT_USAGE = 2;
@@ -67,7 +53,6 @@ export async function run(argv: string[], entryUrl: string): Promise<number> {
         session: { type: 'string' },
         'no-open': { type: 'boolean' },
         timeout: { type: 'string' },
-        hook: { type: 'boolean' },
         help: { type: 'boolean', short: 'h' },
       },
     });
@@ -84,7 +69,7 @@ export async function run(argv: string[], entryUrl: string): Promise<number> {
       case 'await':
         return await awaitSubmission({ session: values.session, timeout: values.timeout });
       case 'end':
-        return await end({ session: values.session, hook: values.hook === true });
+        return await end({ session: values.session });
       default:
         throw new UsageError(`unknown command "${command}"`);
     }
@@ -114,8 +99,6 @@ Flags:
   --no-open            present: don't open the default browser (open the link yourself,
                        e.g. in the Claude Code desktop Browser pane).
   --timeout <seconds>  await: how long to wait (default ${DEFAULT_AWAIT_SECONDS}; "5m" and "30s" work too).
-  --hook               end: run as a session-end hook, taking the session id from
-                       "session_id" in the hook's JSON on stdin.
 
 await's first line names the outcome:
   submitted · round N · <title>   the submission follows          exit 0
@@ -181,7 +164,7 @@ async function present(
       const { errors } = response.body as PresentRejection;
       for (const error of errors) io.err(formatRoundError(file, error));
       // A rejected first round leaves no grilling session behind.
-      if (newSession) await stopServer(server, paths, STOP_MS);
+      if (newSession) await stopServer(server, paths);
       return EXIT_FAILURE;
     }
     if (response.status !== 200) throw serverError(response);
@@ -289,35 +272,16 @@ function parseTimeout(value: string | undefined): number {
 
 // ---------------------------------------------------------------------- end
 
-async function end(options: { session: string | undefined; hook: boolean }): Promise<number> {
-  const id = options.hook ? await hookSessionId() : resolveSession(options.session, false).id;
+async function end(options: { session: string | undefined }): Promise<number> {
+  const { id } = resolveSession(options.session, false);
   const paths = sessionPaths(sessionDir(id));
   if (!existsSync(paths.dir)) return EXIT_OK;
 
   const server = readServerInfo(paths);
-  const limits = options.hook ? HOOK_LIMITS : END_LIMITS;
-  if (server && (await serverState(server, limits.pingMs)) !== 'dead') await stopServer(server, paths, limits.stopMs);
+  if (server && (await serverState(server)) !== 'dead') await stopServer(server, paths);
   rmSync(paths.dir, { recursive: true, force: true });
   io.out(`session ${id} ended`);
   return EXIT_OK;
-}
-
-/** The session id a session-end hook passes on stdin, as `{"session_id": "…", …}`. */
-async function hookSessionId(): Promise<string> {
-  if (process.stdin.isTTY) throw new UsageError("end --hook reads the hook's JSON on stdin");
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
-  let input: unknown;
-  try {
-    input = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-  } catch {
-    throw new UsageError('end --hook: stdin is not JSON');
-  }
-  const id = (input as { session_id?: unknown } | null)?.session_id;
-  if (typeof id !== 'string' || !isValidSessionId(id)) {
-    throw new UsageError('end --hook: the hook input has no usable "session_id"');
-  }
-  return id;
 }
 
 // -------------------------------------------------------------------- helpers
@@ -326,12 +290,12 @@ async function hookSessionId(): Promise<string> {
  * Asks the server to end the session, then waits for it to exit and its folder
  * to go. A server that doesn't answer or doesn't exit in time is terminated.
  */
-async function stopServer(server: ServerInfo, paths: SessionPaths, stopMs: number): Promise<void> {
-  const answered = await call(server.port, '/control/end', {}, stopMs).then(
+async function stopServer(server: ServerInfo, paths: SessionPaths): Promise<void> {
+  const answered = await call(server.port, '/control/end', {}, STOP_MS).then(
     () => true,
     () => false,
   );
-  const deadline = Date.now() + (answered ? stopMs : 0);
+  const deadline = Date.now() + (answered ? STOP_MS : 0);
   while (Date.now() < deadline && isAlive(server.pid)) await sleep(50);
   if (isAlive(server.pid)) {
     try {

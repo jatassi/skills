@@ -66,10 +66,10 @@ export function call(port: number, route: string, body: unknown, timeoutMs?: num
 
 type ServerState = 'running' | 'dead' | 'unresponsive';
 
-export async function serverState(info: ServerInfo, pingTimeoutMs = PING_TIMEOUT_MS): Promise<ServerState> {
+export async function serverState(info: ServerInfo): Promise<ServerState> {
   if (!isAlive(info.pid)) return 'dead';
   try {
-    const response = await call(info.port, '/control/ping', {}, pingTimeoutMs);
+    const response = await call(info.port, '/control/ping', {}, PING_TIMEOUT_MS);
     const identity = response.body as Partial<PingResponse>;
     return response.status === 200 && identity.pid === info.pid && identity.startTime === info.startTime
       ? 'running'

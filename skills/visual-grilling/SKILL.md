@@ -2,11 +2,6 @@
 name: visual-grilling
 description: Grilling with each round shown as a page in the browser, answered and commented on there.
 disable-model-invocation: true
-hooks:
-  SessionEnd:
-    - hooks:
-        - type: command
-          command: 'node "${CLAUDE_PLUGIN_ROOT}/skills/visual-grilling/dist/cli.mjs" end --hook'
 ---
 
 Call the Skill tool with "grilling" and follow it. This skill changes only the channel: each round goes to the user as a round page in the browser, and the round submission comes back through the CLI. The terminal stays a channel too.
@@ -35,6 +30,6 @@ A reply the user types in the terminal answers the open round just as a submissi
 
 ## When grilling concludes
 
-Run `end` (with `--session <id>` if `present` printed one). It stops the server and deletes every file of the grilling session. If the agent session ends first, the session-end hook does the same.
+Stop every server you started: run `end`, once with each `--session <id>` you used (or bare, if `present` never printed one). Do this when grilling concludes, when the user abandons or redirects it mid-grilling, and always before your work in this agent session ends. `end` deletes every file of the grilling session, and does nothing for one that is already gone.
 
 If a skill asks you to call another skill which is not available, stop and ask the user to install the missing skills instead of fabricating their content.

@@ -35,7 +35,6 @@ Point your client at this repository; the manifest is [`plugin.json`](plugin.jso
 │   ├── plugin.json              # Claude Code plugin manifest
 │   └── marketplace.json         # Claude Code marketplace (this repo = one plugin)
 ├── .github/workflows/           # release.yml, the only workflow: cuts a release by hand
-├── hooks/hooks.json             # Codex SessionEnd hook for visual-grilling (Claude Code also loads it)
 └── skills/                      # Shared by both formats
     └── <skill>/SKILL.md
 ```
