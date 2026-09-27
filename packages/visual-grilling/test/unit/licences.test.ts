@@ -99,6 +99,23 @@ describe('thirdPartyLicences', () => {
     expect(thirdPartyLicences([dir])).toContain('Licence: MIT');
   });
 
+  it('writes the standard text, with the author, for a package that ships no licence file', () => {
+    const dir = pkg('bare-isc', { license: 'ISC', author: 'Ada <ada@example.com>' });
+    const text = thirdPartyLicences([dir]);
+    expect(text).toContain('ships no licence file; the standard ISC text');
+    expect(text).toContain('Copyright (c) Ada <ada@example.com>\n\nPermission to use, copy, modify');
+  });
+
+  it.each([
+    ['git+ssh://git@github.com/org/epl-lib.git', 'https://github.com/org/epl-lib'],
+    ['git@gitlab.com:org/epl-lib.git', 'https://gitlab.com/org/epl-lib'],
+    ['github:org/epl-lib', 'https://github.com/org/epl-lib'],
+    ['org/epl-lib', 'https://github.com/org/epl-lib'],
+  ])('reads the EPL source from repository %s', (repository, url) => {
+    const dir = pkg('epl-lib', { license: 'EPL-2.0', repository }, { LICENSE: 'EPL' });
+    expect(thirdPartyLicences([dir])).toContain(`Source available at ${url} @ 1.2.3`);
+  });
+
   it('reads SPDX ids in any case', () => {
     const dir = pkg('lower', { license: 'apache-2.0' });
     expect(thirdPartyLicences([dir])).toContain('Licence: Apache-2.0');

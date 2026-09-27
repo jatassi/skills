@@ -10,7 +10,7 @@
 // Run by build.mjs through Node's type stripping: erasable TypeScript only.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, sep } from 'node:path';
+import { dirname, join } from 'node:path';
 
 /** SPDX ids the bundle may carry. */
 export const ALLOWED_LICENCES: readonly string[] = [
@@ -57,15 +57,17 @@ export class LicenceError extends Error {
 export function packageRoots(files: Iterable<string>): string[] {
   const roots = new Set<string>();
   for (const file of files) {
-    if (!file.split(/[\\/]/).includes('node_modules')) continue;
+    if (!inNodeModules(file)) continue;
     const root = packageRoot(file);
     if (root) roots.add(root);
   }
   return [...roots];
 }
 
+const inNodeModules = (path: string): boolean => path.split(/[\\/]/).includes('node_modules');
+
 function packageRoot(file: string): string | undefined {
-  for (let dir = dirname(file); dir.split(sep).includes('node_modules'); dir = dirname(dir)) {
+  for (let dir = dirname(file); inNodeModules(dir); dir = dirname(dir)) {
     const manifest = join(dir, 'package.json');
     if (!existsSync(manifest)) continue;
     const json = JSON.parse(readFileSync(manifest, 'utf8')) as { name?: unknown; version?: unknown };
@@ -77,6 +79,7 @@ function packageRoot(file: string): string | undefined {
 interface Manifest {
   name: string;
   version: string;
+  author?: unknown;
   license?: unknown;
   licenses?: unknown;
   repository?: unknown;
@@ -123,7 +126,15 @@ export function thirdPartyLicences(packageDirs: Iterable<string>, options: Licen
       lines.push('', `Source available at ${repositoryUrl(manifest) ?? `https://www.npmjs.com/package/${manifest.name}`} @ ${manifest.version}`);
     }
     const texts = filesMatching(dir, /^(licen[cs]e|copying)/i);
-    if (texts.length === 0) lines.push('', '(The package ships no licence file.)');
+    if (texts.length === 0) {
+      const standard = STANDARD_TEXTS[licence];
+      if (standard) {
+        lines.push('', `The package ships no licence file; the standard ${licence} text, with the holder named from its package.json:`);
+        lines.push('', fenced(`Copyright (c) ${authorOf(manifest)}\n\n${standard}`));
+      } else {
+        lines.push('', '(The package ships no licence file.)');
+      }
+    }
     for (const text of texts) lines.push('', fenced(text));
     if (mentions(licence, 'Apache-2.0')) {
       for (const notice of filesMatching(dir, /^notice/i)) lines.push('', 'NOTICE:', '', fenced(notice));
@@ -226,9 +237,54 @@ function repositoryUrl(manifest: Manifest): string | undefined {
   const repository = manifest.repository;
   const raw = typeof repository === 'string' ? repository : (repository as { url?: unknown } | undefined)?.url;
   if (typeof raw !== 'string') return typeof manifest.homepage === 'string' ? manifest.homepage : undefined;
-  if (/^[\w.-]+\/[\w.-]+$/.test(raw)) return `https://github.com/${raw}`;
-  return raw.replace(/^git\+/, '').replace(/^git:\/\//, 'https://').replace(/\.git$/, '');
+  // npm's shorthands: "user/repo", "github:user/repo", "gitlab:…", "bitbucket:…".
+  const shorthand = /^(?:(github|gitlab|bitbucket):)?([\w.-]+\/[\w.-]+)$/.exec(raw);
+  if (shorthand) return `https://${shorthand[1] === 'bitbucket' ? 'bitbucket.org' : `${shorthand[1] ?? 'github'}.com`}/${shorthand[2]}`;
+  return raw
+    .replace(/^git\+/, '')
+    .replace(/^(?:git|ssh):\/\/(?:[^@/]+@)?/, 'https://')
+    .replace(/^git@([^:]+):/, 'https://$1/')
+    .replace(/\.git$/, '');
 }
+
+function authorOf(manifest: Manifest): string {
+  const author = manifest.author;
+  const name = typeof author === 'string' ? author : (author as { name?: unknown } | undefined)?.name;
+  if (typeof name === 'string' && name.trim()) return name.trim();
+  return `the ${manifest.name} authors${repositoryUrl(manifest) ? ` (${repositoryUrl(manifest)})` : ''}`;
+}
+
+/** Standard texts for a package that declares one of these but ships no file. */
+const STANDARD_TEXTS: Record<string, string> = {
+  MIT: `Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.`,
+  ISC: `Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.`,
+};
 
 function filesMatching(dir: string, pattern: RegExp): string[] {
   return readdirSync(dir, { withFileTypes: true })

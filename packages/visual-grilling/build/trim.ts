@@ -71,12 +71,13 @@ export const jsdomTrim: Plugin = {
 
 const UNDICI_STUB = `
 const { EventEmitter } = require("node:events");
+const refusal = () => new Error("network access is not supported: the visual-grilling bundle leaves out undici");
 function refuse() {
-  throw new Error("network access is not supported: the visual-grilling bundle leaves out undici");
+  throw refusal();
 }
 class Dispatcher extends EventEmitter {
   dispatch() { refuse(); }
-  request() { return Promise.reject(new Error("network access is not supported: the visual-grilling bundle leaves out undici")); }
+  request() { return Promise.reject(refusal()); }
   close() { return Promise.resolve(); }
   destroy() { return Promise.resolve(); }
 }

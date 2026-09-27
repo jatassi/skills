@@ -111,10 +111,11 @@ for (const file of ['index.html', 'app.css']) {
 // into @viz-js/viz's WebAssembly. Fails the build on a missing or disallowed
 // licence.
 const bundled = results.flatMap((result) => Object.keys(result.metafile.inputs)).map((input) => resolve(input));
+const [vizDir] = packageRoots([require.resolve('@viz-js/viz')]);
 writeFileSync(
   join(out, 'THIRD_PARTY_LICENSES.md'),
   thirdPartyLicences(packageRoots([...bundled, tailwind]), {
-    explicit: vizWasmEntries(readFileSync(join(packageRoots([require.resolve('@viz-js/viz')])[0], 'lib/provenance.json'), 'utf8')),
+    explicit: vizWasmEntries(readFileSync(join(vizDir, 'lib/provenance.json'), 'utf8')),
     // Its licence file is the MIT licence; its package.json has no `license`.
     undeclared: { 'khroma@2.1.0': 'MIT' },
   }),
@@ -132,4 +133,3 @@ function* walk(dir) {
     else yield path;
   }
 }
-
