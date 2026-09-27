@@ -8,6 +8,10 @@
 
 **Illustration**: the rich content an agent attaches to a question on a round page to make it easier to answer: a diagram, table, chart, option mockups, or anything else the agent writes. Agents choose freely how to illustrate; ready-made building blocks exist for common cases, never as a limit.
 
+**Block**: a ready-made kind of illustration that the round page renders from a source the agent writes in that kind's own language, checks before showing, and anchors comments to in the source's own terms. Raw HTML is an illustration but not a block.
+
+**Mockup**: an optional sketch attached to one of a question's options, shown beside the other options' mockups; picking a mockup picks its option.
+
 **Anchored comment**: a comment the user leaves by clicking a spot on a round page, carrying which question and which element of its illustration it points at.
 
 **Round submission**: the user's answers to a whole round, sent back to the agent at once, including every anchored comment made during the round. A question may be answered by accepting the recommendation, picking an option, free text, or marked unsure (it stays on the frontier).
