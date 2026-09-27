@@ -483,9 +483,9 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
         comments().splice(comments().indexOf(comment), 1);
         render();
       },
-      reportFailure: (message) => {
-        // Mockups have no illustration id; their script errors travel another way.
-        if (!subject.option) void reportDrawFailure(view.round, n, subject.illustration.id, message);
+      reportWarning: (kind, message) => {
+        // Only an illustration has an id the round knows; a mockup's problems stay on the page.
+        if (!subject.option) void reportWarning(view.round, { question: n, illustration: subject.illustration.id, kind, message });
       },
     });
     frames.push({ frame: made, subject });
@@ -705,13 +705,12 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
 }
 
 /**
- * A block that failed only on the page: the server keeps it for the round's
- * submission, where the agent reads it as a warning. Failing to report is
- * fine; the frame still shows the error.
+ * A block that failed only on the page, or a script error in agent HTML: the
+ * server keeps it for the round's submission, where the agent reads it as a
+ * warning. Failing to report is fine; a draw failure still shows in its frame.
  */
-async function reportDrawFailure(round: PageRound, question: number, illustration: string, message: string): Promise<void> {
+async function reportWarning(round: PageRound, warning: PageWarning): Promise<void> {
   if (!canSend(round)) return;
-  const warning: PageWarning = { question, illustration, kind: 'draw', message };
   await fetch(`/api/rounds/${round.number}/warnings`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -1127,7 +1126,7 @@ async function submit(view: RoundView): Promise<void> {
 initTheme();
 // Blocks draw with the theme's tokens: a theme change (data-theme on <html>) redraws them.
 new MutationObserver(() => {
-  for (const frame of mounted?.frames ?? []) void frame.draw();
+  for (const frame of mounted?.frames ?? []) frame.retheme();
 }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 document.addEventListener('keydown', onKey);
 void refreshIndex().then(() => (state.latest > 0 ? showRound(state.latest) : undefined));

@@ -13,7 +13,10 @@
 //   GET  /api/rounds                       → RoundIndex (every round of the session, oldest first)
 //   GET  /api/rounds/latest | /api/rounds/<n>   → PageRound (404 before the first round)
 //   POST /api/rounds/<n>/submission  PageSubmission → {}  (409: submitted or answered in the terminal)
+//   POST /api/rounds/<n>/warnings    PageWarning → {}  a page-only draw failure or a frame script error
 //   POST /api/activity                     → {}  the user is interacting (keeps the server from idling out)
+//   GET  /frame/r<n>/<illustration-id>     an html illustration's sandboxed frame document
+//   GET  /frame/assets/<file>              the frame's scripts (inject.js, tailwind.js)
 
 import type { DesignTreeNode, Illustration, RoundError } from './round.ts';
 import type { CommentRecord, Verdict } from './submission.ts';
@@ -48,7 +51,11 @@ export interface AwaitResponse {
 }
 
 /** An illustration as the round file declared it, for its block to draw on the page. */
-export type PageIllustration = Omit<Illustration, 'line' | 'table'> & { table?: PageTable };
+export type PageIllustration = Omit<Illustration, 'line' | 'table'> & {
+  table?: PageTable;
+  /** For `html`: the path its sandboxed frame is served at, /frame/r<N>/<illustration-id>. */
+  frame?: string;
+};
 
 export interface PageTableCell {
   /** Rendered from the cell's Markdown with raw HTML escaped. */

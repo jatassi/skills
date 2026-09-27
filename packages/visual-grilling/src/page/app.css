@@ -1411,4 +1411,18 @@ textarea[readonly] {
 /* Points are hollow by default: let a click inside one name it. */
 .vega-lite-block .mark-symbol.role-mark > path {
   pointer-events: visible;
+/* Agent HTML: a sandboxed frame, as wide as the illustration and as tall as its content. */
+.kind-html .block-content {
+  width: auto;
+}
+
+.agent-frame {
+  display: block;
+  width: 100%;
+  height: 150px;
+  border: 0;
+}
+
+.backdrop-toggle {
+  font-size: 12px;
 }
