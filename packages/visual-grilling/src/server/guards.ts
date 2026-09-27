@@ -28,7 +28,8 @@ export const BASE_HEADERS: OutgoingHttpHeaders = {
 
 const ROUND_PAGE_CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  // WebAssembly compiles only (Graphviz); JavaScript eval stays blocked.
+  "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "connect-src 'self'",

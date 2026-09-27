@@ -101,7 +101,7 @@ Q6 Retry policy · accepted
     await pageExpect(page.getByRole('region', { name: 'Q7' })).toContainText('Last one.');
   });
 
-  it('shows each illustration and mockup as its raw source in a titled frame', async () => {
+  it('shows each illustration and mockup in a titled frame, a kind with no renderer as its raw source', async () => {
     sandbox = new Sandbox('p1');
     const round = [
       '❓ **Q1** - **Flow**: Which flow?',
@@ -125,7 +125,7 @@ Q6 Retry policy · accepted
     await page.goto(presented.stdout.trim());
     const flow = page.getByRole('figure', { name: 'Request flow' });
     await pageExpect(flow).toContainText('dot');
-    await pageExpect(flow.locator('pre')).toHaveText('digraph { a -> b }');
+    await pageExpect(flow.locator('svg g.node')).toHaveCount(2);
     await pageExpect(page.getByRole('figure', { name: 'Mockup A' }).locator('pre')).toHaveText('<nav>tabs</nav>');
   });
 

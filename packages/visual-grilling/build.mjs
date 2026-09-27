@@ -6,6 +6,7 @@
 //   <out>/page/              the round page (index.html, app.js, app.css)
 //   <out>/page/mermaid.js    the Mermaid+ELK chunk: the page loads it lazily, and
 //                            the server imports it for the draw check
+//   <out>/page/graphviz.js   the Graphviz (@viz-js/viz) chunk, shared the same way
 
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -90,8 +91,9 @@ await Promise.all([
   }),
   esbuild.build({ ...browser, entryPoints: [join(here, 'src/page/app.ts')], outfile: join(out, 'page/app.js') }),
   // One copy of each drawing library: the page imports these chunks by URL,
-  // and the server imports the same files under jsdom.
+  // and the server imports the same files (Mermaid's under jsdom).
   esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/mermaid.ts')], outfile: join(out, 'page/mermaid.js') }),
+  esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/graphviz.ts')], outfile: join(out, 'page/graphviz.js') }),
 ]);
 
 mkdirSync(join(out, 'page'), { recursive: true });
