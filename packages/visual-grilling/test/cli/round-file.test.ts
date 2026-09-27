@@ -1,11 +1,11 @@
 import { existsSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Sandbox } from '../support/harness.ts';
+import { crash, Sandbox } from '../support/harness.ts';
 
 let sandbox: Sandbox;
 
 afterEach(async () => {
-  await sandbox?.dispose(['r1', 'r2']);
+  await sandbox?.dispose(['r1', 'r2', 'r3', 'r4']);
 });
 
 const BROKEN_ROUND = `# Broken
@@ -113,5 +113,52 @@ describe('present with the full grammar', () => {
     // Prose renders with raw HTML off.
     expect(round.questions[0].proseHtml).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(round.questions[0].proseHtml).not.toContain('<script>');
+  });
+});
+
+describe('present with a design tree that names earlier rounds', () => {
+  const tree = (branches: string) => `\`\`\`design-tree\n${branches}\n\`\`\`\n\n`;
+  const question = (n: number) => `❓ **Q${n}** - **Title ${n}**: Body.\n\n➡️ Yes.\n\n`;
+
+  it('accepts any question of the session, rejects one no round has had, and says which round holds each', async () => {
+    sandbox = new Sandbox('r3');
+    const firstRound = sandbox.writeRound('round-1.md', question(1) + question(2));
+    const first = await sandbox.cli(['present', firstRound, '--no-open']);
+    expect(first).toMatchObject({ code: 0, stderr: '' });
+
+    const unknown = sandbox.writeRound('bad.md', tree('- [ ] Q3 and Q4') + question(3));
+    const rejected = await sandbox.cli(['present', unknown, '--no-open']);
+    expect(rejected.code).toBe(1);
+    expect(rejected.stderr).toBe(`${unknown}:2: design tree: Q4 is not in this round or an earlier one\n`);
+
+    const second = sandbox.writeRound('round-2.md', tree('- [x] Storage Q1: folder\n- [ ] Runtime Q3') + question(3));
+    expect(await sandbox.cli(['present', second, '--no-open'])).toMatchObject({ code: 0, stderr: '' });
+
+    const round = await (await fetch(`${first.stdout.trim()}api/rounds/latest`)).json();
+    expect(round).toMatchObject({
+      number: 2,
+      designTree: [
+        { label: 'Storage Q1', settled: true, gist: 'folder', questions: [1], children: [] },
+        { label: 'Runtime Q3', settled: false, questions: [3], children: [] },
+      ],
+      questionRounds: { 1: 1, 3: 2 },
+    });
+  });
+
+  it('keeps those rounds after a restart, reloading them in round order', async () => {
+    sandbox = new Sandbox('r4');
+    // Ten rounds, so round-10.md sorts before round-2.md by name.
+    for (let n = 1; n <= 9; n++) {
+      const result = await sandbox.cli(['present', sandbox.writeRound(`round-${n}.md`, question(n)), '--no-open']);
+      expect(result).toMatchObject({ code: 0, stderr: '' });
+    }
+    const tenth = sandbox.writeRound('round-10.md', tree('- [ ] Runtime Q2') + question(10));
+    expect(await sandbox.cli(['present', tenth, '--no-open'])).toMatchObject({ code: 0, stderr: '' });
+    await crash(sandbox.serverInfo('r4').pid);
+
+    const eleventh = sandbox.writeRound('round-11.md', question(11));
+    const url = (await sandbox.cli(['present', eleventh, '--no-open'])).stdout.trim();
+    const round = await (await fetch(`${url}api/rounds/10`)).json();
+    expect(round).toMatchObject({ number: 10, questionRounds: { 2: 2 } });
   });
 });

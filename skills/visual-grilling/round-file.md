@@ -21,7 +21,7 @@ A question starts at its header and runs to the next header:
 ```
 
 - ❓ and ➡️ work with or without U+FE0F. The dash may be `-`, `–` or `—`. The colon may be missing or sit inside the bold.
-- Numbers are unique and increase through the round. They may start anywhere (a round can open at Q7).
+- Numbers are unique and increase through the round. They may start anywhere, and carry on across rounds: after a round ending at Q6, open the next at Q7.
 - `---` separators between questions are ignored.
 - The header is its own paragraph, outside any list or quote.
 
@@ -81,7 +81,7 @@ An optional `design-tree` fence before Q1 holds the whole tree as one nested GFM
 
 - `[x]` marks a settled branch, optionally followed by `: gist`.
 - `[ ]` marks an open one.
-- A bare `Q<n>` links to that question, which must be in this round.
+- A bare `Q<n>` links to that question, which must be in this round or an earlier round of the grilling session. A link to an earlier round's question opens that round, read-only, at the question.
 - A branch is one line; nest sub-branches as a list.
 
 ````
@@ -110,7 +110,7 @@ Question-level errors drop the illustration part; round-level errors drop the qu
 - **Options**: gaps in the letters (or a list not starting at A); an item not written `- **A** - label`; an option running past one line; anything but an html mockup indented under an option; a second mockup under one option; a recommendation pointing at a missing option; an html fence right after an option but not indented under it (with the hint "indent it under option B").
 - **Illustrations**: a fence with no language; a `design-tree` fence inside a question; a missing, malformed or duplicate `id`; an unknown key, a key that isn't lower camelCase, a key given twice, or a token that isn't `key=value`; a quoted value with no closing quote, a quote that doesn't wrap the whole value, or no space after it; an empty `title` or `file`; a bad `tailwind`, `startLine` or `highlight` value, or a `highlight` outside the code; a `code` fence without `lang=`, or a `lang` that isn't a language name; a duplicate `data-anchor` in one html illustration or mockup.
 - **Mockups**: an `id`; any key but `tailwind`.
-- **Design tree**: anything but one task list in the fence; a branch without `[ ]` or `[x]`, with no name, or running past one line; a `Q<n>` that isn't in the round; a second design-tree fence.
+- **Design tree**: anything but one task list in the fence; a branch without `[ ]` or `[x]`, with no name, or running past one line; a `Q<n>` that no round of the grilling session has had; a second design-tree fence.
 - **Drawing**: any block that fails to draw (it throws or comes out empty, like a `diff` with no files). Where `present` recognises the failure, its message says how to fix it.
 
 ## Worked example

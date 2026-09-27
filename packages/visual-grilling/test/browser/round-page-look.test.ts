@@ -297,6 +297,36 @@ describe('design tree', () => {
     await pageExpect(tree).toBeHidden();
   });
 
+  it("opens an earlier round's question from its Q link, and comes back to this round's", async () => {
+    sandbox = new Sandbox('look');
+    const page = await open(await present(STORAGE_ROUND));
+    const follow = [
+      '```design-tree',
+      '- [x] Runtime: Bun, per Q2',
+      '- [ ] Anything else Q7',
+      '```',
+      '',
+      '❓ **Q7** - **Anything else?**: Last one.',
+      '',
+      '➡️ No.',
+      '',
+    ].join('\n');
+    await present(follow, 'round-2.md');
+    await pageExpect(page.getByRole('heading', { level: 1 })).toHaveText('Round 2');
+
+    const tree = page.getByRole('complementary', { name: 'Design tree' });
+    await pageExpect(tree.getByRole('link', { name: 'Q2' })).toHaveAttribute('title', 'Opens round 1');
+    await pageExpect(tree.getByRole('link', { name: 'Q7' })).not.toHaveAttribute('title');
+    await tree.getByRole('link', { name: 'Q2' }).click();
+    await pageExpect(page.getByRole('heading', { level: 1 })).toHaveText('Round 1 · Storage choices');
+    await pageExpect(region(page, 'Q2')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Back to round 2' }).click();
+    await tree.getByRole('link', { name: 'Q7' }).click();
+    await pageExpect(page.getByRole('heading', { level: 1 })).toHaveText('Round 2');
+    await pageExpect(region(page, 'Q7')).toBeVisible();
+  });
+
   it('is hidden when the round has no tree', async () => {
     sandbox = new Sandbox('look');
     const page = await open(await present(STORAGE_ROUND));

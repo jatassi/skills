@@ -1,5 +1,6 @@
 // The design tree beside the questions: settled and open branches, nested as
-// the agent wrote them, with each bare `Q<n>` linking to that question.
+// the agent wrote them, with each bare `Q<n>` linking to that question, in
+// this round or an earlier one.
 
 import type { DesignTreeNode } from '../core/round.ts';
 import { h, icon } from './dom.ts';
@@ -7,8 +8,10 @@ import { h, icon } from './dom.ts';
 export interface TreeContext {
   /** The question on screen, whose rows are marked current. */
   current?: number;
-  /** Opens a question of the round the tree belongs to. */
+  /** Opens a question: of the round the tree belongs to, or of an earlier one. */
   open: (question: number) => void;
+  /** The earlier round a question is in, when it isn't in the tree's own round. */
+  elsewhere: (question: number) => number | undefined;
   /** Tells this copy's links apart from another copy's (column and drawer) for focus keeping. */
   keyPrefix: string;
 }
@@ -54,7 +57,7 @@ function branches(nodes: DesignTreeNode[], context: TreeContext): HTMLElement {
   );
 }
 
-/** Text with each `Q<n>` of this round turned into a link to that question. */
+/** Text with each `Q<n>` the branch names turned into a link to that question. */
 function linked(text: string, questions: number[], context: TreeContext): (Node | string)[] {
   const parts: (Node | string)[] = [];
   let last = 0;
@@ -69,6 +72,7 @@ function linked(text: string, questions: number[], context: TreeContext): (Node 
           class: 'qref',
           href: `#q${n}`,
           'data-key': `${context.keyPrefix}-q${n}`,
+          title: context.elsewhere(n) === undefined ? undefined : `Opens round ${context.elsewhere(n)}`,
           onclick: (event) => {
             event.preventDefault();
             context.open(n);

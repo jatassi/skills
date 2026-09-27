@@ -92,7 +92,7 @@ export interface DesignTreeNode {
   settled: boolean;
   /** For a settled branch, the text after `: `. */
   gist?: string;
-  /** Questions of this round the branch names with a bare `Q<n>`. */
+  /** Questions the branch names with a bare `Q<n>`: of this round or an earlier one of the session. */
   questions: number[];
   children: DesignTreeNode[];
 }
@@ -158,8 +158,13 @@ const ALLOWED_KEYS: Record<IllustrationKind, string[]> = {
 
 // ------------------------------------------------------------------ parser
 
-export function parseRound(source: string): ParseResult {
-  return new RoundParser(source).parse();
+/**
+ * Parses one round file. `earlier` holds the question numbers of the grilling
+ * session's earlier rounds, which the design tree may name too: numbers carry
+ * on across rounds. Only the server knows them; the parse is otherwise pure.
+ */
+export function parseRound(source: string, earlier: ReadonlySet<number> = new Set()): ParseResult {
+  return new RoundParser(source, earlier).parse();
 }
 
 type Part = 'prose' | 'illustration' | 'options';
@@ -172,7 +177,10 @@ class RoundParser {
   /** Illustration id → the question it first appeared in. */
   private readonly ids = new Map<string, number>();
 
-  constructor(private readonly source: string) {}
+  constructor(
+    private readonly source: string,
+    private readonly earlier: ReadonlySet<number>,
+  ) {}
 
   parse(): ParseResult {
     const tree = parseMarkdown(this.source);
@@ -240,7 +248,8 @@ class RoundParser {
     }
 
     if (treeFence) {
-      const designTree = this.designTree(treeFence, new Set(groups.map(({ match }) => Number(match[1]))));
+      const known = new Set([...this.earlier, ...groups.map(({ match }) => Number(match[1]))]);
+      const designTree = this.designTree(treeFence, known);
       if (designTree) round.designTree = designTree;
     }
 
@@ -651,7 +660,7 @@ class RoundParser {
         const named: number[] = [];
         for (const match of text.matchAll(/\bQ(\d+)\b/g)) {
           const n = Number(match[1]);
-          if (!questions.has(n)) report(line, `Q${n} is not in this round`);
+          if (!questions.has(n)) report(line, `Q${n} is not in this round or an earlier one`);
           else if (!named.includes(n)) named.push(n);
         }
 
