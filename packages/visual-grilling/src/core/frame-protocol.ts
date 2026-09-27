@@ -100,7 +100,9 @@ function readSnapshot(raw: unknown): Snapshot | null {
     selector: text(input.selector, 1_000),
     peers: list(input.peers, MAX_PEERS).flatMap((item) => {
       const peer = object(item);
-      return peer ? [{ tag: text(peer.tag, 40), attrs: attrs(peer.attrs), text: text(peer.text, 80) }] : [];
+      if (!peer) return [];
+      const box = readBox(peer.box);
+      return [{ tag: text(peer.tag, 40), attrs: attrs(peer.attrs), text: text(peer.text, 80), ...(box ? { box } : {}) }];
     }),
     texts: list(input.texts, MAX_TEXTS).flatMap((item) => {
       const entry = object(item);

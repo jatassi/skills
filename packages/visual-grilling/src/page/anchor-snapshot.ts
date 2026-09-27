@@ -41,6 +41,7 @@ export function takeSnapshot(target: Element, root: Element, clientX: number, cl
         tag: element.tagName.toLowerCase(),
         attrs: keptAttributes(element),
         text: (element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 80),
+        box: relative(element.getBoundingClientRect()),
       }))
     : [];
 

@@ -1,7 +1,8 @@
 // Anchoring for the `mermaid` block: one adapter per diagram type, keyed by
-// Mermaid's name for the type (the drawing's aria-roledescription). A click
-// the type's adapter can't name, or a type with no adapter, falls to the
-// generic rules.
+// Mermaid's name for the type (the drawing's aria-roledescription), for all
+// 32 types Mermaid 12 ships. A click the type's adapter can't name (generated
+// decoration, a same-named treemap sibling), or a type with no adapter, falls
+// to the generic rules.
 //
 // Adding a type: write a DiagramAdapter in its own module (types drawn by
 // one renderer, like the graph family, share a module) and list it in
@@ -27,10 +28,26 @@ import {
   stateAdapter,
   useCaseAdapter,
 } from './graph.ts';
-import { sequenceAdapter } from './sequence.ts';
+import { cynefinAdapter } from './cynefin.ts';
+import { eventModelingAdapter } from './eventmodeling.ts';
 import { HIT_CLASS, HIT_ORIGINAL_CLASS, HIT_ORIGINAL_ID } from './hit.ts';
+import { ishikawaAdapter } from './ishikawa.ts';
+import { journeyAdapter } from './journey.ts';
+import { mindmapAdapter } from './mindmap.ts';
+import { packetAdapter } from './packet.ts';
+import { pieAdapter } from './pie.ts';
+import { quadrantAdapter } from './quadrant.ts';
+import { radarAdapter } from './radar.ts';
+import { railroadAdapter } from './railroad.ts';
+import { sankeyAdapter } from './sankey.ts';
+import { sequenceAdapter } from './sequence.ts';
 import { hasClass, type DiagramAdapter, type DiagramClick } from './shared.ts';
+import { timelineAdapter } from './timeline.ts';
+import { treemapAdapter } from './treemap.ts';
+import { treeViewAdapter } from './treeview.ts';
 import { vennAdapter } from './venn.ts';
+import { wardleyAdapter } from './wardley.ts';
+import { xyChartAdapter } from './xychart.ts';
 
 const ADAPTERS: [types: string[], adapter: DiagramAdapter][] = [
   [['flowchart-v2', 'flowchart', 'flowchart-elk', 'swimlane', 'agentflow'], flowchartAdapter],
@@ -47,6 +64,22 @@ const ADAPTERS: [types: string[], adapter: DiagramAdapter][] = [
   [['venn'], vennAdapter],
   [['gitGraph'], gitGraphAdapter],
   [['sequence'], sequenceAdapter],
+  [['mindmap'], mindmapAdapter],
+  [['pie'], pieAdapter],
+  [['quadrantChart'], quadrantAdapter],
+  [['xychart'], xyChartAdapter],
+  [['sankey'], sankeyAdapter],
+  [['radar'], radarAdapter],
+  [['packet'], packetAdapter],
+  [['treemap'], treemapAdapter],
+  [['journey'], journeyAdapter],
+  [['timeline'], timelineAdapter],
+  [['treeView'], treeViewAdapter],
+  [['eventmodeling'], eventModelingAdapter],
+  [['ishikawa'], ishikawaAdapter],
+  [['wardley'], wardleyAdapter],
+  [['cynefin'], cynefinAdapter],
+  [['railroad', 'railroadEbnf', 'railroadAbnf', 'railroadPeg'], railroadAdapter],
 ];
 
 const BY_TYPE = new Map(ADAPTERS.flatMap(([types, adapter]) => types.map((type) => [type, adapter] as const)));

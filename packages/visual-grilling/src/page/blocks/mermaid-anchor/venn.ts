@@ -1,24 +1,44 @@
 // Venn: every area is `g.venn-area[data-venn-sets="A_B"]`, in the agent's set
-// names. Mermaid also draws intersections the agent never declared; those
-// aren't named here. Set names may hold "_", so areas are matched against
-// the source's declarations rather than split. A label drawn under another
-// area's path is matched by geometry, elsewhere.
+// names. A label can sit under another area's path, so the element clicked
+// may belong to the wrong area: the region is found by geometry instead, as
+// the set circles that contain the click point. Mermaid also draws
+// intersections the agent never declared; those aren't named here. Set names
+// may hold "_", so areas are matched against the source's declarations
+// rather than split.
 
-import { find, match, type DiagramAdapter, type DiagramClick } from './shared.ts';
+import type { AdapterMatch } from '../../../core/anchor.ts';
+import { find, hasClass, match, VIA_GEOMETRY, type DiagramAdapter, type DiagramClick } from './shared.ts';
 
 export const vennAdapter: DiagramAdapter = {
+  peers: 'g.venn-area',
   read(click) {
+    const circles = click.peers.filter((peer) => hasClass(peer, 'venn-circle') && peer.box && peer.attrs['data-venn-sets']);
     const area = find(click, (element) => Boolean(element.attrs['data-venn-sets']));
-    if (!area) return null;
-    const joined = area.element.attrs['data-venn-sets']!;
-    const text = area.element.text || null;
-    const union = unions(click.source).find((sets) => orders(sets).some((order) => order.join('_') === joined));
-    if (union) return match('region', union.join(' ∩ '), text, area.index);
-    // A set's own area; its name may hold "_", which also joins intersections.
-    if (setNames(click.source).has(joined)) return match('set', joined, text === joined ? null : text, area.index);
-    return null;
+    if (circles.length === 0) return area ? named(click, area.element.attrs['data-venn-sets']!, area.element.text || null, area.index) : null;
+
+    const { x, y } = click.snapshot.click;
+    const inside = circles.filter(({ box }) => Math.hypot(x - (box!.x + box!.w / 2), y - (box!.y + box!.h / 2)) <= box!.w / 2);
+    if (inside.length === 0) return null;
+    const sets = inside.map((circle) => circle.attrs['data-venn-sets']!);
+    const joined = orders(sets).map((order) => order.join('_'));
+    const text = click.peers.find((peer) => joined.includes(peer.attrs['data-venn-sets'] ?? ''))?.text || null;
+    // The area clicked names the region only when it is the one the point is in.
+    const own = area && joined.includes(area.element.attrs['data-venn-sets']!) ? area.index : -1;
+    const found = named(click, sets.length === 1 ? sets[0]! : sets.join('_'), text, own, sets);
+    return found && { ...found, via: VIA_GEOMETRY };
   },
 };
+
+/** The set or declared region for `joined` (data-venn-sets), or null for a region the agent didn't declare. */
+function named(click: DiagramClick, joined: string, text: string | null, chainIndex: number, sets?: string[]): AdapterMatch | null {
+  const union = unions(click.source).find((declared) =>
+    sets ? declared.length === sets.length && sets.every((set) => declared.includes(set)) : orders(declared).some((order) => order.join('_') === joined),
+  );
+  if (union) return match('region', union.join(' ∩ '), text, chainIndex);
+  // A set's own area; its name may hold "_", which also joins intersections.
+  if (setNames(click.source).has(joined)) return match('set', joined, text === joined ? null : text, chainIndex);
+  return null;
+}
 
 /** `set <name>` declarations. */
 function setNames(source: string): Set<string> {

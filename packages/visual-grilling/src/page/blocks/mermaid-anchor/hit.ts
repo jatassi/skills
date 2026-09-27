@@ -8,9 +8,26 @@ export const HIT_CLASS = 'vg-hit';
 export const HIT_ORIGINAL_ID = 'data-vg-id';
 export const HIT_ORIGINAL_CLASS = 'data-vg-class';
 
-/** The lines a click should be able to find: graph edges, sequence messages, architecture edges, git branches. */
-const THIN = '[data-et="edge"], [data-et="message"], path.edge, line.branch';
-const HIT_STYLE = 'fill:none;stroke:transparent;stroke-width:12px;pointer-events:stroke';
+/**
+ * The lines a click should be able to find: graph edges (state transitions and
+ * mindmap branches too), sequence messages, architecture edges, git branches,
+ * C4 relationships, Wardley links and trends, Cynefin transitions, radar axes
+ * and XY chart lines.
+ */
+const THIN = [
+  '[data-et="edge"]',
+  '[data-et="message"]',
+  'path.edge',
+  'line.branch',
+  '[aria-roledescription="c4"] > g > line',
+  '[aria-roledescription="c4"] > g > path',
+  'line.wardley-link',
+  'line.wardley-trend',
+  'path.cynefinArrowLine',
+  'line.radarAxisLine',
+  '[class^="line-plot-"] > path',
+].join(', ');
+const HIT_STYLE = 'fill:none;stroke:transparent;stroke-width:12px;stroke-dasharray:none;pointer-events:stroke';
 
 export function addHitAreas(svg: SVGSVGElement): void {
   for (const line of [...svg.querySelectorAll(THIN)]) {

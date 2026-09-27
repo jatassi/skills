@@ -34,6 +34,8 @@ export interface SnapshotPeer {
   tag: string;
   attrs: Record<string, string>;
   text: string;
+  /** Relative to the snapshot root, for adapters that match by geometry. */
+  box?: Box;
 }
 
 /** A short visible text leaf, for "near …" descriptions of unlabeled spots. */

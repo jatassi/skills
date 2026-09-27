@@ -1,8 +1,9 @@
 // Architecture: services `g#<P>service-<id>`, junctions `rect#<P>node-<id>`,
 // groups `rect#<P>group-<id>` and edges `path.edge#<P>L_<a>_<b>_<n>`. A group's
-// title isn't inside its group; it is matched by geometry, elsewhere.
+// title and icon aren't inside its group's rect, so they are matched by
+// geometry: the smallest group rect containing the click.
 
-import { ends, find, idOf, knownIds, labelUnlessId, match, pairRef, type DiagramAdapter, type DiagramClick } from './shared.ts';
+import { contains, ends, find, hasClass, idOf, knownIds, labelUnlessId, match, pairRef, VIA_GEOMETRY, type DiagramAdapter, type DiagramClick } from './shared.ts';
 
 const PARTS: [RegExp, string][] = [
   [/^service-(.+)$/, 'service'],
@@ -10,6 +11,7 @@ const PARTS: [RegExp, string][] = [
   [/^group-(.+)$/, 'group'],
 ];
 const EDGE = /^(L_.+_\d+)$/;
+const GROUP = /^group-(.+)$/;
 
 export const architectureAdapter: DiagramAdapter = {
   peers: 'g.architecture-service, rect[id], path.edge',
@@ -28,7 +30,15 @@ export const architectureAdapter: DiagramAdapter = {
         if (id !== null) return match(kind, id, kind === 'service' ? labelUnlessId(element.text, id) : null, index);
       }
     }
-    return null;
+    const titles = find(click, (element) => hasClass(element, 'architecture-groups'));
+    if (!titles) return null;
+    const group = click.peers
+      .filter((peer) => idOf(click, peer, GROUP) !== null && contains(peer.box, click.snapshot.click))
+      .sort((a, b) => a.box!.w * a.box!.h - b.box!.w * b.box!.h)[0];
+    if (!group) return null;
+    const id = idOf(click, group, GROUP)!;
+    const title = click.chain.slice(0, titles.index).find((element) => element.tag === 'text');
+    return match('group', id, labelUnlessId(title?.text, id), -1, VIA_GEOMETRY);
   },
 };
 

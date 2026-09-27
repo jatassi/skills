@@ -35,8 +35,9 @@ function round(): string {
  * midpoint is where an edge label sits), anything else's centre.
  */
 async function clickPoint(target: Locator): Promise<{ x: number; y: number }> {
-  await target.scrollIntoViewIfNeeded();
+  // Centred, so the sticky top bar can't cover it.
   return target.evaluate((element) => {
+    element.scrollIntoView({ block: 'center', inline: 'center' });
     if (element instanceof SVGGeometryElement && /^(path|line|polyline)$/.test(element.localName)) {
       const point = element.getPointAtLength(element.getTotalLength() / 3);
       const screen = point.matrixTransform(element.getScreenCTM()!);
@@ -82,7 +83,9 @@ describe('mermaid anchor corpus', () => {
 
       expected.push(`Q${number} ${fixture.name}`, '   comments only, no verdict');
       for (const [k, check] of fixture.anchors!.entries()) {
-        await comment(page, figure, check, `c${k + 1}`);
+        await comment(page, figure, check, `c${k + 1}`).catch((error: Error) => {
+          throw new Error(`${fixture.name}, click for ${check.term}: ${error.message}`);
+        });
         expected.push(`   comment ${k + 1} · mermaid "f${number}" → ${check.term}: "c${k + 1}"`);
       }
     }
