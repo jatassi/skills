@@ -18,7 +18,12 @@ export function inlineHtml(source: string): string {
   return match ? match[1]! : html;
 }
 
-export function pageRound(number: number, round: Round, record: SubmissionRecord | undefined): PageRound {
+export function pageRound(
+  number: number,
+  round: Round,
+  record: SubmissionRecord | undefined,
+  answeredInTerminal = false,
+): PageRound {
   return {
     number,
     ...(round.title ? { title: round.title } : {}),
@@ -41,5 +46,6 @@ export function pageRound(number: number, round: Round, record: SubmissionRecord
     ...(record
       ? { submitted: Object.fromEntries(record.questions.map((question) => [question.number, question.verdict])) }
       : {}),
+    ...(answeredInTerminal ? { answeredInTerminal: true as const } : {}),
   };
 }

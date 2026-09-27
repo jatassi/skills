@@ -13,10 +13,15 @@ interface State {
   drafts: Map<number, Draft>;
   submitting: boolean;
   error?: string;
-  finished: boolean;
+  /**
+   * The server: `finished` after `end` or the idle shutdown, `stopped` when
+   * the event stream dropped without that. Either way nothing can be sent,
+   * but the round and its drafts stay on screen.
+   */
+  server: 'open' | 'finished' | 'stopped';
 }
 
-const state: State = { step: 0, drafts: new Map(), submitting: false, finished: false };
+const state: State = { step: 0, drafts: new Map(), submitting: false, server: 'open' };
 const app = document.getElementById('app')!;
 
 // ----------------------------------------------------------------- loading
@@ -56,11 +61,42 @@ function listen(): void {
     const { round } = JSON.parse((event as MessageEvent).data) as PageEvents['round'];
     if (round !== state.round?.number) void loadRound(round);
   });
+  events.addEventListener('terminal', (event) => {
+    const { round } = JSON.parse((event as MessageEvent).data) as PageEvents['terminal'];
+    if (state.round?.number !== round) return;
+    state.round.answeredInTerminal = true;
+    render();
+  });
   events.addEventListener('finished', () => {
-    state.finished = true;
+    state.server = 'finished';
     events.close();
     render();
   });
+  // The "finished" event always comes before a clean close, so an error
+  // while still open means the server went away. A restarted server has a
+  // new port, so there is nothing to reconnect to.
+  events.addEventListener('error', () => {
+    if (state.server !== 'open') return;
+    state.server = 'stopped';
+    events.close();
+    render();
+  });
+}
+
+// The user working on the page keeps the server from idling out.
+const ACTIVITY_EVERY_MS = 60_000;
+let lastActivity = 0;
+
+function reportActivity(): void {
+  if (state.server !== 'open' || Date.now() - lastActivity < ACTIVITY_EVERY_MS) return;
+  lastActivity = Date.now();
+  void fetch('/api/activity', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(
+    () => {},
+  );
+}
+
+for (const type of ['pointerdown', 'keydown', 'input']) {
+  document.addEventListener(type, reportActivity, { capture: true, passive: true });
 }
 
 // --------------------------------------------------------------- rendering
@@ -93,9 +129,13 @@ function html(className: string, markup: string): HTMLDivElement {
 }
 
 function render(): void {
+  const notice = serverNotice();
   const round = state.round;
-  if (!round) return;
-  const readOnly = Boolean(round.submitted) || state.finished;
+  if (!round) {
+    if (notice) app.replaceChildren(notice);
+    return;
+  }
+  const readOnly = Boolean(round.submitted || round.answeredInTerminal) || state.server !== 'open';
   const reviewStep = round.questions.length;
 
   const tabs = h(
@@ -118,17 +158,41 @@ function render(): void {
   const question = round.questions[state.step];
   const body = question ? questionPanel(question, readOnly) : reviewPanel(round, readOnly);
 
-  const banner = state.finished
-    ? 'Grilling finished.'
+  const roundState = round.answeredInTerminal
+    ? 'Answered in the terminal'
     : round.submitted
-      ? 'Round submitted · waiting for the next round'
+      ? state.server === 'open'
+        ? 'Round submitted · waiting for the next round'
+        : 'Round submitted'
       : undefined;
   app.replaceChildren(
+    ...(notice ? [notice] : []),
     h('h1', {}, roundHeading(round)),
-    ...(banner ? [h('p', { class: 'banner', role: 'status' }, banner)] : []),
+    ...(roundState ? [h('p', { class: 'banner', role: 'status' }, roundState)] : []),
     tabs,
     body,
   );
+}
+
+function serverNotice(): HTMLElement | undefined {
+  switch (state.server) {
+    case 'open':
+      return undefined;
+    case 'finished':
+      return h(
+        'div',
+        { class: 'notice', role: 'alert' },
+        h('strong', {}, 'Grilling finished'),
+        ' · no more rounds are coming.',
+      );
+    case 'stopped':
+      return h(
+        'div',
+        { class: 'notice stopped', role: 'alert' },
+        h('strong', {}, 'Server stopped'),
+        ' · this round can no longer be sent. Your answers stay here to copy.',
+      );
+  }
 }
 
 function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
@@ -159,10 +223,11 @@ function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
     );
   });
 
-  const writing = draft.writing || draft.mode === 'own';
+  const writing = draft.writing || draft.mode === 'own' || Boolean(readOnly && draft.ownText?.trim());
+  // Read-only rather than disabled, so a draft stays selectable and copyable.
   const textarea = h('textarea', {
     'aria-label': `Your answer to Q${question.number}`,
-    disabled: readOnly,
+    readonly: readOnly,
     oninput: (event) => {
       const text = (event.target as HTMLTextAreaElement).value;
       const next: Draft = text.trim() ? { mode: 'own', text } : { mode: 'none' };
@@ -314,7 +379,7 @@ function go(step: number): void {
 
 async function submit(): Promise<void> {
   const round = state.round;
-  if (!round || round.submitted) return;
+  if (!round || round.submitted || round.answeredInTerminal || state.server !== 'open') return;
   const payload: PageSubmission = {
     round: round.number,
     answers: round.questions.map((question) => {

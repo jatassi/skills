@@ -1,6 +1,6 @@
-import { chromium, expect as pageExpect, type Browser } from 'playwright/test';
+import { chromium, expect as pageExpect, type Browser, type Page } from 'playwright/test';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { Sandbox, STORAGE_ROUND } from '../support/harness.ts';
+import { isAlive, Sandbox, STORAGE_ROUND, waitFor } from '../support/harness.ts';
 
 let browser: Browser;
 let sandbox: Sandbox;
@@ -14,8 +14,35 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
-  await sandbox?.dispose(['p1']);
+  await sandbox?.dispose(['p1', 'p2', 'p3']);
 });
+
+/** Presents the storage round, opens it, and leaves drafts on Q1 (accepted) and Q3 (own answer). */
+async function openWithDrafts(sessionId: string): Promise<Page> {
+  sandbox = new Sandbox(sessionId);
+  const url = (await sandbox.cli(['present', sandbox.writeRound('round.md', STORAGE_ROUND), '--no-open'])).stdout.trim();
+  const page = await browser.newPage();
+  await page.goto(url);
+  await page.getByRole('button', { name: 'Accept' }).click();
+  await page.getByRole('tab', { name: 'Q3' }).click();
+  await page.getByRole('button', { name: 'Write my own answer' }).click();
+  await page.getByRole('textbox', { name: 'Your answer to Q3' }).fill('an unsent draft');
+  return page;
+}
+
+/** The round and its drafts are still there to read and copy, and nothing can be sent. */
+async function expectReadOnlyWithDrafts(page: Page): Promise<void> {
+  const draft = page.getByRole('textbox', { name: 'Your answer to Q3' });
+  await pageExpect(draft).toHaveValue('an unsent draft');
+  await pageExpect(draft).not.toBeEditable();
+  await pageExpect(draft).toBeEnabled();
+  await page.getByRole('tab', { name: 'Q1' }).click();
+  await pageExpect(page.getByRole('button', { name: 'Accept' })).toHaveAttribute('aria-pressed', 'true');
+  await pageExpect(page.getByRole('button', { name: 'Accept' })).toBeDisabled();
+  await page.getByRole('tab', { name: 'Review' }).click();
+  await pageExpect(page.getByRole('region', { name: 'Review' })).toContainText('Q3 Retention? · own answer: “an unsent draft”');
+  await pageExpect(page.getByRole('button', { name: 'Submit round' })).toBeDisabled();
+}
 
 describe('round page', () => {
   it('submits a round through the UI and shows the next round in the same tab', async () => {
@@ -101,5 +128,25 @@ Q6 Retry policy · accepted
     await pageExpect(flow).toContainText('mermaid');
     await pageExpect(flow.locator('pre')).toHaveText('flowchart LR\n  a --> b');
     await pageExpect(page.getByRole('figure', { name: 'Mockup A' }).locator('pre')).toHaveText('<nav>tabs</nav>');
+  });
+
+  it('shows "answered in the terminal" and "Grilling finished" after end, keeping the drafts', async () => {
+    const page = await openWithDrafts('p2');
+
+    expect((await sandbox.cli(['end'])).code).toBe(0);
+    await pageExpect(page.getByRole('alert')).toContainText('Grilling finished');
+    await pageExpect(page.getByRole('status')).toHaveText('Answered in the terminal');
+    await expectReadOnlyWithDrafts(page);
+  });
+
+  it('shows "Server stopped" when the server goes away without finishing, keeping the drafts', async () => {
+    const page = await openWithDrafts('p3');
+    const { pid } = sandbox.serverInfo('p3');
+
+    process.kill(pid, 'SIGKILL');
+    await waitFor(() => !isAlive(pid));
+    await pageExpect(page.getByRole('alert')).toContainText('Server stopped');
+    await pageExpect(page.getByText('Grilling finished')).toHaveCount(0);
+    await expectReadOnlyWithDrafts(page);
   });
 });

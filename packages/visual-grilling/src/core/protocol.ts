@@ -9,15 +9,18 @@
 // Page routes (page → server):
 //   GET  /                                 the round page
 //   GET  /assets/<file>                    page scripts and styles
-//   GET  /events                           server-sent events: `round`, `finished`
+//   GET  /events                           server-sent events: `round`, `terminal`, `finished`
 //   GET  /api/rounds/latest | /api/rounds/<n>   → PageRound (404 before the first round)
-//   POST /api/rounds/<n>/submission  PageSubmission → {}
+//   POST /api/rounds/<n>/submission  PageSubmission → {}  (409: submitted or answered in the terminal)
+//   POST /api/activity                     → {}  the user is interacting (keeps the server from idling out)
 
 import type { DesignTreeNode, Illustration, RoundError } from './round.ts';
 import type { Verdict } from './submission.ts';
 
+/** The server's identity: a live pid that answers with a different start time is a reused pid. */
 export interface PingResponse {
   pid: number;
+  startTime: number;
 }
 
 export interface PresentRequest {
@@ -69,10 +72,15 @@ export interface PageRound {
   questions: PageQuestion[];
   /** Present once the round has been submitted: each question's verdict by number. */
   submitted?: Record<number, Verdict>;
+  /** The round was closed without a submission: the user replied in the terminal. */
+  answeredInTerminal?: true;
 }
 
 /** Server-sent event payloads, keyed by event name. */
 export interface PageEvents {
   round: { round: number };
+  /** An open round was closed by the next `present` or by `end`. */
+  terminal: { round: number };
+  /** The grilling session is over (`end` or the idle shutdown); no more events follow. */
   finished: Record<string, never>;
 }
