@@ -1,5 +1,5 @@
 import { cpus } from 'node:os';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 // CLI, browser and corpus tests each spawn a real server process (via the
 // built CLI) and/or a Chromium instance per test file. Vitest's own default
@@ -12,9 +12,14 @@ import { defineConfig } from 'vitest/config';
 // test` reliable without loosening any product-level timing budget.
 const maxWorkers = Math.max(2, Math.floor(cpus().length / 3));
 
+// The release workflow runs the browser tests (the round page and the block
+// corpus, both in Chromium) on Ubuntu only, and sets this on macOS and Windows.
+const skipBrowser = process.env.VG_SKIP_BROWSER_TESTS === '1';
+
 export default defineConfig({
   test: {
     include: ['test/**/*.test.ts'],
+    exclude: [...configDefaults.exclude, ...(skipBrowser ? ['test/browser/**', 'test/corpus/**'] : [])],
     // CLI and browser tests spawn servers and a browser; keep them roomy.
     testTimeout: 30_000,
     hookTimeout: 30_000,

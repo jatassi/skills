@@ -18,13 +18,14 @@
 // Dead weight is trimmed by the plugins in build/trim.ts. The build prints
 // each output's size; there is no size ceiling.
 
-import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import * as esbuild from 'esbuild';
 import { packageRoots, thirdPartyLicences, vizWasmEntries } from './build/licences.ts';
+import { kib, outputSizes } from './build/sizes.ts';
 import { jsdomTrim, shikiCore } from './build/trim.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -121,15 +122,6 @@ writeFileSync(
   }),
 );
 
-for (const file of walk(out)) {
-  const size = statSync(file).size;
-  console.log(`${relative(out, file).padEnd(24)} ${(size / 1024).toFixed(1).padStart(8)} KiB`);
-}
-
-function* walk(dir) {
-  for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) yield* walk(path);
-    else yield path;
-  }
+for (const { path, bytes } of outputSizes(out)) {
+  console.log(`${path.padEnd(24)} ${kib(bytes).padStart(12)}`);
 }

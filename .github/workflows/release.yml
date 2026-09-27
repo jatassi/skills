@@ -1,0 +1,157 @@
+# Cuts a release, per docs/adr/0002-installs-pinned-to-release-tags.md.
+#
+# Dispatched by hand from main. Tests the dispatched commit on Ubuntu, macOS
+# and Windows at the minimum Node, then builds visual-grilling into
+# skills/visual-grilling/dist/, bumps both plugin manifests, pins the
+# marketplace entry to the new tag, commits, tags that commit vX.Y.Z, pushes
+# both, and creates a GitHub Release with the notes and each output's size.
+#
+# This is the only thing that commits dist/, and the only workflow in the repo:
+# nothing runs on pull requests or pushes.
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, as X.Y.Z (tagged vX.Y.Z); must be newer than the current one
+        required: true
+        type: string
+      notes:
+        description: Release notes (Markdown); the release adds each output's size below them
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 22.22.2
+  # Inputs reach scripts through the environment only, never spliced into them.
+  VERSION: ${{ inputs.version }}
+
+jobs:
+  preflight:
+    name: Check the version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Dispatch the release from main, not $GITHUB_REF"
+          exit 1
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Check the version against the manifests
+        run: node packages/visual-grilling/release.ts manifests --version "$VERSION" --check
+      - name: Require a new tag
+        run: |
+          # --exit-code: 0 when the tag exists, 2 when it doesn't, anything else is an error.
+          status=0
+          git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "::error::Tag v$VERSION already exists"
+            exit 1
+          elif [ "$status" -ne 2 ]; then
+            echo "::error::Could not list the remote's tags (git exited $status)"
+            exit 1
+          fi
+
+  test:
+    name: npm test (${{ matrix.os }})
+    needs: preflight
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      # Golden files and fixtures are compared byte for byte.
+      - name: Keep LF line endings
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        if: runner.os == 'Linux'
+        run: npx playwright install --with-deps chromium
+      # Browser tests (round page and block corpus) run on Ubuntu only. The
+      # POSIX-only checks skip themselves on Windows.
+      - run: npm test
+        env:
+          VG_SKIP_BROWSER_TESTS: ${{ runner.os == 'Linux' && '0' || '1' }}
+      # The bundle every test above ran against, for the release job to check
+      # its own build against.
+      - name: Keep the tested bundle
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v7
+        with:
+          name: tested-bundle
+          path: packages/visual-grilling/.test-dist/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    name: Build, tag and publish
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # The same commit the test jobs tested. If main has moved on since the
+      # dispatch, the push below is not a fast-forward and fails.
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Build into skills/visual-grilling/dist/
+        run: npm run try
+      - uses: actions/download-artifact@v8
+        with:
+          name: tested-bundle
+          path: ${{ runner.temp }}/tested-bundle
+      # Ships exactly what was tested: the build is deterministic, so any
+      # difference means something changed between the two builds.
+      - name: Require the build to match the tested bundle
+        run: diff -r "$RUNNER_TEMP/tested-bundle" skills/visual-grilling/dist
+      - name: Bump the manifests and pin the marketplace to the tag
+        run: node packages/visual-grilling/release.ts manifests --version "$VERSION"
+      - name: Write the release notes
+        env:
+          NOTES: ${{ inputs.notes }}
+        run: |
+          printf '%s\n' "$NOTES" > "$RUNNER_TEMP/notes.md"
+          node packages/visual-grilling/release.ts notes --dist skills/visual-grilling/dist --notes "$RUNNER_TEMP/notes.md" > "$RUNNER_TEMP/release.md"
+          cat "$RUNNER_TEMP/release.md"
+      - name: Commit and tag
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add plugin.json .claude-plugin/plugin.json .claude-plugin/marketplace.json
+          # dist/ is gitignored so that nothing else commits it.
+          git add --all --force skills/visual-grilling/dist
+          if [ -n "$(git status --porcelain --untracked-files=all | grep -v '^[AMDR] ')" ]; then
+            echo "::error::The release changed files it should not have:"
+            git status --short --untracked-files=all
+            exit 1
+          fi
+          git commit --quiet -m "Release v$VERSION"
+          git tag -a "v$VERSION" -m "v$VERSION"
+      - name: Push main and the tag
+        run: git push --atomic origin "HEAD:refs/heads/main" "refs/tags/v$VERSION"
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v$VERSION" --title "v$VERSION" --notes-file "$RUNNER_TEMP/release.md" --verify-tag
