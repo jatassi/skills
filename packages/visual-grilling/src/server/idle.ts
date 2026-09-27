@@ -2,7 +2,11 @@
 // quiet for the idle limit ends itself, so a forgotten tab or an agent that
 // never ran `end` doesn't leave a server running.
 
-export const IDLE_LIMIT_MS = 60 * 60 * 1000;
+const IDLE_LIMIT_MS = 60 * 60 * 1000;
+
+/** How often the limit is checked: a quarter of it, within these bounds. */
+const MIN_CHECK_MS = 25;
+const MAX_CHECK_MS = 60_000;
 
 /** Hidden and undocumented: tests shorten the idle limit with it. */
 const IDLE_ENV = 'VISUAL_GRILLING_IDLE_MS';
@@ -32,7 +36,7 @@ export function watchIdle(limitMs: number, busy: () => boolean, onIdle: () => vo
         onIdle();
       }
     },
-    Math.max(25, Math.min(limitMs / 4, 60_000)),
+    Math.max(MIN_CHECK_MS, Math.min(limitMs / 4, MAX_CHECK_MS)),
   );
   return {
     touch: () => {

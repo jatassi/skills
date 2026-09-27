@@ -14,14 +14,19 @@ interface State {
   submitting: boolean;
   error?: string;
   /**
-   * The server: `finished` after `end` or the idle shutdown, `stopped` when
-   * the event stream dropped without that. Either way nothing can be sent,
-   * but the round and its drafts stay on screen.
+   * The page's link to the server: `finished` after `end` or the idle
+   * shutdown, `stopped` when the event stream dropped without that. Either way
+   * nothing can be sent, but the round and its drafts stay on screen.
    */
-  server: 'open' | 'finished' | 'stopped';
+  connection: 'open' | 'finished' | 'stopped';
 }
 
-const state: State = { step: 0, drafts: new Map(), submitting: false, server: 'open' };
+const state: State = { step: 0, drafts: new Map(), submitting: false, connection: 'open' };
+
+/** Whether the round can still be answered and sent from this page. */
+function canSend(round: PageRound): boolean {
+  return !round.submitted && !round.answeredInTerminal && state.connection === 'open';
+}
 const app = document.getElementById('app')!;
 
 // ----------------------------------------------------------------- loading
@@ -68,7 +73,7 @@ function listen(): void {
     render();
   });
   events.addEventListener('finished', () => {
-    state.server = 'finished';
+    state.connection = 'finished';
     events.close();
     render();
   });
@@ -76,27 +81,31 @@ function listen(): void {
   // while still open means the server went away. A restarted server has a
   // new port, so there is nothing to reconnect to.
   events.addEventListener('error', () => {
-    if (state.server !== 'open') return;
-    state.server = 'stopped';
+    if (state.connection !== 'open') return;
+    state.connection = 'stopped';
     events.close();
     render();
   });
 }
+
+// ---------------------------------------------------------------- activity
 
 // The user working on the page keeps the server from idling out.
 const ACTIVITY_EVERY_MS = 60_000;
 let lastActivity = 0;
 
 function reportActivity(): void {
-  if (state.server !== 'open' || Date.now() - lastActivity < ACTIVITY_EVERY_MS) return;
+  if (state.connection !== 'open' || Date.now() - lastActivity < ACTIVITY_EVERY_MS) return;
   lastActivity = Date.now();
   void fetch('/api/activity', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(
     () => {},
   );
 }
 
-for (const type of ['pointerdown', 'keydown', 'input']) {
-  document.addEventListener(type, reportActivity, { capture: true, passive: true });
+function watchActivity(): void {
+  for (const type of ['pointerdown', 'keydown', 'input']) {
+    document.addEventListener(type, reportActivity, { capture: true, passive: true });
+  }
 }
 
 // --------------------------------------------------------------- rendering
@@ -135,7 +144,7 @@ function render(): void {
     if (notice) app.replaceChildren(notice);
     return;
   }
-  const readOnly = Boolean(round.submitted || round.answeredInTerminal) || state.server !== 'open';
+  const readOnly = !canSend(round);
   const reviewStep = round.questions.length;
 
   const tabs = h(
@@ -161,7 +170,7 @@ function render(): void {
   const roundState = round.answeredInTerminal
     ? 'Answered in the terminal'
     : round.submitted
-      ? state.server === 'open'
+      ? state.connection === 'open'
         ? 'Round submitted · waiting for the next round'
         : 'Round submitted'
       : undefined;
@@ -175,7 +184,7 @@ function render(): void {
 }
 
 function serverNotice(): HTMLElement | undefined {
-  switch (state.server) {
+  switch (state.connection) {
     case 'open':
       return undefined;
     case 'finished':
@@ -379,7 +388,7 @@ function go(step: number): void {
 
 async function submit(): Promise<void> {
   const round = state.round;
-  if (!round || round.submitted || round.answeredInTerminal || state.server !== 'open') return;
+  if (!round || !canSend(round)) return;
   const payload: PageSubmission = {
     round: round.number,
     answers: round.questions.map((question) => {
@@ -419,3 +428,4 @@ async function submit(): Promise<void> {
 
 void loadRound('latest');
 listen();
+watchActivity();

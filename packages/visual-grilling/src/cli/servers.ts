@@ -1,4 +1,4 @@
-// Talking to session servers, and telling a running one from a dead one.
+// Talking to grilling session servers, and telling a running one from a dead one.
 //
 // A server is identified by pid plus process start time, both in its
 // server.json. It is running only if that pid is alive *and* the server on the
@@ -26,7 +26,7 @@ export interface HttpResponse {
   body: unknown;
 }
 
-export class TimeoutError extends Error {}
+class TimeoutError extends Error {}
 
 /** POSTs JSON to a control route. With `timeoutMs`, rejects with TimeoutError when no answer comes. */
 export function call(port: number, route: string, body: unknown, timeoutMs?: number): Promise<HttpResponse> {
@@ -64,7 +64,7 @@ export function call(port: number, route: string, body: unknown, timeoutMs?: num
   });
 }
 
-export type ServerState = 'running' | 'dead' | 'unresponsive';
+type ServerState = 'running' | 'dead' | 'unresponsive';
 
 export async function serverState(info: ServerInfo): Promise<ServerState> {
   if (!isAlive(info.pid)) return 'dead';
@@ -81,11 +81,12 @@ export async function serverState(info: ServerInfo): Promise<ServerState> {
 }
 
 /**
- * Deletes every other session's folder whose server is not running. A folder
- * whose server doesn't answer in time is kept; so is a young folder with no
- * server.json yet. Never follows a symlink.
+ * Deletes every other grilling session's folder whose server is not running.
+ * A folder whose server doesn't answer in time is kept; so is a young folder
+ * with no server.json yet, and one that changed while it was being checked
+ * (its own CLI is restarting the server). Never follows a symlink.
  */
-export async function sweep(ownId: string): Promise<void> {
+export async function sweepDeadSessions(ownId: string): Promise<void> {
   const root = sessionsRoot();
   let names: string[];
   try {
@@ -103,6 +104,7 @@ export async function sweep(ownId: string): Promise<void> {
           if (!stat.isDirectory()) return;
           const info = readServerInfo(sessionPaths(dir));
           if (info ? (await serverState(info)) !== 'dead' : Date.now() - stat.mtimeMs < STARTING_GRACE_MS) return;
+          if (lstatSync(dir).mtimeMs !== stat.mtimeMs) return;
           rmSync(dir, { recursive: true, force: true });
         } catch {
           // Another CLI got there first, or the folder isn't ours to delete.

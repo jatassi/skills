@@ -20,10 +20,11 @@ import {
   type ServerInfo,
   type SessionPaths,
 } from '../core/session.ts';
-import { call, isAlive, serverState, sweep, type HttpResponse } from './servers.ts';
+import { call, isAlive, serverState, sweepDeadSessions, type HttpResponse } from './servers.ts';
 
 const DEFAULT_AWAIT_SECONDS = 90;
 const SERVER_START_MS = 10_000;
+const STOP_MS = 5_000;
 
 const EXIT_OK = 0;
 const EXIT_FAILURE = 1;
@@ -139,13 +140,22 @@ async function present(
 
   const session = resolveSession(options.session, true);
   // Every present clears away other sessions whose server is gone.
-  const swept = sweep(session.id);
+  const swept = sweepDeadSessions(session.id);
   try {
     const paths = sessionPaths(sessionDir(session.id));
     const newSession = !existsSync(paths.dir);
     preparePrivateSessionDir(paths);
-    const { info: server, started } = await ensureServer(paths, options.distDir);
-    const response = await call(server.port, '/control/present', { source });
+    let { info: server, started } = await ensureServer(paths, options.distDir);
+    let response;
+    try {
+      response = await call(server.port, '/control/present', { source });
+    } catch {
+      // The server went away between the check and the call (the idle
+      // shutdown, which also deletes the folder, say): start again once.
+      preparePrivateSessionDir(paths);
+      ({ info: server, started } = await ensureServer(paths, options.distDir));
+      response = await call(server.port, '/control/present', { source });
+    }
     if (response.status === 422) {
       const { errors } = response.body as PresentRejection;
       for (const error of errors) io.err(formatRoundError(file, error));
@@ -263,7 +273,7 @@ async function end(options: { session: string | undefined }): Promise<number> {
   if (!existsSync(paths.dir)) return EXIT_OK;
 
   const server = readServerInfo(paths);
-  if (server && (await serverState(server)) === 'running') await stopServer(server, paths);
+  if (server && (await serverState(server)) !== 'dead') await stopServer(server, paths);
   rmSync(paths.dir, { recursive: true, force: true });
   io.out(`session ${session.id} ended`);
   return EXIT_OK;
@@ -271,11 +281,24 @@ async function end(options: { session: string | undefined }): Promise<number> {
 
 // -------------------------------------------------------------------- helpers
 
-/** Asks the server to end the session, then waits for it to exit and its folder to go. */
+/**
+ * Asks the server to end the session, then waits for it to exit and its folder
+ * to go. A server that doesn't answer or doesn't exit in time is terminated.
+ */
 async function stopServer(server: ServerInfo, paths: SessionPaths): Promise<void> {
-  await call(server.port, '/control/end', {}).catch(() => undefined);
-  const deadline = Date.now() + 5_000;
+  const answered = await call(server.port, '/control/end', {}, STOP_MS).then(
+    () => true,
+    () => false,
+  );
+  const deadline = Date.now() + (answered ? STOP_MS : 0);
   while (Date.now() < deadline && isAlive(server.pid)) await sleep(50);
+  if (isAlive(server.pid)) {
+    try {
+      process.kill(server.pid, 'SIGKILL');
+    } catch {
+      // It exited after all.
+    }
+  }
   rmSync(paths.dir, { recursive: true, force: true });
 }
 

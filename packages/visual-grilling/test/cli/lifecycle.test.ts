@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { isAlive, postJson, Sandbox, type CliResult, STORAGE_ROUND, waitFor } from '../support/harness.ts';
+import { crash, isAlive, postJson, Sandbox, type CliResult, STORAGE_ROUND, waitFor } from '../support/harness.ts';
 
 const IDLE_ENV = 'VISUAL_GRILLING_IDLE_MS';
 const FOLLOW_UP = '# Follow-ups\n\n❓ **Q7** - **Anything else?**: Last one.\n\n➡️ No.\n';
@@ -135,6 +135,17 @@ describe('supersede', () => {
     expect(existsSync(box.sessionDir('sp3'))).toBe(false);
     await waitFor(() => !isAlive(pid));
   });
+
+  it.skipIf(process.platform === 'win32')('stops a server that no longer answers on end', async () => {
+    const box = open('sp4');
+    await present(box);
+    const { pid } = box.serverInfo('sp4');
+    process.kill(pid, 'SIGSTOP');
+
+    expect((await box.cli(['end'])).code).toBe(0);
+    await waitFor(() => !isAlive(pid));
+    expect(existsSync(box.sessionDir('sp4'))).toBe(false);
+  });
 });
 
 describe('ended', () => {
@@ -154,8 +165,7 @@ describe('ended', () => {
     const box = open('en2');
     await present(box);
     const { pid } = box.serverInfo('en2');
-    process.kill(pid, 'SIGKILL');
-    await waitFor(() => !isAlive(pid));
+    await crash(pid);
 
     const result = await box.cli(['await', '--timeout', '1']);
     expect(result.code).toBe(1);
@@ -221,6 +231,21 @@ describe('idle shutdown', () => {
     await waitFor(() => !isAlive(pid));
     expect(existsSync(box.sessionDir('id2'))).toBe(false);
   });
+
+  it("doesn't count pings as activity, so other sessions' sweeps don't keep it alive", async () => {
+    const box = open('id3');
+    box.env[IDLE_ENV] = '800';
+    const url = await present(box);
+    const { pid } = box.serverInfo('id3');
+
+    const pinging = setInterval(() => void fetch(`${url}control/ping`, { method: 'POST' }).catch(() => {}), 100);
+    try {
+      await waitFor(() => !isAlive(pid));
+    } finally {
+      clearInterval(pinging);
+    }
+    expect(existsSync(box.sessionDir('id3'))).toBe(false);
+  });
 });
 
 describe('restart', () => {
@@ -229,8 +254,7 @@ describe('restart', () => {
     const url = await present(box);
     await postJson(`${url}api/rounds/1/submission`, { round: 1, answers: [{ question: 1, mode: 'accepted' }] });
     const before = box.serverInfo('rs1');
-    process.kill(before.pid, 'SIGKILL');
-    await waitFor(() => !isAlive(before.pid));
+    await crash(before.pid);
 
     const restartedUrl = await present(box, [], FOLLOW_UP);
     const after = box.serverInfo('rs1');
@@ -248,8 +272,7 @@ describe('restart', () => {
     const box = open('rs2');
     await present(box);
     const before = box.serverInfo('rs2');
-    process.kill(before.pid, 'SIGKILL');
-    await waitFor(() => !isAlive(before.pid));
+    await crash(before.pid);
     // The pid now belongs to a live process that isn't the server.
     writeFileSync(
       join(box.sessionDir('rs2'), 'server.json'),
@@ -270,8 +293,7 @@ describe('sweep', () => {
     await present(box, ['--session', 'live']);
     await present(box, ['--session', 'dead']);
     const dead = box.serverInfo('dead');
-    process.kill(dead.pid, 'SIGKILL');
-    await waitFor(() => !isAlive(dead.pid));
+    await crash(dead.pid);
 
     // A folder whose server.json names a live pid that isn't a server (a reused pid).
     const reused = box.sessionDir('reused');

@@ -217,12 +217,16 @@ function submit(res: ServerResponse, n: number, body: PageSubmission): void {
  * server exits right after, so only the page hears about that.)
  */
 function answeredInTerminal(n: number): boolean {
-  return rounds.has(n) && !records.has(n) && n < latest;
+  return unsubmitted(n) && n < latest;
+}
+
+function unsubmitted(n: number): boolean {
+  return rounds.has(n) && !records.has(n);
 }
 
 /** Marks the open round answered in the terminal and releases every `await` on it. */
 function closeOpenRound(): void {
-  if (rounds.has(latest) && !records.has(latest)) broadcast('terminal', { round: latest });
+  if (unsubmitted(latest)) broadcast('terminal', { round: latest });
   for (const waiter of [...waiters]) {
     waiter.settle({ outcome: 'superseded', text: `superseded · round ${waiter.round} answered in the terminal` });
   }

@@ -1,6 +1,6 @@
 import { chromium, expect as pageExpect, type Browser, type Page } from 'playwright/test';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { isAlive, Sandbox, STORAGE_ROUND, waitFor } from '../support/harness.ts';
+import { crash, Sandbox, STORAGE_ROUND } from '../support/harness.ts';
 
 let browser: Browser;
 let sandbox: Sandbox;
@@ -143,8 +143,7 @@ Q6 Retry policy · accepted
     const page = await openWithDrafts('p3');
     const { pid } = sandbox.serverInfo('p3');
 
-    process.kill(pid, 'SIGKILL');
-    await waitFor(() => !isAlive(pid));
+    await crash(pid);
     await pageExpect(page.getByRole('alert')).toContainText('Server stopped');
     await pageExpect(page.getByText('Grilling finished')).toHaveCount(0);
     await expectReadOnlyWithDrafts(page);
