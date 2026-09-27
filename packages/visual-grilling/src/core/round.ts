@@ -123,8 +123,9 @@ const ID = /^[a-z0-9][a-z0-9-]*$/;
 const KEY = /^[a-z][a-zA-Z0-9]*$/;
 const DESIGN_TREE = 'design-tree';
 const ORDER = 'the order is prose → illustrations → options → ➡️';
+const NO_HEADINGS = "headings aren't allowed in a question; use **bold** text";
 
-const BLOCK_KINDS: Record<string, IllustrationKind> = {
+const FENCE_KINDS: Record<string, IllustrationKind> = {
   mermaid: 'mermaid',
   dot: 'dot',
   'vega-lite': 'vega-lite',
@@ -157,7 +158,8 @@ const PART_NAME: Record<Part, string> = { prose: 'prose', illustration: 'an illu
 
 class RoundParser {
   private readonly errors: RoundError[] = [];
-  private readonly ids = new Map<string, number | undefined>();
+  /** Illustration id → the question it first appeared in. */
+  private readonly ids = new Map<string, number>();
 
   constructor(private readonly source: string) {}
 
@@ -182,13 +184,18 @@ class RoundParser {
     }
 
     let treeFence: Code | undefined;
+    let strayQuestion = false;
     preamble.forEach((node, index) => {
-      if (this.malformedHeader(node)) return;
+      // After a header that failed to parse, the rest is that question's body.
+      if (strayQuestion || this.malformedHeader(node)) {
+        strayQuestion = true;
+        return;
+      }
       if (node.type === 'heading' && node.depth === 1 && index === 0) {
         round.title = this.roundTitle(node.position!.start.line, toString(node).trim());
       } else if (node.type === 'heading' && node.depth === 1) {
         this.error(node, 'the # round title must be the first line of the round file');
-      } else if (node.type === 'code' && this.isFence(node) && node.lang === DESIGN_TREE && !treeFence) {
+      } else if (this.isFence(node) && node.lang === DESIGN_TREE && !treeFence) {
         treeFence = node;
       } else {
         this.error(node, 'nothing but a # title and a design-tree fence may come before Q1');
@@ -256,10 +263,10 @@ class RoundParser {
     for (const node of body) {
       if (this.malformedHeader(node, number)) continue;
       if (node.type === 'heading') {
-        this.error(node, "headings aren't allowed in a question; use **bold** text", number);
+        this.error(node, NO_HEADINGS, number);
         continue;
       }
-      if (node.type === 'code' && this.isFence(node)) {
+      if (this.isFence(node)) {
         const before = parts.at(-1);
         if (node.lang === 'html' && before?.part === 'options') {
           const letter = this.optionItems(before.node as List).at(-1)?.letter;
@@ -294,6 +301,13 @@ class RoundParser {
       if (entry.part !== 'options' || index === parts.length - 1) return;
       entry.part = parts[index + 1]!.part === 'illustration' ? 'options' : 'prose';
     });
+    for (const { node, part } of parts) {
+      if (part === 'prose') this.nested(node, number);
+    }
+    const swallowed = this.swallowedRecommendation(
+      parts.filter(({ part }) => part !== 'illustration').map(({ node }) => node),
+      number,
+    );
 
     let highest: Part = 'prose';
     for (const { node, part } of parts) {
@@ -321,7 +335,7 @@ class RoundParser {
       .join('\n\n');
 
     if (recIndex === -1) {
-      this.errors.push({ line, question: number, message: 'missing ➡️ recommendation' });
+      if (!swallowed) this.errors.push({ line, question: number, message: 'missing ➡️ recommendation' });
       return undefined;
     }
     const recommendation = this.recommendation(recNodes, options, number);
@@ -340,17 +354,18 @@ class RoundParser {
 
   private recommendation(nodes: RootContent[], options: Option[], number: number): Recommendation | undefined {
     const [first] = nodes;
+    this.nested(first!, number);
     for (const node of nodes.slice(1)) {
-      if (node.type === 'code' && this.isFence(node)) {
+      if (this.isFence(node)) {
         this.error(node, `an illustration after the ➡️ recommendation; ${ORDER}`, number);
       } else if (node.type === 'heading') {
-        this.error(node, "headings aren't allowed in a question; use **bold** text", number);
+        this.error(node, NO_HEADINGS, number);
       } else if (node.type === 'paragraph' && RECOMMENDATION.test(this.slice(node))) {
         this.error(node, 'a question takes one ➡️ recommendation', number);
       } else if (node.type === 'list' && this.isOptionList(node)) {
         this.error(node, `the options after the ➡️ recommendation; ${ORDER}`, number);
-      } else {
-        this.malformedHeader(node, number);
+      } else if (!this.malformedHeader(node, number)) {
+        this.nested(node, number);
       }
     }
 
@@ -399,12 +414,12 @@ class RoundParser {
 
       const option: Option = { letter, label, text: plainText(label) };
       for (const child of item.children.slice(1)) {
-        if (child.type === 'code' && this.isFence(child) && child.lang === 'html' && !option.mockup) {
+        if (this.isFence(child) && child.lang === 'html' && !option.mockup) {
           const mockup = this.mockup(child, letter, number);
           if (mockup) option.mockup = mockup;
-        } else if (child.type === 'code' && this.isFence(child) && child.lang === 'html') {
+        } else if (this.isFence(child) && child.lang === 'html') {
           this.error(child, `option ${letter} already has a mockup; an option takes one`, number);
-        } else if (child.type === 'code' && this.isFence(child)) {
+        } else if (this.isFence(child)) {
           this.error(child, `only an html mockup may be indented under an option (option ${letter})`, number);
         } else {
           this.error(child, `option ${letter} is one line; only an html mockup may be indented under it`, number);
@@ -460,7 +475,7 @@ class RoundParser {
     }
     problems.forEach(report);
 
-    const kind: IllustrationKind = BLOCK_KINDS[fence] ?? 'code';
+    const kind: IllustrationKind = FENCE_KINDS[fence] ?? 'code';
     const allowed = fence === 'code' ? [...CODE_KEYS, 'lang'] : ALLOWED_KEYS[kind];
     for (const key of attributes.keys()) {
       if (!allowed.includes(key)) report(`unknown key "${key}"; ${fence} takes ${allowed.join(', ')}`);
@@ -471,8 +486,7 @@ class RoundParser {
     } else if (!ID.test(id)) {
       report(`id "${id}" must match [a-z0-9][a-z0-9-]*`);
     } else if (this.ids.has(id)) {
-      const where = this.ids.get(id);
-      report(`id "${id}" is already used${where === undefined ? '' : ` in Q${where}`}; ids are unique in a round`);
+      report(`id "${id}" is already used in Q${this.ids.get(id)}; ids are unique in a round`);
     } else {
       this.ids.set(id, number);
     }
@@ -649,8 +663,44 @@ class RoundParser {
     return { fence, meta: line.slice(fence.length).trim() };
   }
 
-  private isFence(node: Code): boolean {
-    return FENCE_START.test(this.slice(node));
+  /** A fenced code block (an indented code block is not a fence). */
+  private isFence(node: Nodes): node is Code {
+    return node.type === 'code' && FENCE_START.test(this.slice(node));
+  }
+
+  /**
+   * Headings, fences and question headers may not hide inside prose: in a
+   * list item or a quote they would slip past the question's grammar.
+   */
+  private nested(node: Nodes, question: number): void {
+    if (!('children' in node)) return;
+    for (const child of node.children) {
+      if (child.type === 'heading') this.error(child, NO_HEADINGS, question);
+      else if (this.isFence(child)) {
+        this.error(child, 'a fence inside a list or quote; put illustrations at the top level of the question', question);
+      } else if (child.type === 'paragraph' && HEADER.test(this.slice(child))) {
+        this.error(child, 'a question header must be its own paragraph, outside any list or quote', question);
+      } else this.nested(child, question);
+    }
+  }
+
+  /** A ➡️ line with no blank line before it gets folded into the paragraph or option above. */
+  private swallowedRecommendation(nodes: Nodes[], question: number): boolean {
+    let found = false;
+    for (const node of nodes) {
+      this.slice(node)
+        .split('\n')
+        .forEach((text, index) => {
+          if (index === 0 || !/^[\s>]*➡/.test(text)) return;
+          found = true;
+          this.errors.push({
+            line: this.lineOf(node) + index,
+            question,
+            message: 'put a blank line before the ➡️ recommendation so it starts its own paragraph',
+          });
+        });
+    }
+    return found;
   }
 
   private error(node: Nodes, message: string, question?: number): void {
@@ -672,7 +722,7 @@ class RoundParser {
  * Parses a fence's `key=value` attributes. A value is bare or double-quoted,
  * with `\"` and `\\` escapes inside quotes.
  */
-export function parseAttributes(meta: string): { attributes: Map<string, string>; problems: string[] } {
+function parseAttributes(meta: string): { attributes: Map<string, string>; problems: string[] } {
   const attributes = new Map<string, string>();
   const problems: string[] = [];
   let i = 0;
@@ -754,11 +804,11 @@ function parseHighlight(value: string): [number, number][] | undefined {
 
 // ----------------------------------------------------------------- shared
 
-export function parseMarkdown(source: string) {
+function parseMarkdown(source: string) {
   return fromMarkdown(source, { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] });
 }
 
-export function plainText(markdown: string): string {
+function plainText(markdown: string): string {
   return parseMarkdown(markdown)
     .children
     .map((node) => toString(node))

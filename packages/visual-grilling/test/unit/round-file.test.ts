@@ -94,7 +94,7 @@ describe('question headers', () => {
       'round.md:5 · Q1: malformed question header; write ❓ **Q1** - **title**: body',
       'round.md:7 · Q1: a question takes one ➡️ recommendation',
     ]);
-    expect(lines(`**Q1** - **No marker**: body\n\n${Q(2)}`)).toEqual([
+    expect(lines(`**Q1** - **No marker**: body\n\n➡️ Yes.\n\n${Q(2)}`)).toEqual([
       'round.md:1: malformed question header; write ❓ **Q1** - **title**: body',
     ]);
   });
@@ -184,6 +184,22 @@ It also ships a bundler.
       "round.md:3 · Q1: headings aren't allowed in a question; use **bold** text",
       "round.md:5 · Q1: headings aren't allowed in a question; use **bold** text",
       "round.md:10 · Q1: headings aren't allowed in a question; use **bold** text",
+    ]);
+  });
+
+  it('rejects headings, fences and headers hidden in a list or quote', () => {
+    expect(lines(Q(1, '> ## Quoted\n\n- note\n\n  ```ts\n  a\n  ```\n\n'))).toEqual([
+      "round.md:3 · Q1: headings aren't allowed in a question; use **bold** text",
+      'round.md:7 · Q1: a fence inside a list or quote; put illustrations at the top level of the question',
+    ]);
+    expect(lines('❓ **Q1** - **T**: B.\n\n➡️ Yes.\n\n- ❓ **Q2** - **T**: B.\n')).toEqual([
+      'round.md:5 · Q1: a question header must be its own paragraph, outside any list or quote',
+    ]);
+  });
+
+  it('points at a ➡️ folded into the paragraph above', () => {
+    expect(lines('❓ **Q1** - **T**: B.\n\n- **A** - One\n- **B** - Two\n➡️ **B**\n')).toEqual([
+      'round.md:5 · Q1: put a blank line before the ➡️ recommendation so it starts its own paragraph',
     ]);
   });
 
