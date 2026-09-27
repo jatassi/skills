@@ -1,0 +1,620 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-27T02:55:39.481565+00:00",
+  "title": "Design System: Visual Grilling Round Page",
+  "extensions": {
+    "colorMeta": {
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Near-Black Canvas",
+        "light": "#f4f5f7",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel Slate",
+        "light": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "panel-raised": {
+        "role": "neutral",
+        "displayName": "Raised Slate",
+        "light": "#f7f8fa",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "inset": {
+        "role": "neutral",
+        "displayName": "Inset Well",
+        "light": "#eef0f3",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "Hover Slate",
+        "light": "#eceff3",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "light": "#d7dbe2",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "line-soft": {
+        "role": "neutral",
+        "displayName": "Soft Hairline",
+        "light": "#e5e8ed",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Strong Hairline",
+        "light": "#bfc6d0",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "light": "#1a1e26",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "light": "#525b69",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "text-faint": {
+        "role": "neutral",
+        "displayName": "Faint Ink",
+        "light": "#667080",
+        "tonalRamp": [
+          "oklch(15% 0.012 262)",
+          "oklch(25% 0.012 262)",
+          "oklch(35% 0.012 262)",
+          "oklch(48% 0.012 262)",
+          "oklch(60% 0.012 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.012 262)",
+          "oklch(95% 0.012 262)"
+        ]
+      },
+      "action-blue": {
+        "role": "primary",
+        "displayName": "Action Blue",
+        "light": "#1f63e0",
+        "tonalRamp": [
+          "oklch(15% 0.17 262)",
+          "oklch(25% 0.17 262)",
+          "oklch(35% 0.17 262)",
+          "oklch(48% 0.17 262)",
+          "oklch(60% 0.17 262)",
+          "oklch(72% 0.17 262)",
+          "oklch(84% 0.17 262)",
+          "oklch(95% 0.17 262)"
+        ]
+      },
+      "action-blue-fill": {
+        "role": "primary",
+        "displayName": "Action Blue Fill",
+        "light": "#1f63e0",
+        "tonalRamp": [
+          "oklch(15% 0.17 262)",
+          "oklch(25% 0.17 262)",
+          "oklch(35% 0.17 262)",
+          "oklch(48% 0.17 262)",
+          "oklch(60% 0.17 262)",
+          "oklch(72% 0.17 262)",
+          "oklch(84% 0.17 262)",
+          "oklch(95% 0.17 262)"
+        ]
+      },
+      "action-blue-fill-hover": {
+        "role": "primary",
+        "displayName": "Action Blue Fill Hover",
+        "light": "#1a55c2",
+        "tonalRamp": [
+          "oklch(15% 0.17 262)",
+          "oklch(25% 0.17 262)",
+          "oklch(35% 0.17 262)",
+          "oklch(48% 0.17 262)",
+          "oklch(60% 0.17 262)",
+          "oklch(72% 0.17 262)",
+          "oklch(84% 0.17 262)",
+          "oklch(95% 0.17 262)"
+        ]
+      },
+      "verdict-green": {
+        "role": "secondary",
+        "displayName": "Verdict Green",
+        "light": "#17784a",
+        "tonalRamp": [
+          "oklch(15% 0.13 152)",
+          "oklch(25% 0.13 152)",
+          "oklch(35% 0.13 152)",
+          "oklch(48% 0.13 152)",
+          "oklch(60% 0.13 152)",
+          "oklch(72% 0.13 152)",
+          "oklch(84% 0.13 152)",
+          "oklch(95% 0.13 152)"
+        ]
+      },
+      "verdict-green-soft": {
+        "role": "secondary",
+        "displayName": "Verdict Green Wash",
+        "light": "rgba(23,120,74,.08)",
+        "tonalRamp": [
+          "oklch(15% 0.13 152)",
+          "oklch(25% 0.13 152)",
+          "oklch(35% 0.13 152)",
+          "oklch(48% 0.13 152)",
+          "oklch(60% 0.13 152)",
+          "oklch(72% 0.13 152)",
+          "oklch(84% 0.13 152)",
+          "oklch(95% 0.13 152)"
+        ]
+      },
+      "comment-purple": {
+        "role": "tertiary",
+        "displayName": "Comment Purple",
+        "light": "#6b43d4",
+        "tonalRamp": [
+          "oklch(15% 0.16 295)",
+          "oklch(25% 0.16 295)",
+          "oklch(35% 0.16 295)",
+          "oklch(48% 0.16 295)",
+          "oklch(60% 0.16 295)",
+          "oklch(72% 0.16 295)",
+          "oklch(84% 0.16 295)",
+          "oklch(95% 0.16 295)"
+        ]
+      },
+      "comment-purple-soft": {
+        "role": "tertiary",
+        "displayName": "Comment Purple Wash",
+        "light": "rgba(107,67,212,.08)",
+        "tonalRamp": [
+          "oklch(15% 0.16 295)",
+          "oklch(25% 0.16 295)",
+          "oklch(35% 0.16 295)",
+          "oklch(48% 0.16 295)",
+          "oklch(60% 0.16 295)",
+          "oklch(72% 0.16 295)",
+          "oklch(84% 0.16 295)",
+          "oklch(95% 0.16 295)"
+        ]
+      },
+      "on-purple": {
+        "role": "tertiary",
+        "displayName": "Ink On Purple",
+        "light": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.05 295)",
+          "oklch(25% 0.05 295)",
+          "oklch(35% 0.05 295)",
+          "oklch(48% 0.05 295)",
+          "oklch(60% 0.05 295)",
+          "oklch(72% 0.05 295)",
+          "oklch(84% 0.05 295)",
+          "oklch(95% 0.05 295)"
+        ]
+      },
+      "unsure-amber": {
+        "role": "tertiary",
+        "displayName": "Unsure Amber",
+        "light": "#8f5e07",
+        "tonalRamp": [
+          "oklch(15% 0.13 75)",
+          "oklch(25% 0.13 75)",
+          "oklch(35% 0.13 75)",
+          "oklch(48% 0.13 75)",
+          "oklch(60% 0.13 75)",
+          "oklch(72% 0.13 75)",
+          "oklch(84% 0.13 75)",
+          "oklch(95% 0.13 75)"
+        ]
+      },
+      "unsure-amber-soft": {
+        "role": "tertiary",
+        "displayName": "Unsure Amber Wash",
+        "light": "rgba(143,94,7,.09)",
+        "tonalRamp": [
+          "oklch(15% 0.13 75)",
+          "oklch(25% 0.13 75)",
+          "oklch(35% 0.13 75)",
+          "oklch(48% 0.13 75)",
+          "oklch(60% 0.13 75)",
+          "oklch(72% 0.13 75)",
+          "oklch(84% 0.13 75)",
+          "oklch(95% 0.13 75)"
+        ]
+      },
+      "selection": {
+        "role": "primary",
+        "displayName": "Selection",
+        "light": "rgba(31,99,224,.18)",
+        "tonalRamp": [
+          "oklch(15% 0.17 262)",
+          "oklch(25% 0.17 262)",
+          "oklch(35% 0.17 262)",
+          "oklch(48% 0.17 262)",
+          "oklch(60% 0.17 262)",
+          "oklch(72% 0.17 262)",
+          "oklch(84% 0.17 262)",
+          "oklch(95% 0.17 262)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Review step heading; the largest type on the page."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Question titles, option labels, review row titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Question prose (max 72ch), recommendation text, text answers."
+      },
+      "body-small": {
+        "displayName": "Body Small",
+        "purpose": "Option descriptions, summaries, banners, warnings, tables."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Buttons, counts and chips, with tabular figures."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Question numbers, illustration kind, anchor paths, tree metadata."
+      },
+      "mono-key": {
+        "displayName": "Mono Key",
+        "purpose": "Keycaps, option letters and pin numbers."
+      }
+    },
+    "themes": {
+      "default": "dark",
+      "alternatives": [
+        "light"
+      ],
+      "note": "Frontmatter colours are the dark theme; colorMeta.<token>.light holds the light-theme value for the same role."
+    },
+    "shadows": [
+      {
+        "name": "float",
+        "value": "0 6px 16px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.3)",
+        "light": "0 6px 16px rgba(20,24,32,.12), 0 1px 3px rgba(20,24,32,.08)",
+        "purpose": "Popovers and the tree drawer; only floating layers cast shadows."
+      },
+      {
+        "name": "pin-lift",
+        "value": "0 2px 6px rgba(0,0,0,.35)",
+        "purpose": "Comment pins sitting on an illustration."
+      }
+    ],
+    "focus": [
+      {
+        "name": "focus-ring",
+        "value": "outline: 2px solid var(--blue); outline-offset: 2px",
+        "purpose": "Every keyboard focus."
+      },
+      {
+        "name": "field-focus",
+        "value": "border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 22%, transparent)",
+        "purpose": "Textarea focus."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(.2,.8,.2,1)",
+        "purpose": "Drawers, check draw-in, pulse."
+      },
+      {
+        "name": "state",
+        "value": ".15s",
+        "purpose": "Background, border and colour changes on controls."
+      },
+      {
+        "name": "check-draw",
+        "value": ".32s",
+        "purpose": "Chip check stroke draws in when a question becomes answered."
+      },
+      {
+        "name": "drawer",
+        "value": ".22s",
+        "purpose": "Tree drawer slide."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: all animation and transition off",
+        "purpose": "Accessibility."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "tiny",
+        "value": "440px",
+        "purpose": "Count drops the word 'answered'."
+      },
+      {
+        "name": "xs",
+        "value": "480px",
+        "purpose": "Illustration kind and button labels drop."
+      },
+      {
+        "name": "sm",
+        "value": "520px",
+        "purpose": "Recommendation wraps."
+      },
+      {
+        "name": "md",
+        "value": "600px",
+        "purpose": "Tab strip fades at the right edge."
+      },
+      {
+        "name": "pane",
+        "value": "700px",
+        "purpose": "Round subject hides in the bar."
+      },
+      {
+        "name": "wide",
+        "value": "1080px",
+        "purpose": "Design-tree side column (300px) replaces the drawer."
+      }
+    ],
+    "illustration": {
+      "mermaidCap": "min(50vh, 440px)",
+      "uncappedWithin": "1.5x cap",
+      "overflow": "72px bottom fade plus centred 'Show full diagram' button",
+      "agentHtml": "sandboxed iframe (allow-scripts), height fitted up to 520px, automatic light backdrop when text contrast < 3:1 on dark"
+    },
+    "keys": {
+      "Enter": "accept recommendation",
+      "option letter": "pick that option",
+      "M": "comment mode",
+      "W": "write own answer",
+      "U": "unsure",
+      "J/K": "next/previous",
+      "Cmd/Ctrl+Enter": "submit round",
+      "Escape": "close or leave mode"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Submit round. The only blue fill on the page.",
+      "html": "<button class=\"ds-btn ds-btn-primary\"><svg class=\"ds-i\" viewBox=\"0 0 16 16\"><path d=\"M8 13V3M4 7l4-4 4 4\"/></svg>Submit round <kbd class=\"ds-kbd\">⌘↵</kbd></button>",
+      "css": ".ds-i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.ds-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid #2a303b;border-radius:6px;background:#1a1e27;color:#e7eaf0;font:500 13px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;cursor:pointer;transition:background .15s,border-color .15s}.ds-btn:active{transform:translateY(.5px)}.ds-btn:focus-visible{outline:2px solid #5b95ff;outline-offset:2px}.ds-btn-primary{background:#2f6fe4;border-color:transparent;color:#fff}.ds-btn-primary:hover{background:#3b7af0}.ds-kbd{font:500 10.5px/1 ui-monospace,'SF Mono',Menlo,monospace;padding:2px 4px 1px;border:1px solid rgba(255,255,255,.35);border-bottom-width:2px;border-radius:4px;color:rgba(255,255,255,.85)}"
+    },
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Next, Accept and other plain actions.",
+      "html": "<button class=\"ds-btn\">Accept <kbd class=\"ds-kbd\">↵</kbd></button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid #2a303b;border-radius:6px;background:#1a1e27;color:#e7eaf0;font:500 13px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;cursor:pointer;transition:background .15s,border-color .15s}.ds-btn:hover{background:#212631;border-color:#3a4250}.ds-btn:focus-visible{outline:2px solid #5b95ff;outline-offset:2px}.ds-kbd{font:500 10.5px/1 ui-monospace,'SF Mono',Menlo,monospace;padding:2px 4px 1px;border:1px solid #2a303b;border-bottom-width:2px;border-radius:4px;color:#7f8898;background:#0b0d11}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary answer actions: Write my own answer, Unsure.",
+      "html": "<button class=\"ds-btn-ghost\"><svg class=\"ds-i\" viewBox=\"0 0 16 16\"><circle cx=\"8\" cy=\"8\" r=\"6\"/><path d=\"M6.5 6.2a1.6 1.6 0 1 1 2.2 1.5c-.5.2-.7.6-.7 1.1M8 11.2v.1\"/></svg>Unsure <kbd class=\"ds-kbd\">U</kbd></button>",
+      "css": ".ds-i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.ds-btn-ghost{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:1px solid transparent;border-radius:6px;background:transparent;color:#a0a8b6;font:500 12.5px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;cursor:pointer;transition:background .15s,color .15s}.ds-btn-ghost:hover{background:#212631;color:#e7eaf0}.ds-btn-ghost:focus-visible{outline:2px solid #5b95ff;outline-offset:2px}.ds-kbd{font:500 10.5px/1 ui-monospace,'SF Mono',Menlo,monospace;padding:2px 4px 1px;border:1px solid #2a303b;border-bottom-width:2px;border-radius:4px;color:#7f8898;background:#0b0d11}"
+    },
+    {
+      "name": "State Chips",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Question state in the panel header: neutral, answered green, commented purple, unsure amber.",
+      "html": "<span class=\"ds-chip\">No answer</span> <span class=\"ds-chip ds-ok\">Accepted</span> <span class=\"ds-chip ds-cm\">Comments only · 2</span> <span class=\"ds-chip ds-un\">Unsure</span>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:999px;border:1px solid #2a303b;color:#a0a8b6;font:500 12px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums}.ds-ok{color:#49c27a;background:rgba(73,194,122,.11);border-color:rgba(73,194,122,.38)}.ds-cm{color:#ad93fb;background:rgba(173,147,251,.13);border-color:rgba(173,147,251,.38)}.ds-un{color:#e5a843;background:rgba(229,168,67,.11);border-color:rgba(229,168,67,.38)}"
+    },
+    {
+      "name": "Recommendation Block",
+      "kind": "card",
+      "refersTo": "recommendation",
+      "description": "The agent's recommended answer with one-key Accept; turns green once accepted.",
+      "html": "<div class=\"ds-rec\"><p class=\"ds-rec-t\"><span class=\"ds-rec-k\">Recommended</span><span class=\"ds-ref\">A</span>Re-call await in a loop.</p><button class=\"ds-acc\">Accept ↵</button></div>",
+      "css": ".ds-rec{display:flex;align-items:flex-start;gap:12px;padding:10px 10px 10px 12px;border:1px solid #2a303b;border-radius:6px;background:#1a1e27;color:#e7eaf0;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;transition:background .18s,border-color .18s}.ds-rec:hover{border-color:#3a4250}.ds-rec-t{margin:0;flex:1}.ds-rec-k{font-weight:600;color:#a0a8b6;margin-right:4px}.ds-ref{display:inline-block;min-width:20px;text-align:center;font:600 11px/1 ui-monospace,Menlo,monospace;padding:3px 5px 2px;margin-right:6px;border:1px solid #2a303b;border-bottom-width:2px;border-radius:4px;color:#a0a8b6;background:#0b0d11}.ds-acc{height:26px;padding:0 10px;border:1px solid #2a303b;border-radius:6px;background:#1a1e27;color:#e7eaf0;font:500 12.5px/1 -apple-system,system-ui,sans-serif;cursor:pointer}.ds-acc:hover{background:#212631}.ds-acc:focus-visible{outline:2px solid #5b95ff;outline-offset:2px}"
+    },
+    {
+      "name": "Option Rows",
+      "kind": "custom",
+      "refersTo": "option-row",
+      "description": "Radiogroup of options; the picked row is green.",
+      "html": "<div class=\"ds-opts\"><button class=\"ds-opt ds-on\"><span class=\"ds-radio\"></span><span class=\"ds-k\">A</span><span><b>Re-call await in a loop</b><small>Blocks up to 110 s per call.</small></span></button><button class=\"ds-opt\"><span class=\"ds-radio\"></span><span class=\"ds-k\">B</span><span><b>Background process</b><small>Host-specific.</small></span></button></div>",
+      "css": ".ds-opts{border:1px solid #2a303b;border-radius:6px;overflow:hidden;background:#151820}.ds-opt{display:grid;grid-template-columns:16px auto 1fr;gap:10px;align-items:start;width:100%;text-align:left;padding:10px 12px;background:transparent;border:0;border-top:1px solid #20252e;color:#e7eaf0;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;cursor:pointer;transition:background .15s}.ds-opt:first-child{border-top:0}.ds-opt:hover{background:#212631}.ds-opt:focus-visible{outline:2px solid #5b95ff;outline-offset:-2px}.ds-opt small{display:block;color:#a0a8b6;font-size:13px}.ds-radio{width:14px;height:14px;margin-top:3px;border-radius:50%;border:1.5px solid #7f8898}.ds-k{min-width:20px;text-align:center;font:600 11px/1 ui-monospace,Menlo,monospace;padding:3px 5px 2px;margin-top:1px;border:1px solid #2a303b;border-bottom-width:2px;border-radius:4px;color:#a0a8b6;background:#0b0d11}.ds-on{background:rgba(73,194,122,.11)}.ds-on .ds-radio{border-color:#49c27a;box-shadow:inset 0 0 0 2.5px #151820,inset 0 0 0 7px #49c27a}.ds-on .ds-k{color:#49c27a;border-color:rgba(73,194,122,.4)}"
+    },
+    {
+      "name": "Own Answer Field",
+      "kind": "input",
+      "refersTo": "text-answer",
+      "description": "Free-text answer on the inset well with a blue focus.",
+      "html": "<textarea class=\"ds-ta\" rows=\"3\" placeholder=\"Your answer, in your own words. It replaces the recommendation.\"></textarea>",
+      "css": ".ds-ta{display:block;width:100%;min-height:80px;padding:10px 12px;border:1px solid #2a303b;border-radius:6px;background:#0b0d11;color:#e7eaf0;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;caret-color:#5b95ff;transition:border-color .15s,box-shadow .15s}.ds-ta::placeholder{color:#7f8898}.ds-ta:hover{border-color:#3a4250}.ds-ta:focus{outline:none;border-color:#5b95ff;box-shadow:0 0 0 3px rgba(91,149,255,.22)}"
+    },
+    {
+      "name": "Step Tabs",
+      "kind": "nav",
+      "refersTo": "step-tab",
+      "description": "One-at-a-time question strip ending in Review; current tab underlined in text colour, not blue.",
+      "html": "<nav class=\"ds-steps\"><button class=\"ds-step ds-cur\">Q1</button><button class=\"ds-step\">Q2</button><button class=\"ds-step\">Q3</button><button class=\"ds-step\">Review</button></nav>",
+      "css": ".ds-steps{display:flex;gap:2px;border-bottom:1px solid #2a303b;background:#0e1014}.ds-step{height:36px;padding:0 10px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:#a0a8b6;font:500 13px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;cursor:pointer}.ds-step:hover{color:#e7eaf0}.ds-step:focus-visible{outline:2px solid #5b95ff;outline-offset:2px}.ds-cur{color:#e7eaf0;border-bottom-color:#e7eaf0}"
+    },
+    {
+      "name": "Review Bar",
+      "kind": "nav",
+      "refersTo": "review-bar",
+      "description": "Sticky 48px bar: round menu, answered count in tabular figures, Submit round.",
+      "html": "<header class=\"ds-bar\"><b>Round 3</b><span class=\"ds-grow\"></span><span class=\"ds-count\"><b>4</b> / 6 answered</span><button class=\"ds-sub\">Submit round</button></header>",
+      "css": ".ds-bar{display:flex;align-items:center;gap:6px;height:48px;padding:0 12px;background:#151820;border-bottom:1px solid #2a303b;color:#e7eaf0;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}.ds-grow{flex:1}.ds-count{color:#a0a8b6;font-size:12.5px;font-variant-numeric:tabular-nums;margin-right:4px}.ds-count b{color:#e7eaf0}.ds-sub{height:30px;padding:0 12px;border:0;border-radius:6px;background:#2f6fe4;color:#fff;font:500 13px/1 -apple-system,system-ui,sans-serif;cursor:pointer}.ds-sub:hover{background:#3b7af0}.ds-sub:focus-visible{outline:2px solid #5b95ff;outline-offset:2px}"
+    },
+    {
+      "name": "Comment Pin",
+      "kind": "custom",
+      "refersTo": "comment-pin",
+      "description": "Numbered purple teardrop pinned to an illustration element.",
+      "html": "<span class=\"ds-pin\">1</span> <span class=\"ds-pin\">2</span>",
+      "css": ".ds-pin{display:inline-block;min-width:20px;height:20px;padding:0 5px;border-radius:10px 10px 10px 2px;background:#ad93fb;color:#150f24;font:600 11px/20px -apple-system,system-ui,sans-serif;text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 2px 6px rgba(0,0,0,.35)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Pull-Request Review",
+    "overview": "**Creative North Star: \"The Pull-Request Review\"**\n\nAnswering a round is reviewing a change. Each question is a file in the diff: a header row carrying its state, the agent's prose, the recommendation as the proposed change, the illustration as evidence, and a verdict. Comments pin to exact elements inside the illustration the way review comments pin to lines. Nothing is sent until one deliberate \"Submit round\", the way a review is submitted once.\n\nThe world is a near-black canvas with panels one tonal step up, drawn with 1px hairlines and a single 6px corner. It is dense and keyboard-first: every answering action has a one-letter key shown in a small keycap beside its label. Colour is almost entirely withheld from structure and spent on meaning: blue means \"act\" (the primary action and focus), green means \"decided\", purple means \"commented\", amber means \"unsure\". The shipped structure is one question at a time: a tab strip of questions with a final Review step, one panel per step.\n\nThe system refuses the rounded, shadowed questionnaire card stack. Dark is the default theme; a light theme exists as an alternative with the same roles.",
+    "keyCharacteristics": [
+      "Near-black canvas, panels one step lighter, 1px hairlines, 6px corners.",
+      "Colour carries state only: blue act, green decided, purple commented, amber unsure.",
+      "Keyboard first, with keycaps printed next to every answerable action.",
+      "System sans for everything read; mono only for ids, keys, figures, kinds and anchor paths.",
+      "Flat at rest; only floating layers (popovers, drawers, pins) cast shadows.",
+      "Agent content is quarantined: sandboxed frames on an inset well, with a readable backdrop guaranteed."
+    ],
+    "rules": [
+      {
+        "name": "The Blue Means Act Rule",
+        "body": "Blue appears only on the primary action (Submit round) and on focus. Selected tabs, picked options and current rows never turn blue; the current step tab is marked with a text-coloured underline.",
+        "section": "colors"
+      },
+      {
+        "name": "The Green Is Decided Rule",
+        "body": "Every answered state is green, whichever way it was answered. Accepting, picking an option and writing an own answer are one colour, because to the round they are one thing: a verdict.",
+        "section": "colors"
+      },
+      {
+        "name": "The Soft Wash Rule",
+        "body": "A signal hue fills a surface only as its soft wash (roughly 11-13% alpha) with a border of the hue mixed to 35-40% alpha; solid signal fills are reserved for Submit and comment pins.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Is Data Rule",
+        "body": "Mono sets ids, keys, figures, kinds and paths. It never sets prose, titles or labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Count Rule",
+        "body": "Every count that changes while the user works (\"0 / 6 answered\", comment counts, pins, chip labels) uses tabular figures so it does not jitter.",
+        "section": "typography"
+      },
+      {
+        "name": "The Only-Floaters-Cast Rule",
+        "body": "Panels, cards, buttons and chips never have shadows. A shadow means the element floats over other content.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep blue for Submit round and focus only; mark the current tab or row with text colour and fill, not blue.",
+      "**Do** paint every answered state green, whether accepted, picked or written.",
+      "**Do** keep panel order fixed: header, prose, recommendation with Accept, illustration, options, own answer / unsure.",
+      "**Do** print the key beside every answerable action: Enter accepts, the option's letter picks it, M comments, W writes, U unsure, J/K move, ⌘Enter submits.",
+      "**Do** separate with 1px hairlines and tonal steps (canvas, panel, panel-raised, inset well) at 6px corners.",
+      "**Do** render Mermaid at natural size, uncapped within 1.5x of min(50vh, 440px), faded with \"Show full diagram\" beyond.",
+      "**Do** run agent HTML in a sandboxed frame and switch to a light backdrop automatically when its colours are unreadable on dark.",
+      "**Do** open in dark; offer light as the alternative with the same roles."
+    ],
+    "donts": [
+      "**Don't** put shadows on panels, buttons or chips; only popovers, drawers and pins float.",
+      "**Don't** use a second accent for picked options or selected tabs.",
+      "**Don't** set prose, titles or labels in mono.",
+      "**Don't** fill a surface with a solid signal colour; use the soft wash with a tinted hairline.",
+      "**Don't** stack rounded, shadowed questionnaire cards.",
+      "**Don't** add per-question send buttons; the round goes back once."
+    ]
+  }
+}

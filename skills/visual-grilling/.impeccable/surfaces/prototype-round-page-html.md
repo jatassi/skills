@@ -8,7 +8,7 @@ related_targets: []
 Scope: the visual-grilling round page (prototype). Visitor mode: Operate.
 Audience/job: a developer answering an agent's grilling round; accept, pick, write, comment, or skip each question, then submit once.
 Constraints: dark default; narrow side pane first (~480–700px), full tab adds a side column; single HTML file; agent HTML sandboxed.
-Unresolved: which of three structures (stacked review, one-at-a-time, triage table) wins; light theme parity.
+Chosen structure: B, one at a time (user, 2026-09-26): a question tab strip across the top, one question per screen, and a final Review screen that submits. Variants A and C stay in the prototype for reference only.
 
 ## Direction contract
 
