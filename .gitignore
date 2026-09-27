@@ -1,4 +1,7 @@
 .DS_Store
-# Local agent workspace (includes third-party skills); symlinks into skills/
-.agents/
-.claude/
+# Local agent workspace: third-party skills and symlinks into skills/.
+# Only the repo's own maintenance skills are tracked.
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/release/
