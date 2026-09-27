@@ -1,10 +1,13 @@
 // The `mermaid` block. It loads the Mermaid chunk lazily and draws with the
 // page's design tokens; the frame calls it again on a theme change, so each
 // draw reads the tokens afresh. Tall diagrams are capped. A draw that throws
-// is shown, and reported as a warning, by the frame.
+// is shown, and reported as a warning, by the frame. Clicks are read per
+// diagram type (mermaid-anchor/), with wide hit areas over thin lines.
 
 import type * as MermaidChunk from '../../chunks/mermaid.ts';
 import { diagramView, readTokens } from './diagram-view.ts';
+import { addHitAreas } from './mermaid-anchor/hit.ts';
+import { MERMAID_PEERS, mermaidAnchor } from './mermaid-anchor/index.ts';
 import type { BlockRenderer } from './registry.ts';
 
 /** The chunk's URL on the server. Kept out of the page bundle on purpose. */
@@ -30,6 +33,11 @@ export const mermaidBlock: BlockRenderer = {
       readTokens(mermaid.TOKEN_NAMES),
     );
     // Mermaid sanitises its own output (securityLevel: 'strict').
-    target.append(diagramView(target, svg));
+    const view = diagramView(target, svg);
+    const drawing = view.querySelector<SVGSVGElement>('.diagram > svg');
+    if (drawing) addHitAreas(drawing);
+    target.append(view);
   },
+  anchor: mermaidAnchor,
+  peers: MERMAID_PEERS,
 };
