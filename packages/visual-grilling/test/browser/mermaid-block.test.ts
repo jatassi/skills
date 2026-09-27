@@ -74,14 +74,14 @@ describe('mermaid block', () => {
     const darkPlain = await colourBehind(page, 'Request flow', 'Browser');
     const recommended = await colourBehind(page, 'Request flow', 'Agent');
     const risk = await colourBehind(page, 'Request flow', 'Server');
-    // The page's dark panel token fills a plain node; the marks tint theirs.
-    expect(darkPlain).toBe('rgb(22, 27, 34)');
+    // The page's dark panel token (--panel, #151820) fills a plain node; the marks tint theirs.
+    expect(darkPlain).toBe('rgb(21, 24, 32)');
     expect(new Set([darkPlain, recommended, risk]).size).toBe(3);
 
     await page.evaluate(() => {
       document.documentElement.dataset.theme = 'light';
     });
-    await pageExpect.poll(() => colourBehind(page, 'Request flow', 'Browser')).toBe('rgb(246, 248, 250)');
+    await pageExpect.poll(() => colourBehind(page, 'Request flow', 'Browser')).toBe('rgb(255, 255, 255)');
   });
 
   it("keeps the preset marks when the agent's own themeCSS overrides the page's", async () => {

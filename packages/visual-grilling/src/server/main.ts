@@ -17,6 +17,7 @@ import type {
   PingResponse,
   PresentRequest,
   PresentResponse,
+  RoundIndex,
 } from '../core/protocol.ts';
 import { parseRound, type Round } from '../core/round.ts';
 import { makeDir, sessionPaths, writePrivateFile, type ServerInfo } from '../core/session.ts';
@@ -128,6 +129,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     const asset = /^\/assets\/([a-z0-9-]+\.(?:js|css))$/.exec(route);
     if (asset) return sendFile(res, asset[1]!);
     if (route === '/events') return openEvents(req, res);
+    if (route === '/api/rounds') return sendJson(res, 200, roundIndex());
     const roundRoute = /^\/api\/rounds\/(latest|\d+)$/.exec(route);
     if (roundRoute) {
       const n = roundRoute[1] === 'latest' ? latest : Number(roundRoute[1]);
@@ -250,6 +252,18 @@ function reportWarning(res: ServerResponse, n: number, body: unknown): void {
  */
 function answeredInTerminal(n: number): boolean {
   return unsubmitted(n) && n < latest;
+}
+
+function roundIndex(): RoundIndex {
+  return {
+    rounds: [...rounds.keys()]
+      .sort((a, b) => a - b)
+      .map((n) => {
+        const round = rounds.get(n)!;
+        const state = records.has(n) ? 'submitted' : answeredInTerminal(n) ? 'terminal' : 'open';
+        return { number: n, ...(round.title ? { title: round.title } : {}), questions: round.questions.length, state };
+      }),
+  };
 }
 
 function unsubmitted(n: number): boolean {

@@ -40,7 +40,7 @@ async function expectReadOnlyWithDrafts(page: Page): Promise<void> {
   await pageExpect(page.getByRole('button', { name: 'Accept' })).toHaveAttribute('aria-pressed', 'true');
   await pageExpect(page.getByRole('button', { name: 'Accept' })).toBeDisabled();
   await page.getByRole('tab', { name: 'Review' }).click();
-  await pageExpect(page.getByRole('region', { name: 'Review' })).toContainText('Q3 Retention? · own answer: “an unsent draft”');
+  await pageExpect(page.getByRole('region', { name: 'Review' })).toContainText('Own answer: “an unsent draft”');
   await pageExpect(page.getByRole('button', { name: 'Submit round' })).toBeDisabled();
 }
 
@@ -72,8 +72,8 @@ describe('round page', () => {
 
     await page.getByRole('tab', { name: 'Review' }).click();
     const review = page.getByRole('region', { name: 'Review' });
-    await pageExpect(review).toContainText('Q2 Which runtime? · picked B');
-    await pageExpect(review).toContainText('1 question has no answer and will be sent as unsure.');
+    await pageExpect(review.getByRole('listitem').nth(1)).toContainText('Picked B: Bun');
+    await pageExpect(review).toContainText('1 unanswered question will be sent as unsure.');
 
     const waiting = sandbox.cli(['await', '--timeout', '30']);
     await page.getByRole('button', { name: 'Submit round' }).click();
@@ -208,7 +208,10 @@ Q6 Retry policy · accepted
     await pageExpect(compare.getByRole('list', { name: 'Comments on Compare' })).toContainText('does this need Node?');
     await pageExpect(page.locator('.comment-count')).toHaveText('2 comments');
 
-    // Pins scroll with the illustration.
+    // Pins scroll with the illustration. (Clicking the wide header scrolled it; start from the left.)
+    await compare.locator('.stage').evaluate((stage) => {
+      stage.scrollLeft = 0;
+    });
     const before = (await pins.first().boundingBox())!;
     await compare.locator('.stage').evaluate((stage) => {
       stage.scrollLeft = 150;
@@ -230,12 +233,12 @@ Q6 Retry policy · accepted
     await costs.getByRole('cell', { name: '$10' }).click();
     await costs.getByRole('textbox').fill('per seat?');
     await costs.getByRole('button', { name: 'Add comment' }).click();
-    await pageExpect(page.getByRole('heading', { level: 2 })).toContainText('(comments only)');
+    await pageExpect(page.getByRole('region', { name: 'Q2' })).toContainText('Comments only · 1');
 
     await page.getByRole('tab', { name: 'Review' }).click();
     const review = page.getByRole('region', { name: 'Review' });
-    await pageExpect(review).toContainText('Q1 Install path · accepted · 2 comments');
-    await pageExpect(review).toContainText('Q2 Costs · comments only · 1 comment');
+    await pageExpect(review.getByRole('listitem').nth(0)).toContainText('Accepted: The MCP server. · 2 comments');
+    await pageExpect(review.getByRole('listitem').nth(1)).toContainText('Comments only · 1 comment, no verdict');
     await pageExpect(review).not.toContainText('will be sent as unsure');
 
     const waiting = sandbox.cli(['await', '--timeout', '30']);
