@@ -4,7 +4,7 @@ Vega-Lite 6, written as JSON and drawn as SVG. Leave out `$schema`, since the pa
 
 ## Data
 
-- Put the values inline as JSON rows in `data.values`. Inline CSV or TSV strings and `url` data are rejected.
+- Put the values inline as JSON rows in `data.values`. Inline CSV, TSV or DSV strings, `url` data and raw Vega specs are rejected.
 - Every field an encoding names must exist in the rows. A missing field draws nothing, and `present` rejects the chart as empty.
 - Write dates with a time, such as `"2026-01-05T00:00"`, so they parse as local time. A bare `"2026-01-05"` parses as UTC and can show as the day before. Alternatively, set `"utc": true` on the `timeUnit`.
 

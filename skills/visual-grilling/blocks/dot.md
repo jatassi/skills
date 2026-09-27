@@ -12,7 +12,7 @@ Graphviz, for a graph whose layout you need to control. The engine is `dot` unle
 
 A comment names a node, edge or cluster by its `id` attribute, then by node name, or by `a -> b` for an edge. Use meaningful node names (`api`, `queue`) and give an `id` only when the name isn't one.
 
-Ids shaped like `node1`, `edge2` or `clust3` can't be told from the ones Graphviz generates, so anchors ignore them and fall back to the node name.
+Ids shaped like `node1`, `edge2`, `clust3` or `graph4` can't be told from the ones Graphviz generates, so anchors ignore them and fall back to the node name.
 
 ## Preset marks
 

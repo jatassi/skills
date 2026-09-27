@@ -21,9 +21,9 @@ A mockup sits under its option and shows as one card in a side-by-side row. Each
 
 ## Anchors
 
-Name the parts the user may comment on with `data-anchor="<name>"`, in kebab-case and unique within one illustration or mockup (`present` rejects a duplicate). A comment comes back as `html "Error banner" → button retry-button "Retry"` (the element, your name and its text), or with `mockup B` in place of `html "Error banner"` for a mockup. Without a `data-anchor`, a comment uses the element's `id`, `aria-label` or SVG `<title>`, then its nearby text and the click position.
+Name the parts the user may comment on with `data-anchor="<name>"`, in kebab-case and unique within one illustration or mockup (`present` rejects a duplicate). A comment comes back as `html "Error banner" → button retry-button "Retry"` (the element, your name and its text), or with `mockup B` in place of `html "Error banner"` for a mockup. Without a `data-anchor`, a comment uses the element's `id`, `aria-label` or SVG `<title>`, then its nearby text and the click position. An `id` that looks generated, such as one with three digits in a row, is skipped.
 
-## Marks and theme
+## Preset marks
 
 Use the [theme tokens](../illustrating.md#theme-tokens) so your HTML follows the theme: `accent-green` for recommended, `accent-red` for risk, and `fg-muted` or `opacity-60` for muted.
 
@@ -32,5 +32,7 @@ Use the [theme tokens](../illustrating.md#theme-tokens) so your HTML follows the
   Upload failed. <button data-anchor="retry-button" class="text-accent-blue">Retry</button>
 </div>
 ```
+
+## Theme override
 
 Hard-coded colours override the theme and stay fixed in both themes. If your text would be unreadable on dark, the frame falls back to the light backdrop, and the user can toggle it by hand.
