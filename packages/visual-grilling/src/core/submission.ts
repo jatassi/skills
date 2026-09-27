@@ -178,6 +178,7 @@ export function checkWarning(round: Round, payload: unknown): PageWarning {
     if (!option) throw new Error(`Q${question.number}: option ${String(body.option).slice(0, 2)} has no mockup`);
     subject = { option: option.letter };
   } else {
+    if (typeof body.illustration !== 'string') throw new Error('a warning names an illustration or an option');
     const illustration = question.illustrations.find((candidate) => candidate.id === body.illustration);
     if (!illustration) throw new Error(`Q${question.number} has no illustration "${String(body.illustration)}"`);
     if (body.kind === 'script' && illustration.kind !== 'html') throw new Error('only html illustrations run scripts');

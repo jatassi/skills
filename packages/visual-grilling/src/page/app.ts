@@ -616,7 +616,7 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
         nextNumber: all.length + 1,
         commenting: state.commenting,
         readOnly,
-        picked: subject.option !== undefined && chosen(subject.option),
+        chosen: subject.option !== undefined && chosen(subject.option),
       });
     }
 

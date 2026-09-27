@@ -166,6 +166,7 @@ describe('the frame document', () => {
     ['a question with no options', '/frame/r1/q1/A'],
     ['an unknown question', '/frame/r1/q9/A'],
     ['a lower-case option', '/frame/r1/q3/a'],
+    ['a question number with a leading zero', '/frame/r1/q03/A'],
   ])('has no mockup frame for %s', async (_, path) => {
     expect((await rawRequest(port, 'GET', path)).status).toBe(404);
   });
@@ -243,7 +244,7 @@ Q3 Layout
     [{ question: 1, illustration: 'banner', kind: 'script', message: '' }, 'message'],
     [{ question: 3, option: 'C', kind: 'script', message: 'x' }, 'option C has no mockup'],
     [{ question: 1, option: 'A', kind: 'script', message: 'x' }, 'option A has no mockup'],
-    [{ question: 3, kind: 'script', message: 'x' }, 'no illustration "undefined"'],
+    [{ question: 3, kind: 'script', message: 'x' }, 'a warning names an illustration or an option'],
   ])('rejects a warning that does not fit the round: %j', async (body, error) => {
     const response = await postJson(`${url}api/rounds/1/warnings`, body);
     expect(response.status).toBe(400);

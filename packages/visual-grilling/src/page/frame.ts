@@ -48,7 +48,7 @@ export interface FrameView {
   commenting: boolean;
   readOnly: boolean;
   /** For a mockup card: its option is the answer (picked, or accepted through the recommendation). */
-  picked?: boolean;
+  chosen?: boolean;
 }
 
 export interface FrameHooks {
@@ -239,10 +239,10 @@ export class IllustrationFrame {
     this.toggle.setAttribute('aria-pressed', String(view.commenting));
     this.toggle.disabled = view.readOnly;
     this.element.classList.toggle('commenting', canComment);
-    this.element.classList.toggle('on', view.picked === true);
+    this.element.classList.toggle('on', view.chosen === true);
     if (this.cardPick) {
       this.cardPick.hidden = view.commenting || view.readOnly;
-      this.cardPick.setAttribute('aria-pressed', String(view.picked === true));
+      this.cardPick.setAttribute('aria-pressed', String(view.chosen === true));
     }
     this.pushState();
 

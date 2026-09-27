@@ -19,7 +19,7 @@ import type {
   PresentResponse,
   RoundIndex,
 } from '../core/protocol.ts';
-import { parseRound, type Round } from '../core/round.ts';
+import { parseRound, type Mockup, type Round } from '../core/round.ts';
 import { makeDir, sessionPaths, writePrivateFile, type ServerInfo } from '../core/session.ts';
 import {
   buildRecord,
@@ -142,10 +142,13 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     if (frameAsset && (FRAME_ASSETS as readonly string[]).includes(frameAsset[1]!)) {
       return sendFile(res, frameAsset[1]!, BASE_HEADERS, frameDir);
     }
-    const frameRoute = /^\/frame\/r(\d+)\/([a-z0-9][a-z0-9-]*)(?:\/([A-Z]))?$/.exec(route);
-    if (frameRoute) {
-      const [, n, id, option] = frameRoute;
-      return sendFrame(res, frameSource(Number(n), id!, option), url.searchParams.get('theme'));
+    const theme = url.searchParams.get('theme');
+    const frameRoute = /^\/frame\/r(\d+)\/([a-z0-9][a-z0-9-]*)$/.exec(route);
+    if (frameRoute) return sendFrame(res, illustrationFrame(Number(frameRoute[1]), frameRoute[2]!), theme);
+    const mockupRoute = /^\/frame\/r(\d+)\/q([1-9]\d*)\/([A-Z])$/.exec(route);
+    if (mockupRoute) {
+      const [, n, question, option] = mockupRoute;
+      return sendFrame(res, mockupFrame(Number(n), Number(question), option!), theme);
     }
     if (route === '/api/rounds') return sendJson(res, 200, roundIndex());
     const roundRoute = /^\/api\/rounds\/(latest|\d+)$/.exec(route);
@@ -251,25 +254,28 @@ function submit(res: ServerResponse, n: number, body: PageSubmission): void {
   sendJson(res, 200, {});
 }
 
-/**
- * The agent HTML a frame path names: /frame/r<N>/<illustration-id> is an html
- * illustration, /frame/r<N>/q<M>/<option> is that option's mockup.
- */
-function frameSource(n: number, id: string, option: string | undefined): { source: string; tailwind: boolean } | undefined {
-  const round = rounds.get(n);
-  if (!round) return undefined;
-  if (option !== undefined) {
-    const question = round.questions.find((candidate) => `q${candidate.number}` === id);
-    return question?.options.find((candidate) => candidate.letter === option)?.mockup;
-  }
-  const illustration = round.questions
-    .flatMap((question) => question.illustrations)
+/** The agent HTML a frame shows, and whether Tailwind loads into it. */
+type FrameSource = Pick<Mockup, 'source' | 'tailwind'>;
+
+/** /frame/r<N>/<illustration-id>: an html illustration. */
+function illustrationFrame(n: number, id: string): FrameSource | undefined {
+  const illustration = rounds
+    .get(n)
+    ?.questions.flatMap((question) => question.illustrations)
     .find((candidate) => candidate.id === id && candidate.kind === 'html');
   return illustration && { source: illustration.source, tailwind: illustration.tailwind !== false };
 }
 
+/** /frame/r<N>/q<M>/<option>: that option's mockup. */
+function mockupFrame(n: number, question: number, option: string): FrameSource | undefined {
+  return rounds
+    .get(n)
+    ?.questions.find((candidate) => candidate.number === question)
+    ?.options.find((candidate) => candidate.letter === option)?.mockup;
+}
+
 /** Serves an html illustration's or a mockup's frame: the agent's HTML with the frame head injected, sandboxed. */
-function sendFrame(res: ServerResponse, frame: { source: string; tailwind: boolean } | undefined, theme: string | null): void {
+function sendFrame(res: ServerResponse, frame: FrameSource | undefined, theme: string | null): void {
   if (!frame) return sendJson(res, 404, { error: 'no such frame' });
   const page = frameDocument(frame.source, {
     tailwind: frame.tailwind,
