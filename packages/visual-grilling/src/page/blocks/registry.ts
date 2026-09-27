@@ -9,7 +9,7 @@
 //
 // A kind with no renderer shows its raw source.
 
-import type { AnchorAdapter, Box, Snapshot } from '../../core/anchor.ts';
+import type { AdapterMatch, Box, Snapshot } from '../../core/anchor.ts';
 import type { ThemeName } from '../../core/frame-tokens.ts';
 import type { PageIllustration } from '../../core/protocol.ts';
 import type { IllustrationKind } from '../../core/round.ts';
@@ -66,11 +66,17 @@ export interface BlockRenderer {
     illustration: PageIllustration,
     context: BlockContext,
   ): void | BlockView | Promise<void | BlockView>;
-  /** The block's adapter for anchored comments, tried before the generic fallback. */
-  anchor?: AnchorAdapter;
+  /**
+   * The block's adapter for anchored comments, tried before the generic
+   * fallback. It gets the illustration too, for rules that read the source.
+   */
+  anchor?: BlockAnchor;
   /** A CSS selector for elements the adapter needs to see besides the clicked chain (Snapshot.peers). */
   peers?: string;
 }
+
+/** A block's reading of a click: an `AnchorAdapter` that also sees the illustration clicked. */
+export type BlockAnchor = (snapshot: Snapshot, illustration: PageIllustration) => AdapterMatch | null;
 
 const renderers = new Map<IllustrationKind, BlockRenderer>();
 

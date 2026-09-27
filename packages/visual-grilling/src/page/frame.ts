@@ -240,8 +240,9 @@ export class IllustrationFrame {
   /** A click, snapshotted here or inside a sandboxed frame, becomes the pending comment's anchor. */
   private pickSnapshot(snapshot: Snapshot): void {
     if (!this.view.commenting || this.view.readOnly) return;
-    const renderer = blockFor(this.subject.illustration.kind);
-    const anchor = resolveAnchor(snapshot, this.anchorSubject(), renderer.anchor);
+    const { illustration } = this.subject;
+    const { anchor: blockAnchor } = blockFor(illustration.kind);
+    const anchor = resolveAnchor(snapshot, this.anchorSubject(), blockAnchor && ((shot) => blockAnchor(shot, illustration)));
     this.pending = anchor;
     this.pendingCrop = anchor.target.weak ? this.crop(anchor, snapshot.root) : undefined;
     this.sync(this.view);
