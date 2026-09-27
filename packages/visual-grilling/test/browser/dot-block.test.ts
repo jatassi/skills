@@ -71,12 +71,12 @@ describe('dot block', () => {
     const recommended = await paint(page, 'Dependencies', 'api');
     const risk = await paint(page, 'Dependencies', 'db');
     // The page's dark panel token fills a plain node; the marks tint theirs.
-    expect(plain).toEqual({ fill: 'rgb(22, 27, 34)', stroke: 'rgb(139, 148, 158)' });
-    expect(recommended.stroke).toBe('rgb(63, 185, 80)');
-    expect(risk.stroke).toBe('rgb(248, 81, 73)');
+    expect(plain).toEqual({ fill: 'rgb(21, 24, 32)', stroke: 'rgb(160, 168, 182)' });
+    expect(recommended.stroke).toBe('rgb(73, 194, 122)');
+    expect(risk.stroke).toBe('rgb(240, 101, 91)');
     expect(new Set([plain.fill, recommended.fill, risk.fill]).size).toBe(3);
-    expect((await paint(page, 'Dependencies', 'web->db')).stroke).toBe('rgb(248, 81, 73)');
-    expect((await paint(page, 'Dependencies', 'web->api')).stroke).toBe('rgb(139, 148, 158)');
+    expect((await paint(page, 'Dependencies', 'web->db')).stroke).toBe('rgb(240, 101, 91)');
+    expect((await paint(page, 'Dependencies', 'web->api')).stroke).toBe('rgb(160, 168, 182)');
     const muted = await figure.evaluate((element) => {
       const group = [...element.querySelectorAll('g.node')].find((g) => g.querySelector('title')?.textContent === 'cache')!;
       return getComputedStyle(group).opacity;
@@ -86,7 +86,7 @@ describe('dot block', () => {
     await page.evaluate(() => {
       document.documentElement.dataset.theme = 'light';
     });
-    await pageExpect.poll(async () => (await paint(page, 'Dependencies', 'web')).fill).toBe('rgb(246, 248, 250)');
+    await pageExpect.poll(async () => (await paint(page, 'Dependencies', 'web')).fill).toBe('rgb(255, 255, 255)');
   });
 
   it("lets the source's own colours and layout win over the page's", async () => {
