@@ -1,43 +1,57 @@
-# Cuts a release, per docs/adr/0002-installs-pinned-to-release-tags.md.
+# Tests pull requests into main, and releases every push to main, per
+# docs/adr/0002-installs-pinned-to-release-tags.md and
+# docs/adr/0003-every-merge-to-main-is-a-release.md.
 #
-# Dispatched by hand from main. Tests the dispatched commit on Ubuntu, macOS
-# and Windows at the minimum Node, then builds visual-grilling into
-# skills/visual-grilling/dist/, bumps both plugin manifests, pins the
+# Changes land on dev and reach main by pull request. On the pull request,
+# npm test runs on Ubuntu, macOS and Windows at the minimum Node, and the
+# bundle it ran against is kept under the git tree it tested. The merge then
+# releases without testing again: it requires a tested bundle for exactly the
+# tree it is releasing, builds visual-grilling into skills/visual-grilling/dist/,
+# checks the build against that bundle, bumps both plugin manifests (patch, or
+# the pull request's release:minor or release:major label), pins the
 # marketplace entry to the new tag, commits, tags that commit vX.Y.Z, pushes
-# both, and creates a GitHub Release with the notes and each output's size.
+# both, creates a GitHub Release, and fast-forwards dev to the release commit.
 #
-# This is the only thing that commits dist/, and the only workflow in the repo:
-# nothing runs on pull requests or pushes.
+# Dispatching it by hand on main tests and releases main as it is: the way to
+# retry a release that failed after its merge.
+#
+# This is the only thing that commits dist/, and the only workflow in the repo.
 
 name: Release
 
 on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
-      version:
-        description: Version to release, as X.Y.Z (tagged vX.Y.Z); must be newer than the current one
+      bump:
+        description: Which part of the version to bump
         required: true
-        type: string
+        type: choice
+        options: [patch, minor, major]
+        default: patch
       notes:
-        description: Release notes (Markdown); the release adds each output's size below them
-        required: true
+        description: Release notes (Markdown); GitHub's generated notes and each output's size follow them
+        required: false
         type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: release
-  cancel-in-progress: false
+  # Pull requests test in their own group; releases queue one at a time.
+  group: ${{ github.event_name == 'pull_request' && format('test-{0}', github.ref) || 'release' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   NODE_VERSION: 22.22.2
-  # Inputs reach scripts through the environment only, never spliced into them.
-  VERSION: ${{ inputs.version }}
 
 jobs:
   preflight:
-    name: Check the version
+    name: Require main
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Require main
@@ -45,28 +59,12 @@ jobs:
         run: |
           echo "::error::Dispatch the release from main, not $GITHUB_REF"
           exit 1
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Check the version against the manifests
-        run: node packages/visual-grilling/release.ts manifests --version "$VERSION" --check
-      - name: Require a new tag
-        run: |
-          # --exit-code: 0 when the tag exists, 2 when it doesn't, anything else is an error.
-          status=0
-          git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null || status=$?
-          if [ "$status" -eq 0 ]; then
-            echo "::error::Tag v$VERSION already exists"
-            exit 1
-          elif [ "$status" -ne 2 ]; then
-            echo "::error::Could not list the remote's tags (git exited $status)"
-            exit 1
-          fi
 
   test:
     name: npm test (${{ matrix.os }})
     needs: preflight
+    # A push to main was tested on its pull request.
+    if: ${{ !cancelled() && github.event_name != 'push' && needs.preflight.result != 'failure' }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -75,6 +73,7 @@ jobs:
       # Golden files and fixtures are compared byte for byte.
       - name: Keep LF line endings
         run: git config --global core.autocrlf false
+      # On a pull request, the merge of it into main: the tree main will have.
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
@@ -89,39 +88,99 @@ jobs:
       - run: npm test
         env:
           VG_SKIP_BROWSER_TESTS: ${{ runner.os == 'Linux' && '0' || '1' }}
-      # The bundle every test above ran against, for the release job to check
-      # its own build against.
+      - name: Name the tested bundle after the tested tree
+        if: runner.os == 'Linux'
+        run: echo "BUNDLE=tested-bundle-$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_ENV"
+      # The bundle every test above ran against, for the release to check its
+      # own build against. Kept long enough for a pull request to wait a while
+      # between its last push and its merge.
       - name: Keep the tested bundle
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v7
         with:
-          name: tested-bundle
+          name: ${{ env.BUNDLE }}
           path: packages/visual-grilling/.test-dist/
           include-hidden-files: true
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 30
 
   release:
     name: Build, tag and publish
     needs: test
+    if: >-
+      ${{ !cancelled() && github.ref == 'refs/heads/main' &&
+      ((github.event_name == 'push' && needs.test.result == 'skipped') ||
+       (github.event_name == 'workflow_dispatch' && needs.test.result == 'success')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
-      # The same commit the test jobs tested. If main has moved on since the
-      # dispatch, the push below is not a fast-forward and fails.
+      # The pushed or dispatched commit. If main has moved on since, the push
+      # below is not a fast-forward and fails.
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - name: Find the tested bundle for this tree
+        run: |
+          tree=$(git rev-parse 'HEAD^{tree}')
+          name="tested-bundle-$tree"
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            run=$GITHUB_RUN_ID
+          else
+            run=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$name&per_page=100" \
+              --jq '[.artifacts[] | select(.expired | not)] | sort_by(.created_at) | last | .workflow_run.id // empty')
+            if [ -z "$run" ]; then
+              echo "::error::No pull request tested tree $tree. Merge through a pull request from dev whose checks passed with main up to date, or dispatch Release to test and release main as it is."
+              exit 1
+            fi
+            conclusion=$(gh run view "$run" --json conclusion --jq .conclusion)
+            if [ "$conclusion" != success ]; then
+              echo "::error::The run that tested tree $tree (run $run) did not pass: $conclusion"
+              exit 1
+            fi
+          fi
+          gh run download "$run" --name "$name" --dir "$RUNNER_TEMP/tested-bundle"
+      - name: Work out the version and notes
+        env:
+          BUMP: ${{ inputs.bump }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+              --jq '[.[] | select(.base.ref == "main" and .merged_at != null)] | first // {}')
+            labels=$(jq -r '[.labels[]?.name] | join(",")' <<<"$pr")
+            case ",$labels," in
+              *,release:major,*) BUMP='major' ;;
+              *,release:minor,*) BUMP='minor' ;;
+              *) BUMP='patch' ;;
+            esac
+            NOTES=$(jq -r '.body // ""' <<<"$pr")
+          fi
+          VERSION=$(node packages/visual-grilling/release.ts next --bump "$BUMP")
+          echo "Releasing v$VERSION ($BUMP)"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          printf '%s\n' "$NOTES" > "$RUNNER_TEMP/notes.md"
+      - name: Require a new tag
+        run: |
+          # --exit-code: 0 when the tag exists, 2 when it doesn't, anything else is an error.
+          status=0
+          git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "::error::Tag v$VERSION already exists"
+            exit 1
+          elif [ "$status" -ne 2 ]; then
+            echo "::error::Could not list the remote's tags (git exited $status)"
+            exit 1
+          fi
       - run: npm ci
       - name: Build into skills/visual-grilling/dist/
         run: npm run try
-      - uses: actions/download-artifact@v8
-        with:
-          name: tested-bundle
-          path: ${{ runner.temp }}/tested-bundle
       # Ships exactly what was tested: the build is deterministic, so any
       # difference means something changed between the two builds.
       - name: Require the build to match the tested bundle
@@ -129,10 +188,7 @@ jobs:
       - name: Bump the manifests and pin the marketplace to the tag
         run: node packages/visual-grilling/release.ts manifests --version "$VERSION"
       - name: Write the release notes
-        env:
-          NOTES: ${{ inputs.notes }}
         run: |
-          printf '%s\n' "$NOTES" > "$RUNNER_TEMP/notes.md"
           node packages/visual-grilling/release.ts notes --dist skills/visual-grilling/dist --notes "$RUNNER_TEMP/notes.md" > "$RUNNER_TEMP/release.md"
           cat "$RUNNER_TEMP/release.md"
       - name: Commit and tag
@@ -149,9 +205,17 @@ jobs:
           fi
           git commit --quiet -m "Release v$VERSION"
           git tag -a "v$VERSION" -m "v$VERSION"
+      # A push with the workflow's token does not start another run.
       - name: Push main and the tag
         run: git push --atomic origin "HEAD:refs/heads/main" "refs/tags/v$VERSION"
       - name: Create the GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "v$VERSION" --title "v$VERSION" --notes-file "$RUNNER_TEMP/release.md" --verify-tag
+        # The notes and sizes come first, then GitHub's list of changes.
+        run: gh release create "v$VERSION" --title "v$VERSION" --notes-file "$RUNNER_TEMP/release.md" --generate-notes --verify-tag
+      # So the next pull request from dev starts from the release. Not a
+      # failure if dev has moved on: the release commit reaches it through
+      # that pull request's merge instead.
+      - name: Fast-forward dev to the release
+        run: |
+          if ! git push origin "HEAD:refs/heads/dev"; then
+            echo "::notice::dev has moved on from main, so it was not fast-forwarded to v$VERSION"
+          fi

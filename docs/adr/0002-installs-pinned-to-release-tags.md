@@ -1,5 +1,7 @@
 # Installs are pinned to release tags; only the release workflow commits bundles
 
+> Releases now run on every merge to `main` rather than by hand: see [ADR 0003](0003-every-merge-to-main-is-a-release.md).
+
 The marketplace entry for `jatassi-skills` pins its source to the latest release tag (`source: { source: "github", repo: "jatassi/skills", ref: "vX.Y.Z" }`), and only the manually triggered release workflow writes `skills/visual-grilling/dist/`. That workflow runs the full test command on Ubuntu, macOS and Windows at the minimum Node, builds, bumps both plugin manifests, sets the pin, commits and tags. We chose this because `visual-grilling` ships prebuilt bundles alongside skill text that keeps changing on `main`. An unpinned install clones the default branch and could pair new skill text with an old or untested build. Pinning makes what installs exactly what was tested.
 
 ## Considered Options

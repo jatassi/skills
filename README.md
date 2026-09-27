@@ -22,9 +22,19 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 
 The marketplace pins the plugin to the latest release tag, so Claude Code installs exactly the build that release tested, not whatever is on `main`.
 
+### skills.sh
+
+```
+npx skills add jatassi/skills
+```
+
+This installs every skill in the repo into any agent the [`skills` CLI](https://skills.sh) supports. Update later with `npx skills update`.
+
 ### Agent Plugins clients
 
-Point your client at this repository; the manifest is [`plugin.json`](plugin.json) at the root. These clients read `main`, which carries the latest release's `visual-grilling` build; between releases, the skill text on `main` can be newer than that build.
+Point your client at this repository; the manifest is [`plugin.json`](plugin.json) at the root.
+
+skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a release, so they get the same build as Claude Code. The exception is the few minutes while a release is building, when the skill text on `main` can be newer than the `visual-grilling` build.
 
 ## Layout
 
@@ -34,7 +44,7 @@ Point your client at this repository; the manifest is [`plugin.json`](plugin.jso
 ├── .claude-plugin/
 │   ├── plugin.json              # Claude Code plugin manifest
 │   └── marketplace.json         # Claude Code marketplace (this repo = one plugin)
-├── .github/workflows/           # release.yml, the only workflow: cuts a release by hand
+├── .github/workflows/           # release.yml, the only workflow: tests pull requests, releases merges to main
 └── skills/                      # Shared by both formats
     └── <skill>/SKILL.md
 ```
@@ -50,17 +60,20 @@ npm test                          # type-check, build into packages/visual-grill
 npm run try                       # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
 ```
 
-Never commit the `npm run try` output: `dist/` is gitignored, and only a release commits it. After the first release `dist/` is tracked, so a try build shows up as changes to it; discard them with `git restore skills/visual-grilling/dist`. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.
+Work on `dev`, not `main`. Never commit the `npm run try` output: `dist/` is gitignored, and only a release commits it. After the first release `dist/` is tracked, so a try build shows up as changes to it; discard them with `git restore skills/visual-grilling/dist`. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.
 
 ## Releasing
 
-Only the [Release workflow](.github/workflows/release.yml) commits `skills/visual-grilling/dist/`, and there is no CI on pull requests or pushes ([ADR 0002](docs/adr/0002-installs-pinned-to-release-tags.md)). There is no CHANGELOG; the notes go on the GitHub Release.
+Every merge to `main` is a release ([ADR 0003](docs/adr/0003-every-merge-to-main-is-a-release.md)). Only the [Release workflow](.github/workflows/release.yml) commits `skills/visual-grilling/dist/` ([ADR 0002](docs/adr/0002-installs-pinned-to-release-tags.md)). There is no CHANGELOG; the notes go on the GitHub Release.
 
-1. Run `npm update` within the pinned majors, then `npm test`, and land the result on `main`.
-2. Run **Release** on `main` with a `version` (`X.Y.Z`, newer than the current one) and the release `notes`. The Actions tab's `notes` box takes one line; for Markdown over several lines, dispatch from the terminal:
+1. Land changes on `dev`. Run `npm update` within the pinned majors from time to time, with `npm test`.
+2. Open a pull request from `dev` into `main`. Its description becomes the release notes. Label it `release:minor` or `release:major` for more than a patch bump.
+3. Wait for the `npm test` checks (Ubuntu, macOS and Windows at Node 22.22.2; browser tests on Ubuntu only), make sure `main` hasn't moved since they ran, and merge with a merge commit.
 
-   ```
-   gh workflow run release.yml --ref main -f version=1.2.3 -f notes="$(cat notes.md)"
-   ```
+The merge's run finds the bundle the pull request tested for exactly the merged tree, builds into `dist/` and checks the build is byte-for-byte that bundle, bumps `version` in both `plugin.json` manifests, pins the marketplace entry to `vX.Y.Z`, commits that to `main`, tags it `vX.Y.Z`, creates a GitHub Release (your notes, each output's size, then GitHub's list of changes), and fast-forwards `dev` to the release commit.
 
-The workflow runs `npm test` on Ubuntu, macOS and Windows at Node 22.22.2 (browser tests on Ubuntu only), builds into `dist/` and checks the build is byte-for-byte the bundle the tests ran against, bumps `version` in both `plugin.json` manifests, pins the marketplace entry to `vX.Y.Z`, commits that to `main`, tags it `vX.Y.Z`, and creates a GitHub Release with the notes and each output's size. If `main` moved while the tests ran, the push fails and nothing is released; run it again.
+If the release fails after a merge (for example because `main` moved and the merged tree was never tested), run **Release** by hand on `main`. It tests `main` as it is and then releases it:
+
+```
+gh workflow run release.yml --ref main -f bump=patch -f notes="$(cat notes.md)"
+```
