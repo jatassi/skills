@@ -138,9 +138,11 @@ export const MERMAID_FIXTURES: MermaidFixture[] = [
   participant A as Agent
   participant S as Server
   A->>S: present
-  S-->>A: link
   Note over A,S: the user answers
-  A->>S: await`,
+  activate S
+  S-->>A: link
+  A->>S: await
+  deactivate S`,
     anchors: [
       // The bottom box comes first in the document, then the top one.
       { text: 'Agent', nth: 0, term: 'participant A "Agent"' },
@@ -148,6 +150,7 @@ export const MERMAID_FIXTURES: MermaidFixture[] = [
       { text: 'present', term: 'message #1 A → S "present"' },
       { css: '[data-et="message"]:not(.vg-hit)', nth: 1, term: 'message #2 S → A "link"' },
       { text: 'the user answers', term: 'note #1 "the user answers"' },
+      { css: 'rect.activation0', term: 'activation of S' },
     ],
   },
   {
@@ -222,6 +225,8 @@ export const MERMAID_FIXTURES: MermaidFixture[] = [
     anchors: [
       { text: 'Open', term: 'state Open' },
       { css: 'g.node[id*="-state-root_start-"]', term: 'start' },
+      { css: 'path[data-id="edge1"]', term: 'transition Open → Submitted "submit"' },
+      { text: 'present', term: 'transition label Open → Superseded "present"' },
     ],
   },
   {
@@ -238,6 +243,7 @@ export const MERMAID_FIXTURES: MermaidFixture[] = [
       { text: 'Checking', term: 'state Checking' },
       { css: 'g.node[id*="-state-Review_start-"]', term: 'start of Review' },
       { text: 'editable', term: 'note on Draft "editable"' },
+      { css: 'path[data-id="edge1"]', term: 'transition Draft → Review' },
     ],
   },
   {
@@ -359,6 +365,8 @@ Customer -- "asks" --> Agent`,
       { text: 'Database', term: 'service db "Database"' },
       { css: 'rect[id$="-node-j1"]', term: 'junction j1' },
       { css: 'path[id$="-L_db_server_0"]', term: 'edge db → server' },
+      // The group's title sits outside its rect's subtree.
+      { text: 'API', term: 'group cloud "API tier"' },
     ],
   },
   {
@@ -376,6 +384,32 @@ Customer -- "asks" --> Agent`,
       { text: 'Customer', term: 'person cust "Customer"' },
       { text: 'Orders', term: 'system db orders "Orders DB"' },
       { text: 'Sells', term: 'system web "Web shop"' },
+      { text: 'Shop', term: 'boundary b1 "Shop"' },
+      { css: 'line:not(.vg-hit)', term: 'relationship cust → web "Uses"' },
+      { text: '[HTTPS]', term: 'relationship cust → web "Uses"' },
+    ],
+  },
+  {
+    name: 'C4 with nested boundaries and a bidirectional relationship',
+    verdict: 'draws',
+    source: `C4Context
+  Enterprise_Boundary(e1, "Corp") {
+    Person(u, "User")
+    System_Boundary(b1, "Shop") {
+      System(web, "Web")
+    }
+  }
+  System_Boundary(b2, "Other") {
+    System(x, "X")
+  }
+  BiRel(u, web, "Uses")
+  Rel_Back(x, web, "Calls")`,
+    anchors: [
+      { text: 'Corp', term: 'boundary e1 "Corp"' },
+      { text: 'Shop', term: 'boundary b1 "Shop"' },
+      { text: 'Other', term: 'boundary b2 "Other"' },
+      { text: 'Uses', term: 'relationship u ↔ web "Uses"' },
+      { text: 'Calls', term: 'relationship x → web "Calls"' },
     ],
   },
   {
@@ -414,10 +448,13 @@ Customer -- "asks" --> Agent`,
   set Desirable
   set Feasible
   set Viable
-  union Desirable,Feasible["Worth prototyping"]`,
+  union Desirable,Feasible["Worth prototyping"]
+  union Desirable,Feasible,Viable["Sweet spot"]`,
     anchors: [
       { text: 'Desirable', term: 'set Desirable' },
       { text: 'Worth prototyping', term: 'region Desirable ∩ Feasible "Worth prototyping"' },
+      // Drawn under the Desirable ∩ Feasible area's path: only geometry names it.
+      { text: 'Sweet spot', term: 'region Desirable ∩ Feasible ∩ Viable "Sweet spot"' },
     ],
   },
   {
@@ -427,15 +464,28 @@ Customer -- "asks" --> Agent`,
   "mermaid" : 5700
   "server" : 1200
   "page" : 8`,
+    anchors: [
+      { css: 'path.pieCircle', nth: 1, term: 'slice "server"' },
+      { text: '83%', term: 'slice "mermaid"' },
+      // Under 1%: Mermaid draws no slice for it, only the legend entry.
+      { text: 'page', term: 'legend entry "page"' },
+    ],
   },
   {
     name: 'mindmap',
     verdict: 'draws',
     source: `mindmap
   root((Grilling))
-    Rounds
+    rounds[Rounds]
       Questions
+      ::icon(fa fa-book)
     Session`,
+    anchors: [
+      { text: 'Grilling', term: 'node root "Grilling"' },
+      { text: 'Rounds', term: 'node rounds "Rounds"' },
+      { text: 'Session', term: 'node "Session"' },
+      { css: 'path[data-id="edge_1_2"]', term: 'branch rounds → "Questions"' },
+    ],
   },
   {
     name: 'timeline',
@@ -445,6 +495,24 @@ Customer -- "asks" --> Agent`,
   section 2026
     v1 : tracer
     v2 : blocks`,
+    anchors: [
+      { text: '2026', term: 'section "2026"' },
+      { text: 'v1', term: 'period "v1"' },
+      { text: 'blocks', term: 'event "v2 / blocks"' },
+    ],
+  },
+  {
+    name: 'timeline with a period before the first section',
+    verdict: 'draws',
+    // "2001" isn't drawn: with sections, periods before the first one are dropped.
+    source: `timeline
+  2001 : early
+  section Later
+    2002 : late : later`,
+    anchors: [
+      { text: '2002', term: 'period "2002"' },
+      { text: 'later', term: 'event "2002 / later"' },
+    ],
   },
   {
     name: 'user journey',
@@ -454,6 +522,12 @@ Customer -- "asks" --> Agent`,
   section Page
     Read question: 5: User
     Pick option: 4: User`,
+    anchors: [
+      { text: 'Read question', term: 'task "Read question"' },
+      { css: 'circle.face', nth: 1, term: 'score 4 of task "Pick option"' },
+      { text: 'Page', term: 'section "Page"' },
+      { css: 'text.legend', term: 'actor User' },
+    ],
   },
   {
     name: 'git graph',
@@ -494,8 +568,261 @@ Customer -- "asks" --> Agent`,
   title Effort and value
   x-axis Low effort --> High effort
   y-axis Low value --> High value
+  quadrant-1 Do next
   Tracer: [0.2, 0.8]
   Corpus: [0.7, 0.6]`,
+    anchors: [
+      // Points are drawn in reverse source order.
+      { text: 'Tracer', term: 'point "Tracer"' },
+      { css: 'g.data-point circle', nth: 0, term: 'point "Corpus"' },
+      { text: 'Do next', term: 'quadrant-1 "Do next"' },
+    ],
+  },
+  {
+    name: 'XY chart',
+    verdict: 'draws',
+    source: `xychart
+  title "Cold start"
+  x-axis [bun, node, deno]
+  y-axis "ms" 0 --> 100
+  bar [60, 80, 70]
+  line [50, 90, 40]`,
+    anchors: [
+      { css: 'g.bar-plot-0 rect', nth: 1, term: 'bar "node: 80"' },
+      // A third of the way along the line, nearest the "node" category.
+      { css: 'g.line-plot-1 path:not(.vg-hit)', term: 'line point "node: 90"' },
+      // A generated value tick.
+      { text: '100', term: 'text "100"' },
+    ],
+  },
+  {
+    name: 'XY chart, horizontal with two bar plots',
+    verdict: 'draws',
+    source: `xychart horizontal
+  x-axis [a, b, c]
+  y-axis 0 --> 10
+  bar [1, 5, 3]
+  bar [1, 1, 1]`,
+    anchors: [
+      // The second plot's bars are drawn over the first's: click past their ends.
+      { css: 'g.bar-plot-0 rect', nth: 1, term: 'bar #1 "b: 5"' },
+      { css: 'g.bar-plot-1 rect', nth: 2, term: 'bar #2 "c: 1"' },
+    ],
+  },
+  {
+    name: 'sankey',
+    verdict: 'draws',
+    source: `sankey-beta
+Agent,Server,30
+Server,Page,20
+Server,Disk,10`,
+    anchors: [
+      { css: 'g.node rect', nth: 0, term: 'node "Agent"' },
+      { css: 'g.link path', nth: 1, term: 'flow Server → Page "20"' },
+      // Links are painted over labels: the click lands on a link.
+      { css: 'g.node-labels text', nth: 1, term: 'node "Server"' },
+    ],
+  },
+  {
+    name: 'radar',
+    verdict: 'draws',
+    source: `radar-beta
+  axis m["Math"], s["Science"], e["English"]
+  curve a["Alice"]{85, 90, 80}
+  curve b["Bob"]{70, 75, 85}
+  max 100
+  min 0`,
+    anchors: [
+      { text: 'Science', term: 'axis s "Science"' },
+      { text: 'English', term: 'axis e "English"' },
+      { text: 'Bob', term: 'curve b "Bob"' },
+      { css: 'rect.radarLegendBox-0', term: 'curve a "Alice"' },
+    ],
+  },
+  {
+    name: 'packet',
+    verdict: 'draws',
+    source: `packet
+  0-15: "Source"
+  16-47: "Spans rows"
+  +8: "Kind"`,
+    anchors: [
+      { text: 'Source', term: 'field 0-15 "Source"' },
+      // A field crossing a row is drawn twice, with row-local ranges.
+      { text: 'Spans rows', nth: 1, term: 'field 16-47 "Spans rows"' },
+      { css: 'rect.packetBlock', nth: 3, term: 'field +8 "Kind"' },
+    ],
+  },
+  {
+    name: 'treemap',
+    verdict: 'draws',
+    source: `treemap-beta
+"Budget"
+  "Housing"
+    "Rent": 1400
+    "Utilities": 220
+  "Food"
+    "Groceries": 480`,
+    anchors: [
+      { text: 'Rent', term: 'leaf "Budget / Housing / Rent"' },
+      { text: 'Food', term: 'section "Budget / Food"' },
+    ],
+  },
+  {
+    name: 'treemap with same-named siblings',
+    verdict: 'draws',
+    source: `treemap-beta
+"Root"
+  "A"
+    "x": 5
+    "x": 50`,
+    anchors: [
+      // Told apart only by value: no precise term.
+      { text: 'x', nth: 0, term: 'text "x"' },
+      { text: 'A', term: 'section "Root / A"' },
+    ],
+  },
+  {
+    name: 'tree view',
+    verdict: 'draws',
+    source: `treeView-beta
+  root/
+    a/
+      index.js
+    b/
+      index.js`,
+    anchors: [
+      { text: 'index.js', nth: 1, term: 'file "root/b/index.js"' },
+      { text: 'a', term: 'folder "root/a"' },
+      // The "/" root Mermaid adds.
+      { text: '/', term: 'text "/"' },
+    ],
+  },
+  {
+    name: 'event modeling',
+    verdict: 'draws',
+    source: `eventmodeling
+tf 01 ui ShopUI
+tf 02 cmd AddItemToCart
+tf 03 evt ItemAdded
+tf 04 rmo CartView ->> 03`,
+    anchors: [
+      { text: 'AddItemToCart', term: 'frame 02 "AddItemToCart"' },
+      { text: 'CartView', term: 'frame 04 "CartView"' },
+      // A generated swimlane header.
+      { text: 'Events', term: 'text "Events"' },
+    ],
+  },
+  {
+    name: 'ishikawa',
+    verdict: 'draws',
+    source: `ishikawa-beta
+  Late release
+  People
+    A
+      A1
+      A2
+    B
+  Tools
+    T`,
+    anchors: [
+      { css: 'text.ishikawa-head-label', term: 'effect "Late release"' },
+      { text: 'Tools', term: 'category "Tools"' },
+      { text: 'A2', term: 'cause "People / A / A2"' },
+      { text: 'B', term: 'cause "People / B"' },
+    ],
+  },
+  {
+    name: 'wardley',
+    verdict: 'draws',
+    source: `wardley-beta
+title Tea Shop
+anchor Business [0.95, 0.63]
+component Cup of Tea [0.79, 0.61]
+component Hot Water [0.52, 0.80]
+component Kettle [0.43, 0.35]
+Business -> Cup of Tea
+Cup of Tea -> Hot Water
+Hot Water -> Kettle
+evolve Kettle 0.62`,
+    anchors: [
+      { text: 'Business', term: 'anchor "Business"' },
+      { text: 'Cup of Tea', term: 'component "Cup of Tea"' },
+      { css: 'line.wardley-link', nth: 1, term: 'link Cup of Tea → Hot Water' },
+      { css: 'line.wardley-trend', term: 'evolve "Kettle"' },
+      // A generated stage label.
+      { text: 'Genesis', term: 'text "Genesis"' },
+    ],
+  },
+  {
+    name: 'cynefin',
+    verdict: 'draws',
+    source: `cynefin-beta
+  title Incident Response
+  complex
+    "Investigate root cause"
+  complicated
+    "Expert review"
+  clear
+    "Restart service"
+  chaotic
+    "Page on-call"
+  complex --> complicated : "Pattern identified"
+  chaotic --> clear : "Stabilised"`,
+    anchors: [
+      { text: 'Expert review', term: 'item in complicated "Expert review"' },
+      { text: 'Page on-call', term: 'item in chaotic "Page on-call"' },
+      { text: 'Pattern identified', term: 'transition complex → complicated "Pattern identified"' },
+      { text: 'Stabilised', term: 'transition chaotic → clear "Stabilised"' },
+      { text: 'Chaotic', term: 'domain chaotic' },
+      // A generated subtitle.
+      { text: 'Disorder', term: 'text "Disorder"' },
+    ],
+  },
+  {
+    name: 'railroad',
+    verdict: 'draws',
+    source: `railroad-beta
+  expression = sequence(nonterminal("term"), zeroOrMore(sequence(choice(terminal("+"), terminal("-")), nonterminal("term")))) ;
+  term = choice(terminal("x"), terminal("1")) ;`,
+    anchors: [
+      { text: 'term', nth: 1, term: 'nonterminal #2 in rule expression "term"' },
+      { text: 'x', term: 'terminal in rule term "x"' },
+    ],
+  },
+  {
+    name: 'railroad EBNF',
+    verdict: 'draws',
+    source: `railroad-ebnf-beta
+  expression = term ( "+" term | "-" term )* ;
+  term = "x" | "1" ;`,
+    anchors: [
+      { text: 'term', nth: 2, term: 'nonterminal #3 in rule expression "term"' },
+      { text: '+', term: 'terminal in rule expression "+"' },
+      { text: 'term =', term: 'rule term' },
+    ],
+  },
+  {
+    name: 'railroad ABNF',
+    verdict: 'draws',
+    source: `railroad-abnf-beta
+  address = local "@" domain ;
+  domain = label *( "." label ) ;`,
+    anchors: [
+      { text: 'label', nth: 1, term: 'nonterminal #2 in rule domain "label"' },
+      { text: '@', term: 'terminal in rule address "@"' },
+    ],
+  },
+  {
+    name: 'railroad PEG',
+    verdict: 'draws',
+    source: `railroad-peg-beta
+  Expression <- Term (("+" / "-") Term)* ;
+  Term <- "x" / "1" ;`,
+    anchors: [
+      { text: 'Term', nth: 0, term: 'nonterminal #1 in rule Expression "Term"' },
+      { text: '-', term: 'terminal in rule Expression "-"' },
+    ],
   },
 
   // --------------------------------------------------- failures that throw

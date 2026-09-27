@@ -7,15 +7,22 @@
 // multi-line message, so a click on it goes to the next message element. A
 // bottom participant box has no data-id; its rect, just before the text,
 // carries the participant's name.
+//
+// An activation bar has no participant id: it belongs to the lifeline it
+// sits on, found by geometry, and is counted top to bottom on it.
 
-import type { AdapterMatch, SnapshotPeer } from '../../../core/anchor.ts';
-import { find, hasClass, labelUnlessId, match, peerIndex, VIA_NEIGHBOUR, type DiagramAdapter, type DiagramClick } from './shared.ts';
+import type { AdapterMatch, Box, SnapshotPeer } from '../../../core/anchor.ts';
+import { classes, find, hasClass, labelUnlessId, match, peerIndex, sameBox, VIA_GEOMETRY, VIA_NEIGHBOUR, type DiagramAdapter, type DiagramClick } from './shared.ts';
 
 const et = (element: { attrs: Record<string, string> }, value: string) => element.attrs['data-et'] === value;
 
 export const sequenceAdapter: DiagramAdapter = {
-  peers: 'text.messageText, [data-et="message"], [data-et="note"], [data-et="control-structure"], rect[name], text.actor',
+  peers:
+    'text.messageText, [data-et="message"], [data-et="note"], [data-et="control-structure"], rect[name], text.actor, [data-et="life-line"], rect[class^="activation"]',
   read(click) {
+    const activation = find(click, (element) => element.tag === 'rect' && classes(element).some((name) => /^activation\d+$/.test(name)));
+    if (activation) return activationMatch(click, activation.element.box, activation.index);
+
     const tagged = find(click, (element) => Boolean(element.attrs['data-et']) || (element.tag === 'g' && Boolean(element.attrs.name)));
     if (tagged) {
       const { element, index } = tagged;
@@ -50,6 +57,20 @@ export const sequenceAdapter: DiagramAdapter = {
     return box ? match('participant', box.element.attrs.name!, null, box.index) : null;
   },
 };
+
+/** `activation #k of P`: the lifeline the bar sits on, and its place among that lifeline's bars from the top. */
+function activationMatch(click: DiagramClick, box: Box, chainIndex: number): AdapterMatch | null {
+  const on = (bar: Box) => (line: SnapshotPeer) => line.box !== undefined && line.box.x >= bar.x && line.box.x <= bar.x + bar.w;
+  const lifeline = click.peers.find((peer) => et(peer, 'life-line') && on(box)(peer));
+  if (!lifeline) return null;
+  const bars = click.peers
+    .filter((peer) => peer.tag === 'rect' && classes(peer).some((name) => /^activation\d+$/.test(name)) && peer.box && on(peer.box)(lifeline))
+    .map((peer) => peer.box!)
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+  const k = bars.findIndex((bar) => sameBox(bar, box));
+  const ref = bars.length > 1 && k >= 0 ? `#${k + 1} of ${lifeline.attrs['data-id']}` : `of ${lifeline.attrs['data-id']}`;
+  return match('activation', ref, null, chainIndex, VIA_GEOMETRY);
+}
 
 /** 1-based rank of the element with `dataId` among the drawing's `data-et=<kind>` elements. */
 function rank(click: DiagramClick, kind: string, dataId: string): number {

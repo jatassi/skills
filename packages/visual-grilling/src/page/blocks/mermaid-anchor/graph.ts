@@ -14,8 +14,10 @@ import {
   match,
   pairRef,
   peerIndex,
+  sourceLines,
   unprefixed,
   VIA_NEIGHBOUR,
+  VIA_POSITION,
   type DiagramAdapter,
   type DiagramClick,
 } from './shared.ts';
@@ -167,10 +169,25 @@ export const classAdapter: DiagramAdapter = {
 
 const STATE_NODE = /^state-(.+)-\d+$/;
 
-/** States (simple and composite), start and end points, and notes. Transitions are matched by position, elsewhere. */
+/**
+ * States (simple and composite), start and end points, notes, and
+ * transitions. A transition's data-id `edge<k>` counts transitions in source
+ * order, nested ones included, so it is named by the k-th `a --> b` line.
+ */
 export const stateAdapter: DiagramAdapter = {
   peers: GRAPH_PEERS,
   read(click) {
+    const transition = find(click, (element) => (isEdge(element) || isEdgeLabel(element)) && /^edge\d+$/.test(element.attrs['data-id']!));
+    if (transition) {
+      const k = Number(transition.element.attrs['data-id']!.slice('edge'.length));
+      const transitions = stateTransitions(click.source);
+      const ref = pairRef(
+        transitions.map((other) => other.ends),
+        k,
+      );
+      const kind = isEdge(transition.element) ? 'transition' : 'transition label';
+      return ref ? match(kind, ref, transitions[k]!.label, transition.index, VIA_POSITION) : null;
+    }
     const note = find(click, (element) => /----note-\d+$/.test(element.attrs.id ?? ''));
     if (note) {
       const on = idOf(click, note.element, /^state-(.+)----note-\d+$/);
@@ -193,6 +210,14 @@ export const stateAdapter: DiagramAdapter = {
     return null;
   },
 };
+
+/** `a --> b : label` lines in source order, composites' included. */
+function stateTransitions(source: string): { ends: string; label: string | null }[] {
+  return sourceLines(source).flatMap(({ text }) => {
+    const transition = /^([^\s:]+)\s*-->\s*([^\s:]+)\s*(?::\s*(.*))?$/.exec(text);
+    return transition ? [{ ends: `${transition[1]} → ${transition[2]}`, label: transition[3]?.trim() || null }] : [];
+  });
+}
 
 // ------------------------------------------------------------------- ER
 
