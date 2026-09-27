@@ -14,6 +14,14 @@ let browser: Browser;
 let page: Page;
 let sandbox: Sandbox;
 
+/**
+ * How long the anchors round waits for a figure's own draw before treating
+ * the click as ready. The default 5 s assertion timeout is tight for the
+ * first draw's WASM chunk load on a busy machine; this stays well inside the
+ * test's own overall timeout.
+ */
+const DRAW_TIMEOUT_MS = 30_000;
+
 beforeAll(async () => {
   sandbox = new Sandbox('dotc');
   const presented = await sandbox.cli([
@@ -79,13 +87,20 @@ describe('dot block corpus', () => {
     const round1 = await browser.newPage({ viewport: { width: 700, height: 900 } });
     await round1.goto(presented.stdout.trim());
     // M does nothing until the round has loaded.
-    await pageExpect(round1.getByRole('figure', { name: 'f1' })).toBeVisible();
+    await pageExpect(round1.getByRole('figure', { name: 'f1' })).toBeVisible({ timeout: DRAW_TIMEOUT_MS });
     await round1.keyboard.press('m');
 
     const expected: string[] = [];
     for (const [i, fixture] of drawn.entries()) {
       const figure = round1.getByRole('figure', { name: `f${i + 1}` });
-      await pageExpect(figure.locator('svg g.graph')).toBeVisible();
+      // Real draw, not a stub: the first figure loads and WASM-compiles the
+      // ~1.5 MB Graphviz chunk, which can take much longer than the default
+      // 5 s assertion timeout when the machine is busy (this is what a click
+      // right after would otherwise race). Later figures reuse the already
+      // loaded chunk, so this rarely needs the extra room, but every figure
+      // gets it for the same reason: only its own rendered SVG says it's
+      // ready to be clicked.
+      await pageExpect(figure.locator('svg g.graph')).toBeVisible({ timeout: DRAW_TIMEOUT_MS });
       for (const { click, term } of fixture.anchors!) {
         await figure.scrollIntoViewIfNeeded();
         const [x, y] = await figure.evaluate(pointOn, click);
