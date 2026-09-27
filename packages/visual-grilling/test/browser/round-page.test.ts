@@ -73,4 +73,33 @@ Q6 Retry policy · accepted
     await pageExpect(page.getByRole('heading', { level: 1 })).toHaveText('Round 2 · Follow-ups');
     await pageExpect(page.getByRole('region', { name: 'Q7' })).toContainText('Last one.');
   });
+
+  it('shows each illustration and mockup as its raw source in a titled frame', async () => {
+    sandbox = new Sandbox('p1');
+    const round = [
+      '❓ **Q1** - **Flow**: Which flow?',
+      '',
+      '```mermaid id=flow title="Request flow"',
+      'flowchart LR',
+      '  a --> b',
+      '```',
+      '',
+      '- **A** - Tabs',
+      '  ```html',
+      '  <nav>tabs</nav>',
+      '  ```',
+      '- **B** - Drawer',
+      '',
+      '➡️ **A**',
+      '',
+    ].join('\n');
+    const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', round), '--no-open']);
+
+    const page = await browser.newPage();
+    await page.goto(presented.stdout.trim());
+    const flow = page.getByRole('figure', { name: 'Request flow' });
+    await pageExpect(flow).toContainText('mermaid');
+    await pageExpect(flow.locator('pre')).toHaveText('flowchart LR\n  a --> b');
+    await pageExpect(page.getByRole('figure', { name: 'Mockup A' }).locator('pre')).toHaveText('<nav>tabs</nav>');
+  });
 });

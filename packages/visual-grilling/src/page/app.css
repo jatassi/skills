@@ -157,3 +157,29 @@ textarea {
   justify-content: space-between;
   gap: 8px;
 }
+
+.illustration {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin: 12px 0;
+}
+
+.illustration figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.illustration pre {
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  max-height: 440px;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.options li > .illustration {
+  margin: 4px 0 0;
+}

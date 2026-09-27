@@ -22,11 +22,17 @@ export function pageRound(number: number, round: Round, record: SubmissionRecord
   return {
     number,
     ...(round.title ? { title: round.title } : {}),
+    ...(round.designTree ? { designTree: round.designTree } : {}),
     questions: round.questions.map((question) => ({
       number: question.number,
       title: question.title,
       proseHtml: markdownHtml(question.prose),
-      options: question.options.map((option) => ({ letter: option.letter, labelHtml: inlineHtml(option.label) })),
+      illustrations: question.illustrations.map(({ line: _line, ...illustration }) => illustration),
+      options: question.options.map((option) => ({
+        letter: option.letter,
+        labelHtml: inlineHtml(option.label),
+        ...(option.mockup ? { mockup: { source: option.mockup.source, tailwind: option.mockup.tailwind } } : {}),
+      })),
       recommendation: {
         html: markdownHtml(question.recommendation.source),
         ...(question.recommendation.option ? { option: question.recommendation.option } : {}),

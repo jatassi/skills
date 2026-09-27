@@ -13,7 +13,7 @@
 //   GET  /api/rounds/latest | /api/rounds/<n>   → PageRound (404 before the first round)
 //   POST /api/rounds/<n>/submission  PageSubmission → {}
 
-import type { RoundError } from './round.ts';
+import type { DesignTreeNode, Illustration, RoundError } from './round.ts';
 import type { Verdict } from './submission.ts';
 
 export interface PingResponse {
@@ -43,17 +43,29 @@ export interface AwaitResponse {
   text: string;
 }
 
+/** An illustration as the round file declared it; block tickets draw it on the page. */
+export type PageIllustration = Omit<Illustration, 'line'>;
+
+export interface PageOption {
+  letter: string;
+  labelHtml: string;
+  mockup?: { source: string; tailwind: boolean };
+}
+
 export interface PageQuestion {
   number: number;
   title: string;
   proseHtml: string;
-  options: { letter: string; labelHtml: string }[];
+  illustrations: PageIllustration[];
+  options: PageOption[];
   recommendation: { html: string; option?: string };
 }
 
 export interface PageRound {
   number: number;
   title?: string;
+  /** The whole design tree as of this round; absent when the round has none. */
+  designTree?: DesignTreeNode[];
   questions: PageQuestion[];
   /** Present once the round has been submitted: each question's verdict by number. */
   submitted?: Record<number, Verdict>;

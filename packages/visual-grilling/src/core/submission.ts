@@ -85,7 +85,7 @@ export function buildRecord(
         const option = question.options.find((candidate) => candidate.letter === pointer);
         verdict = {
           mode: 'accepted',
-          ...(option ? { option: option.letter, label: option.label } : {}),
+          ...(option ? { option: option.letter, label: option.text } : {}),
           recommendation: question.recommendation.text,
         };
         break;
@@ -93,7 +93,7 @@ export function buildRecord(
       case 'picked': {
         const option = question.options.find((candidate) => candidate.letter === answer.option);
         if (!option) throw new Error(`Q${question.number} has no option ${answer.option}`);
-        verdict = { mode: 'picked', option: option.letter, label: option.label };
+        verdict = { mode: 'picked', option: option.letter, label: option.text };
         break;
       }
       case 'own': {
