@@ -13,6 +13,7 @@ import { fromMarkdown } from 'mdast-util-from-markdown';
 import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { toString } from 'mdast-util-to-string';
 import { gfm } from 'micromark-extension-gfm';
+import { parseTable, type TableData } from './table.ts';
 import type { Code, List, ListItem, Nodes, Paragraph, RootContent } from 'mdast';
 
 // ------------------------------------------------------------------- model
@@ -67,6 +68,8 @@ export interface Illustration {
   tailwind?: boolean;
   /** For code fences. */
   code?: CodeSettings;
+  /** For `table`: its one table, as cells. */
+  table?: TableData;
 }
 
 export interface Question {
@@ -512,6 +515,16 @@ class RoundParser {
 
     if (kind === 'code') {
       illustration.code = this.codeSettings(node, fence, attributes, report);
+    }
+
+    if (kind === 'table') {
+      const parsed = parseTable(node.value);
+      if (parsed.ok) illustration.table = parsed.table;
+      else {
+        for (const problem of parsed.problems) {
+          this.errors.push({ line: line + problem.line, question: number, illustration: subject, message: problem.message });
+        }
+      }
     }
 
     return this.errors.length > errorCount ? undefined : illustration;

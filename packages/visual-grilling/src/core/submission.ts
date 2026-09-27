@@ -1,7 +1,8 @@
 // The round submission: what the page sends, the structured record saved as
 // `submissions/round-N.json`, and the text `await` prints for the agent.
 
-import type { Round } from './round.ts';
+import { anchorLine, type Anchor, type Box } from './anchor.ts';
+import type { Question, Round } from './round.ts';
 
 /** One question's answer as the page sends it. */
 export type PageAnswer =
@@ -11,28 +12,32 @@ export type PageAnswer =
   | { mode: 'unsure' }
   | { mode: 'none' };
 
+/**
+ * An anchored comment as the page sends it: the resolved anchor plus the
+ * text. The server trusts none of it beyond its shape, and takes the
+ * illustration's kind and title from the round.
+ */
+export type PageComment = Anchor & { text: string };
+
 export interface PageSubmission {
   round: number;
-  answers: ({ question: number } & PageAnswer)[];
+  answers: ({ question: number; comments?: PageComment[] } & PageAnswer)[];
 }
 
+/**
+ * `comments` is "comments only, no verdict": no answer, but comments. Like
+ * `unsure` and `none`, it leaves the question open.
+ */
 export type Verdict =
   | { mode: 'accepted'; option?: string; label?: string; recommendation: string }
   | { mode: 'picked'; option: string; label: string }
   | { mode: 'own'; text: string }
   | { mode: 'unsure' }
+  | { mode: 'comments' }
   | { mode: 'none' };
 
-/**
- * An anchored comment. `anchor` is the `anchorLine` form (illustration and
- * element in the source's own terms); `weak` carries the fallback detail that
- * only weak matches print.
- */
-export interface CommentRecord {
-  anchor: string;
-  text: string;
-  weak?: { near?: string; across: number; down: number; crop?: string };
-}
+/** An anchored comment in the saved record. `crop` is the absolute path of a weak match's crop image. */
+export type CommentRecord = PageComment & { question: number; crop?: string };
 
 export interface WarningRecord {
   kind: 'draw' | 'script';
@@ -78,6 +83,11 @@ export function buildRecord(
 
   const questions = round.questions.map((question): QuestionRecord => {
     const answer = byQuestion.get(question.number) ?? { mode: 'none' };
+    const rawComments: unknown = (answer as { comments?: unknown }).comments ?? [];
+    if (!Array.isArray(rawComments) || rawComments.length > MAX_COMMENTS) {
+      throw new Error(`Q${question.number}: comments must be a list of at most ${MAX_COMMENTS}`);
+    }
+    const comments = rawComments.map((comment, index) => readComment(comment, question, index + 1));
     let verdict: Verdict;
     switch (answer.mode) {
       case 'accepted': {
@@ -110,7 +120,8 @@ export function buildRecord(
       default:
         throw new Error(`Q${question.number}: unknown answer mode`);
     }
-    return { number: question.number, title: question.title, verdict, comments: [], warnings: [] };
+    if (verdict.mode === 'none' && comments.length > 0) verdict = { mode: 'comments' };
+    return { number: question.number, title: question.title, verdict, comments, warnings: [] };
   });
 
   return {
@@ -163,8 +174,10 @@ function verdictLine(question: QuestionRecord): string {
       return `own answer: ${quote(verdict.text)}`;
     case 'unsure':
       return 'unsure';
+    case 'comments':
+      return 'comments only, no verdict';
     case 'none':
-      return question.comments.length > 0 ? 'comments only, no verdict' : 'no answer (sent as unsure)';
+      return 'no answer (sent as unsure)';
   }
 }
 
@@ -179,21 +192,97 @@ function summaryVerdict(question: QuestionRecord): string {
       return 'own answer';
     case 'unsure':
       return 'unsure';
+    case 'comments':
+      return 'comments only';
     case 'none':
-      return question.comments.length > 0 ? 'comments only' : 'no answer';
+      return 'no answer';
   }
 }
 
 function commentLine(comment: CommentRecord, index: number): string {
-  let detail = '';
-  if (comment.weak) {
-    const parts: string[] = [];
-    if (comment.weak.near) parts.push(`near ${quote(comment.weak.near)}`);
-    parts.push(`at ${comment.weak.across}% across, ${comment.weak.down}% down`);
-    if (comment.weak.crop) parts.push(`crop ${comment.weak.crop}`);
-    detail = `  [${parts.join('; ')}]`;
+  return `comment ${index} · ${anchorLine(comment, comment.crop)}: ${quote(comment.text)}`;
+}
+
+// ------------------------------------------------------- comment checking
+
+const MAX_COMMENTS = 200;
+const MAX_COMMENT_TEXT = 4_000;
+
+/**
+ * Checks one comment from the page and builds its record. The page resolved
+ * the anchor; this only bounds its shape and ties it to an illustration (or a
+ * mockup) the question really has.
+ */
+function readComment(raw: unknown, question: Question, index: number): CommentRecord {
+  const where = `Q${question.number} comment ${index}`;
+  const fail = (message: string): never => {
+    throw new Error(`${where}: ${message}`);
+  };
+  const input = record(raw) ?? fail('must be an object');
+  const field = (value: unknown, name: string, max: number): string =>
+    typeof value === 'string' ? value.slice(0, max) : fail(`${name} must be a string`);
+  const optional = (value: unknown, name: string, max: number): string | null =>
+    value === null || value === undefined ? null : field(value, name, max);
+  const number = (value: unknown, name: string): number =>
+    typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : fail(`${name} must be a number`);
+
+  const text = field(input.text, 'text', MAX_COMMENT_TEXT).trim();
+  if (!text) fail('text is empty');
+
+  let subject: Pick<CommentRecord, 'illustration' | 'option'>;
+  if (input.option !== undefined && input.option !== null) {
+    const letter = field(input.option, 'option', 2);
+    if (!question.options.some((option) => option.letter === letter && option.mockup)) {
+      fail(`option ${letter} has no mockup`);
+    }
+    subject = { option: letter };
+  } else {
+    const id = field(record(input.illustration)?.id, 'illustration.id', 100);
+    const illustration =
+      question.illustrations.find((candidate) => candidate.id === id) ??
+      fail(`Q${question.number} has no illustration "${id}"`);
+    subject = {
+      illustration: { id, kind: illustration.kind, ...(illustration.title ? { title: illustration.title } : {}) },
+    };
   }
-  return `comment ${index} · ${comment.anchor}${detail}: ${quote(comment.text)}`;
+
+  const target = record(input.target) ?? fail('target must be an object');
+  const clicked = record(input.clicked) ?? fail('clicked must be an object');
+  const position = record(input.position) ?? fail('position must be an object');
+  const near = Array.isArray(input.near) ? input.near.slice(0, 3).map((item) => field(item, 'near', 60)) : [];
+  const box = input.box === null || input.box === undefined ? null : readBox(record(input.box) ?? fail('box must be an object'));
+
+  function readBox(value: Record<string, unknown>): Box {
+    return { x: number(value.x, 'box.x'), y: number(value.y, 'box.y'), w: number(value.w, 'box.w'), h: number(value.h, 'box.h') };
+  }
+  const clamp = (value: number) => Math.min(100, Math.max(0, value));
+
+  return {
+    question: question.number,
+    ...subject,
+    target: {
+      kind: field(target.kind, 'target.kind', 80),
+      ref: optional(target.ref, 'target.ref', 300),
+      label: optional(target.label, 'target.label', 300),
+      via: field(target.via, 'target.via', 60),
+      weak: target.weak === true,
+    },
+    clicked: {
+      tag: field(clicked.tag, 'clicked.tag', 40),
+      role: optional(clicked.role, 'clicked.role', 60),
+      text: field(clicked.text ?? '', 'clicked.text', 80),
+    },
+    within: optional(input.within, 'within', 200),
+    near,
+    position: { x: clamp(number(position.x, 'position.x')), y: clamp(number(position.y, 'position.y')) },
+    selector: field(input.selector ?? '', 'selector', 1_000),
+    box,
+    text,
+  };
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 }
 
 function warningLine(warning: WarningRecord): string {

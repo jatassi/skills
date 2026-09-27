@@ -1,8 +1,9 @@
 // The round page: one question per step, tabs Q1…Qn and Review, and one
 // round submission sent from the Review step.
 
-import type { PageEvents, PageIllustration, PageQuestion, PageRound } from '../core/protocol.ts';
-import type { PageAnswer, PageSubmission, Verdict } from '../core/submission.ts';
+import type { PageEvents, PageQuestion, PageRound } from '../core/protocol.ts';
+import type { PageAnswer, PageComment, PageSubmission, Verdict } from '../core/submission.ts';
+import { IllustrationFrame, type FrameSubject } from './frame.ts';
 
 type Draft = PageAnswer & { ownText?: string; writing?: boolean };
 
@@ -11,6 +12,10 @@ interface State {
   /** Index into the steps: 0…n-1 are questions, n is Review. */
   step: number;
   drafts: Map<number, Draft>;
+  /** Anchored comments by question number, in the order they were made. */
+  comments: Map<number, PageComment[]>;
+  /** Comment mode: a click on an illustration pins a comment instead of acting. */
+  commenting: boolean;
   submitting: boolean;
   error?: string;
   /**
@@ -21,13 +26,22 @@ interface State {
   connection: 'open' | 'finished' | 'stopped';
 }
 
-const state: State = { step: 0, drafts: new Map(), submitting: false, connection: 'open' };
+const state: State = {
+  step: 0,
+  drafts: new Map(),
+  comments: new Map(),
+  commenting: false,
+  submitting: false,
+  connection: 'open',
+};
 
 /** Whether the round can still be answered and sent from this page. */
 function canSend(round: PageRound): boolean {
   return !round.submitted && !round.answeredInTerminal && state.connection === 'open';
 }
 const app = document.getElementById('app')!;
+/** One frame per illustration and mockup of the shown round, kept across re-renders. */
+let frames = new Map<string, IllustrationFrame>();
 
 // ----------------------------------------------------------------- loading
 
@@ -41,6 +55,14 @@ async function loadRound(which: number | 'latest'): Promise<void> {
   state.drafts = new Map(
     round.questions.map((question) => [question.number, draftFrom(round.submitted?.[question.number])]),
   );
+  state.comments = new Map(
+    round.questions.map((question) => [
+      question.number,
+      (round.comments?.[question.number] ?? []).map(({ question: _question, crop: _crop, ...comment }) => comment),
+    ]),
+  );
+  state.commenting = false;
+  frames = new Map();
   document.title = roundHeading(round);
   render();
 }
@@ -174,9 +196,13 @@ function render(): void {
         ? 'Round submitted · waiting for the next round'
         : 'Round submitted'
       : undefined;
+  const comments = commentCount();
   app.replaceChildren(
     ...(notice ? [notice] : []),
     h('h1', {}, roundHeading(round)),
+    ...(comments > 0
+      ? [h('p', { class: 'review-bar muted' }, h('span', { class: 'comment-count' }, count(comments, 'comment')))]
+      : []),
     ...(roundState ? [h('p', { class: 'banner', role: 'status' }, roundState)] : []),
     tabs,
     body,
@@ -228,7 +254,19 @@ function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
         h('span', { class: 'key' }, option.letter),
         label,
       ),
-      option.mockup && sourceFrame(`Mockup ${option.letter}`, 'html mockup', option.mockup.source),
+      option.mockup &&
+        frameFor(question, readOnly, {
+          illustration: {
+            id: `mockup-${option.letter.toLowerCase()}`,
+            kind: 'html',
+            fence: 'html',
+            source: option.mockup.source,
+            tailwind: option.mockup.tailwind,
+          },
+          option: option.letter,
+          title: `Mockup ${option.letter}`,
+          kindLabel: 'html mockup',
+        }),
     );
   });
 
@@ -249,7 +287,12 @@ function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
   return h(
     'section',
     { class: 'panel', 'aria-label': `Q${question.number}` },
-    h('h2', {}, `Q${question.number} · ${question.title} `, h('span', { class: 'muted' }, `(${stateLabel(draft)})`)),
+    h(
+      'h2',
+      {},
+      `Q${question.number} · ${question.title} `,
+      h('span', { class: 'muted' }, `(${stateLabel(draft, commentsOn(question))})`),
+    ),
     html('prose', question.proseHtml),
     h(
       'div',
@@ -266,7 +309,13 @@ function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
         'Accept',
       ),
     ),
-    ...question.illustrations.map(illustrationFrame),
+    ...question.illustrations.map((illustration) =>
+      frameFor(question, readOnly, {
+        illustration,
+        title: illustration.title ?? illustration.id,
+        kindLabel: illustration.kind,
+      }),
+    ),
     optionItems.length > 0 && h('ul', { class: 'options', 'aria-label': 'Options' }, ...optionItems),
     h(
       'div',
@@ -298,22 +347,54 @@ function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
   );
 }
 
-/** Until each block's renderer lands, an illustration shows as its raw source. */
-function illustrationFrame(illustration: PageIllustration): HTMLElement {
-  return sourceFrame(illustration.title ?? illustration.id, illustration.kind, illustration.source);
+/** The illustration's frame (its block drawn by the block registry), synced with the question's comments. */
+function frameFor(question: PageQuestion, readOnly: boolean, subject: FrameSubject): HTMLElement {
+  const key = `${question.number}:${subject.option ? `option ${subject.option}` : subject.illustration.id}`;
+  let frame = frames.get(key);
+  if (!frame) {
+    frame = new IllustrationFrame(subject, {
+      toggleCommenting,
+      addComment: (comment) => {
+        state.comments.get(question.number)!.push(comment);
+        render();
+      },
+      removeComment: (comment) => {
+        const list = state.comments.get(question.number)!;
+        list.splice(list.indexOf(comment), 1);
+        render();
+      },
+    });
+    frames.set(key, frame);
+  }
+  const all = state.comments.get(question.number) ?? [];
+  frame.sync({
+    comments: all
+      .map((comment, index) => ({ number: index + 1, comment }))
+      .filter(({ comment }) =>
+        subject.option ? comment.option === subject.option : !comment.option && comment.illustration?.id === subject.illustration.id,
+      ),
+    nextNumber: all.length + 1,
+    commenting: state.commenting,
+    readOnly,
+  });
+  return frame.element;
 }
 
-function sourceFrame(title: string, kind: string, source: string): HTMLElement {
-  return h(
-    'figure',
-    { class: 'illustration', 'aria-label': title },
-    h('figcaption', {}, h('span', {}, title), h('span', { class: 'muted' }, kind)),
-    h('pre', {}, h('code', {}, source)),
-  );
+function toggleCommenting(): void {
+  state.commenting = !state.commenting;
+  render();
+}
+
+function commentCount(): number {
+  let total = 0;
+  for (const list of state.comments.values()) total += list.length;
+  return total;
 }
 
 function reviewPanel(round: PageRound, readOnly: boolean): HTMLElement {
-  const unanswered = round.questions.filter((question) => state.drafts.get(question.number)!.mode === 'none');
+  const unanswered = round.questions.filter(
+    (question) => state.drafts.get(question.number)!.mode === 'none' && commentsOn(question) === 0,
+  );
   return h(
     'section',
     { class: 'panel', 'aria-label': 'Review' },
@@ -350,7 +431,7 @@ function roundHeading(round: PageRound): string {
   return `Round ${round.number}${round.title ? ` · ${round.title}` : ''}`;
 }
 
-function stateLabel(draft: Draft): string {
+function stateLabel(draft: Draft, comments: number): string {
   switch (draft.mode) {
     case 'accepted':
     case 'picked':
@@ -359,11 +440,25 @@ function stateLabel(draft: Draft): string {
     case 'unsure':
       return 'unsure';
     case 'none':
-      return 'open';
+      return comments > 0 ? 'comments only' : 'open';
   }
 }
 
+function commentsOn(question: PageQuestion): number {
+  return state.comments.get(question.number)?.length ?? 0;
+}
+
+function count(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`;
+}
+
 function summary(question: PageQuestion, draft: Draft): string {
+  const comments = commentsOn(question);
+  const verdict = verdictSummary(question, draft, comments);
+  return comments > 0 && draft.mode !== 'none' ? `${verdict} · ${count(comments, 'comment')}` : verdict;
+}
+
+function verdictSummary(question: PageQuestion, draft: Draft, comments: number): string {
   switch (draft.mode) {
     case 'accepted':
       return question.recommendation.option ? `accepted ${question.recommendation.option}` : 'accepted';
@@ -374,7 +469,7 @@ function summary(question: PageQuestion, draft: Draft): string {
     case 'unsure':
       return 'unsure';
     case 'none':
-      return 'no answer';
+      return comments > 0 ? `comments only · ${count(comments, 'comment')}` : 'no answer';
   }
 }
 
@@ -399,7 +494,7 @@ async function submit(): Promise<void> {
           : draft.mode === 'own'
             ? { mode: 'own', text: draft.text }
             : { mode: draft.mode };
-      return { question: question.number, ...answer };
+      return { question: question.number, ...answer, comments: state.comments.get(question.number) ?? [] };
     }),
   };
 
@@ -425,6 +520,28 @@ async function submit(): Promise<void> {
     render();
   }
 }
+
+// M toggles comment mode; Escape drops an unsaved comment, then leaves comment mode.
+document.addEventListener('keydown', (event) => {
+  if (event.metaKey || event.ctrlKey || event.altKey || typingIn(event.target)) return;
+  if (event.key === 'm' || event.key === 'M') {
+    if (!state.round || !canSend(state.round)) return;
+    event.preventDefault();
+    toggleCommenting();
+  } else if (event.key === 'Escape') {
+    const cancelled = [...frames.values()].some((frame) => frame.cancel());
+    if (!cancelled && state.commenting) toggleCommenting();
+  }
+});
+
+function typingIn(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && (target.isContentEditable || /^(input|textarea|select)$/i.test(target.tagName));
+}
+
+// Blocks draw with the theme's tokens: a theme change (data-theme on <html>) redraws them.
+new MutationObserver(() => {
+  for (const frame of frames.values()) void frame.draw();
+}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 void loadRound('latest');
 listen();

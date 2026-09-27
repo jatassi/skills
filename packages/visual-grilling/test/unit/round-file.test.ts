@@ -396,7 +396,8 @@ describe('illustrations', () => {
       ['code', 'id, title, file, startLine, highlight, lang'],
     ])('%s takes %s', (lang, keys) => {
       const extra = lang === 'code' ? ' lang=ts' : '';
-      expect(lines(Q(1, fence(`${lang} id=a${extra} height=3`, 'x')))).toEqual([
+      const content = lang === 'table' ? '| a |\n|---|\n| 1 |' : 'x';
+      expect(lines(Q(1, fence(`${lang} id=a${extra} height=3`, content)))).toEqual([
         `round.md:3 · Q1 · illustration "a" (${lang}): unknown key "height"; ${lang} takes ${keys}`,
       ]);
     });
@@ -558,6 +559,66 @@ ${fence('mermaid', 'graph LR')}- **A** - One
       'round.md:18 · Q1: question numbers must increase; Q1 follows Q2',
       'round.md:18 · Q1: missing ➡️ recommendation',
       "round.md:20 · Q1: headings aren't allowed in a question; use **bold** text",
+    ]);
+  });
+});
+
+describe('table blocks', () => {
+  const table = (content: string) => Q(1, fence('table id=t', content));
+
+  it('reads the one table into cells, with plain text beside the Markdown', () => {
+    const [illustration] = accept(
+      table('| Tool | Install |\n|:--|--:|\n| **MCP** server | `npx x` |\n| CLI | a \\| b |'),
+    ).questions[0]!.illustrations;
+    expect(illustration!.table).toEqual({
+      align: ['left', 'right'],
+      header: [
+        { markdown: 'Tool', text: 'Tool' },
+        { markdown: 'Install', text: 'Install' },
+      ],
+      rows: [
+        [
+          { markdown: '**MCP** server', text: 'MCP server' },
+          { markdown: '`npx x`', text: 'npx x' },
+        ],
+        [
+          { markdown: 'CLI', text: 'CLI' },
+          { markdown: 'a \\| b', text: 'a | b' },
+        ],
+      ],
+    });
+  });
+
+  it('keeps empty cells', () => {
+    const [illustration] = accept(table('| | A |\n|---|---|\n| x | |')).questions[0]!.illustrations;
+    expect(illustration!.table!.header[0]).toEqual({ markdown: '', text: '' });
+    expect(illustration!.table!.rows[0]![1]).toEqual({ markdown: '', text: '' });
+  });
+
+  it('rejects a source with no table', () => {
+    expect(lines(table('Tool, Install\nMCP, npx'))).toEqual([
+      'round.md:4 · Q1 · illustration "t" (table): no table found; a table block holds exactly one GFM table: a header row, a |---| delimiter row, then rows',
+    ]);
+  });
+
+  it('rejects a second table and anything beside the table', () => {
+    expect(lines(table('Intro.\n\n| a |\n|---|\n| 1 |\n\n| b |\n|---|\n| 2 |'))).toEqual([
+      'round.md:4 · Q1 · illustration "t" (table): only the table may be in a table block; put prose in the question',
+      'round.md:10 · Q1 · illustration "t" (table): found 2 tables; a table block holds exactly one',
+    ]);
+  });
+
+  it('rejects a table with no rows', () => {
+    expect(lines(table('| a | b |\n|---|---|'))).toEqual([
+      'round.md:4 · Q1 · illustration "t" (table): the table has a header but no rows',
+    ]);
+  });
+
+  it('rejects a row whose cells don\'t match the header, including a stray line after the table', () => {
+    expect(lines(table('| a | b |\n|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 |\n| 6 |\nafterthought'))).toEqual([
+      'round.md:6 · Q1 · illustration "t" (table): this row has 3 cells; the header has 2',
+      'round.md:8 · Q1 · illustration "t" (table): this row has 1 cell; the header has 2',
+      'round.md:9 · Q1 · illustration "t" (table): this row has 1 cell; the header has 2',
     ]);
   });
 });

@@ -15,7 +15,7 @@
 //   POST /api/activity                     → {}  the user is interacting (keeps the server from idling out)
 
 import type { DesignTreeNode, Illustration, RoundError } from './round.ts';
-import type { Verdict } from './submission.ts';
+import type { CommentRecord, Verdict } from './submission.ts';
 
 /** The server's identity: a live pid that answers with a different start time is a reused pid. */
 export interface PingResponse {
@@ -46,8 +46,20 @@ export interface AwaitResponse {
   text: string;
 }
 
-/** An illustration as the round file declared it; block tickets draw it on the page. */
-export type PageIllustration = Omit<Illustration, 'line'>;
+/** An illustration as the round file declared it, for its block to draw on the page. */
+export type PageIllustration = Omit<Illustration, 'line' | 'table'> & { table?: PageTable };
+
+export interface PageTableCell {
+  /** Rendered from the cell's Markdown with raw HTML escaped. */
+  html: string;
+  text: string;
+}
+
+export interface PageTable {
+  align: ('left' | 'center' | 'right' | null)[];
+  header: PageTableCell[];
+  rows: PageTableCell[][];
+}
 
 export interface PageOption {
   letter: string;
@@ -74,6 +86,8 @@ export interface PageRound {
   submitted?: Record<number, Verdict>;
   /** The round was closed without a submission: the user replied in the terminal. */
   answeredInTerminal?: true;
+  /** Present once the round has been submitted: each question's anchored comments by number. */
+  comments?: Record<number, CommentRecord[]>;
 }
 
 /** Server-sent event payloads, keyed by event name. */

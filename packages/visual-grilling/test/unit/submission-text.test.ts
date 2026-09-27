@@ -1,8 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { firstSentence, renderSubmission, type SubmissionRecord } from '../../src/core/submission.ts';
+import type { AnchorTarget } from '../../src/core/anchor.ts';
+import {
+  firstSentence,
+  renderSubmission,
+  type CommentRecord,
+  type SubmissionRecord,
+} from '../../src/core/submission.ts';
 
 const RECORD_PATH = '/tmp/visual-grilling/a1b2/submissions/round-3.json';
 const golden = (name: string) => `./golden/${name}.txt`;
+
+/** A comment record with only what the line shows spelled out. */
+function comment(
+  question: number,
+  illustration: CommentRecord['illustration'],
+  target: Partial<AnchorTarget> & { kind: string },
+  text: string,
+  extra: Partial<CommentRecord> = {},
+): CommentRecord {
+  return {
+    question,
+    illustration,
+    target: { ref: null, label: null, via: 'test', weak: false, ...target },
+    clicked: { tag: 'rect', role: null, text: '' },
+    within: null,
+    near: [],
+    position: { x: 10, y: 20 },
+    selector: 'rect',
+    box: null,
+    text,
+    ...extra,
+  };
+}
 
 describe('renderSubmission', () => {
   it('renders every answer mode, comments, warnings and the summary', async () => {
@@ -27,7 +56,14 @@ describe('renderSubmission', () => {
           number: 2,
           title: 'Which runtime?',
           verdict: { mode: 'picked', option: 'B', label: 'Bun' },
-          comments: [{ anchor: 'chart "Cold start" → bar "runtime: Bun; ms: 60"', text: 'is this warm or cold?' }],
+          comments: [
+            comment(
+              2,
+              { id: 'cold', kind: 'vega-lite', title: 'Cold start' },
+              { kind: 'bar', label: 'runtime: Bun; ms: 60' },
+              'is this warm or cold?',
+            ),
+          ],
           warnings: [
             {
               kind: 'draw',
@@ -48,14 +84,29 @@ describe('renderSubmission', () => {
         {
           number: 6,
           title: 'Error copy',
-          verdict: { mode: 'none' },
+          verdict: { mode: 'comments' },
           comments: [
-            {
-              anchor: 'html "Error banner" → unlabeled shape',
-              text: 'too loud',
-              weak: { near: 'Retry', across: 72, down: 40, crop: '/tmp/visual-grilling/a1b2/crops/r3-q6-c1.png' },
-            },
-            { anchor: 'html "Error banner" → button "Retry"', text: 'fine' },
+            comment(
+              6,
+              { id: 'banner', kind: 'html', title: 'Error banner' },
+              { kind: 'unlabeled shape', via: 'position only', weak: true },
+              'too loud',
+              { near: ['Retry'], position: { x: 72, y: 40 }, crop: '/tmp/visual-grilling/a1b2/crops/r3-q6-c1.png' },
+            ),
+            comment(6, { id: 'banner', kind: 'html', title: 'Error banner' }, { kind: 'button', label: 'Retry' }, 'fine'),
+            comment(
+              6,
+              undefined,
+              { kind: 'list item', label: 'Retry', via: 'text', weak: true },
+              'clicked beside it',
+              {
+                option: 'B',
+                clicked: { tag: 'span', role: null, text: '' },
+                within: 'toolbar',
+                near: ['Cancel', 'Save'],
+                position: { x: 5, y: 95 },
+              },
+            ),
           ],
           warnings: [{ kind: 'script', illustration: { id: 'banner', lang: 'html' }, message: 'x is not defined' }],
         },
@@ -83,7 +134,9 @@ describe('renderSubmission', () => {
           number: 2,
           title: 'Only question',
           verdict: { mode: 'unsure' },
-          comments: [{ anchor: 'table "Costs" → cell row "MCP", column "Install"', text: 'one' }],
+          comments: [
+            comment(2, { id: 'costs', kind: 'table', title: 'Costs' }, { kind: 'cell', ref: 'row "MCP", column "Install"' }, 'one'),
+          ],
           warnings: [{ kind: 'draw', illustration: { id: 'costs', lang: 'table' }, message: 'boom' }],
         },
       ],
