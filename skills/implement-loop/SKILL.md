@@ -12,3 +12,5 @@ Instruct each subagent to call the Skill tool with "implement". Keep subagent br
 Subagents rebase onto `main` tip and open PRs, but do not merge. You perform a light review of the changes, then either resume the subagent with instructions to address your findings or merge the PR and continue the loop.
 
 Follow-on questions may emerge as subagents report. For all but the most ambiguous or high-risk, decide and proceed. Keep a note of decisions and findings, and post them as one closing comment on the parent when every branch is merged.
+
+If a skill asks you to call another skill which is not available, stop and ask the user to install the missing skills instead of fabricating their content.
