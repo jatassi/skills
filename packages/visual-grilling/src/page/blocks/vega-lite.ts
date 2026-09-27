@@ -8,8 +8,10 @@
 
 import type { AdapterMatch, Snapshot } from '../../core/anchor.ts';
 import type * as VegaLiteChunk from '../../chunks/vega-lite.ts';
+import { checkDrawing } from '../readability.ts';
 import { readTokens } from './diagram-view.ts';
 import type { BlockRenderer } from './registry.ts';
+import { overridesTheme } from './theme-override.ts';
 
 /** The chunk's URL on the server. Kept out of the page bundle on purpose. */
 const CHUNK_URL = '/assets/vega-lite.js';
@@ -24,15 +26,16 @@ function loadChunk(): Promise<typeof VegaLiteChunk> {
 }
 
 export const vegaLiteBlock: BlockRenderer = {
-  async render(target, illustration) {
+  async render(target, illustration, context) {
     const vegaLite = await loadChunk();
-    const { svg } = await vegaLite.drawVegaLite(illustration.source, readTokens(vegaLite.TOKEN_NAMES));
+    const { svg } = await vegaLite.drawVegaLite(illustration.source, readTokens(target, vegaLite.TOKEN_NAMES));
     const chart = document.createElement('div');
     chart.className = 'vega-lite-block';
     // Vega's SVG writer escapes every text and attribute, and the loader
     // refuses every URL; the page's CSP runs no inline script either way.
     chart.innerHTML = svg;
     target.append(chart);
+    if (overridesTheme('vega-lite', illustration.source)) checkDrawing(target, context);
   },
   anchor: vegaLiteAnchor,
 };

@@ -6,9 +6,9 @@
  * amber unsure. Dark is the default; light is the same roles on white.
  *
  * The tokens below are the page's one theme: blocks that draw with page
- * colours read them from :root by name (the Mermaid, dot and Vega-Lite blocks
- * read canvas, panel, line, fg, muted, accent, answered, unsure and risk), and
- * redraw when data-theme flips.
+ * colours read them by name where they sit (the Mermaid, dot and Vega-Lite
+ * blocks read canvas, panel, line, fg, muted, accent, answered, unsure and
+ * risk), and redraw when data-theme flips or the light backdrop comes on.
  */
 
 :root,
@@ -41,7 +41,10 @@
   --scrim: rgba(0, 0, 0, 0.35);
 }
 
-:root[data-theme='light'] {
+/* The light backdrop takes the light tokens too, so a block drawn on it with
+   page colours (an overridden drawing's axes, edges and labels) reads them. */
+:root[data-theme='light'],
+.illustration.light-backdrop .block-content {
   color-scheme: light;
   --canvas: #f4f5f7;
   --panel: #ffffff;
@@ -1521,8 +1524,8 @@ textarea[readonly] {
 
 /* The light backdrop, for a block whose own colours are unreadable on dark. */
 .illustration.light-backdrop .block-content {
-  background: #ffffff;
-  color: #1a1e26;
+  background: var(--panel);
+  color: var(--fg);
 }
 
 /* Agent HTML: a sandboxed frame, as wide as the illustration and as tall as its content. */

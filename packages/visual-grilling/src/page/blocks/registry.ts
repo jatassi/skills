@@ -17,6 +17,11 @@ import type { IllustrationKind } from '../../core/round.ts';
 export interface BlockContext {
   /** The page theme when this draw started. A theme change calls `render` again (or `BlockView.setState`). */
   theme: ThemeName;
+  /**
+   * Whether this draw sits on the light backdrop. The page's tokens as read
+   * from `target` are then the light ones, and a readability check is moot.
+   */
+  backdrop: boolean;
   /** What a block that runs apart from the page (a sandboxed frame) reports to its illustration frame. */
   events: BlockEvents;
 }
@@ -24,7 +29,12 @@ export interface BlockContext {
 export interface BlockEvents {
   /** A click in comment mode, snapshotted where the page can't reach (inside a sandboxed frame). */
   pick(snapshot: Snapshot): void;
-  /** Whether the block's own colours are unreadable on the dark backdrop; the frame then offers the light one. */
+  /**
+   * Whether the block's own colours are unreadable on the dark backdrop; the
+   * frame then offers the light one. Only a block whose colours may not follow
+   * the theme reports it: agent HTML, or a drawing whose theme the agent
+   * overrode (see readability.ts, checkDrawing).
+   */
   readability(unreadable: boolean): void;
   /** An uncaught script error; it reaches the agent as a warning. */
   scriptError(message: string): void;
@@ -59,7 +69,9 @@ export interface BlockRenderer {
    * anchoring root: comment positions are percentages of that box, and pins
    * are laid over it, so they scroll with the content. The page calls
    * `render` again, on a new target, when the theme (data-theme on <html>)
-   * changes, unless it returned a BlockView, which gets `setState` instead.
+   * or the light backdrop changes, unless it returned a BlockView, which gets
+   * `setState` instead. A block drawing with page colours reads them from
+   * `target` (readTokens), so it draws light ones on the light backdrop.
    */
   render(
     target: HTMLElement,

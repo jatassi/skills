@@ -5,9 +5,11 @@
 // the frame.
 
 import type * as GraphvizChunk from '../../chunks/graphviz.ts';
+import { checkDrawing } from '../readability.ts';
 import { diagramView, readTokens } from './diagram-view.ts';
 import { dotAnchor } from './dot-anchor.ts';
 import type { BlockRenderer } from './registry.ts';
+import { overridesTheme } from './theme-override.ts';
 
 /** The chunk's URL on the server. Kept out of the page bundle on purpose. */
 const CHUNK_URL = '/assets/graphviz.js';
@@ -24,11 +26,12 @@ function loadChunk(): Promise<typeof GraphvizChunk> {
 let drawCount = 0;
 
 export const dotBlock: BlockRenderer = {
-  async render(target, illustration) {
+  async render(target, illustration, context) {
     const graphviz = await loadChunk();
-    const { svg } = await graphviz.drawDot(`vg-dot-${++drawCount}`, illustration.source, readTokens(graphviz.TOKEN_NAMES));
+    const { svg } = await graphviz.drawDot(`vg-dot-${++drawCount}`, illustration.source, readTokens(target, graphviz.TOKEN_NAMES));
     // Graphviz escapes the labels it writes, and the chunk strips links.
     target.append(diagramView(target, svg));
+    if (overridesTheme('dot', illustration.source)) checkDrawing(target, context);
   },
   anchor: dotAnchor,
 };
