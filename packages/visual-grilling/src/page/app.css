@@ -1396,3 +1396,19 @@ textarea[readonly] {
 .diagram-viewport.capped + .show-full {
   display: block;
 }
+
+/* Chart blocks: Vega-Lite's own SVG, centred. */
+
+.vega-lite-block {
+  padding: 8px;
+}
+
+.vega-lite-block svg {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Points are hollow by default: let a click inside one name it. */
+.vega-lite-block .mark-symbol.role-mark > path {
+  pointer-events: visible;
+}
