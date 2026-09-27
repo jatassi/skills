@@ -2,15 +2,17 @@
 // shares the round page's origin.
 //
 // The frame is loaded by URL (/frame/r<N>/<illustration-id>, or
-// /frame/r<N>/q<M>/<option> for a mockup; never srcdoc)
-// with the sandbox below and no allow-same-origin, so its scripts can neither
-// read this page nor send its round submission (page writes need this page's
-// exact Origin; the frame's is "null"). The server injects the frame script
+// /frame/r<N>/q<M>/<option> for a mockup; never srcdoc, which would inherit
+// this page's CSP). Its response's CSP sandboxes it with no allow-same-origin,
+// so its scripts can neither read this page nor send its round submission
+// (page writes need this page's exact Origin; the frame's is "null"). The
+// iframe itself has no sandbox attribute: Claude's built-in browser refuses
+// to load an iframe that has one. The server injects the frame script
 // (src/frame/inject.ts), which is the frame's only way to talk to the page:
 // postMessage, read here as data only (readFrameMessage), and only from one
 // of this page's own frames.
 
-import { FRAME_SANDBOX, readFrameMessage, type FrameMessage, type PageMessage } from '../../core/frame-protocol.ts';
+import { readFrameMessage, type FrameMessage, type PageMessage } from '../../core/frame-protocol.ts';
 import { sourceBlock, type BlockRenderer, type BlockState } from './registry.ts';
 
 const CROP_TIMEOUT_MS = 5_000;
@@ -42,7 +44,6 @@ export const htmlBlock: BlockRenderer = {
 
     const iframe = document.createElement('iframe');
     iframe.className = FRAME_CLASS;
-    iframe.setAttribute('sandbox', FRAME_SANDBOX);
     iframe.title = illustration.title ?? illustration.id;
     iframe.src = `${illustration.frame}?theme=${context.theme}`;
 

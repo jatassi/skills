@@ -55,9 +55,8 @@ describe('agent HTML frames', () => {
     await pageExpect(frame.locator('[data-anchor="read"]')).toHaveText('read blocked');
     await pageExpect(frame.locator('[data-anchor="submit"]')).toHaveText('submit tried');
 
-    expect(await page.locator('iframe[title="Probe"]').getAttribute('sandbox')).toBe(
-      'allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads',
-    );
+    // The response's CSP sandboxes the frame; the iframe has no sandbox attribute for Claude's built-in browser to refuse.
+    expect(await page.locator('iframe[title="Probe"]').getAttribute('sandbox')).toBeNull();
     // Nothing was submitted: the round still waits for the user.
     const waited = await sandbox.cli(['await', '--timeout', '0']);
     expect(waited.stdout.split('\n')[0]).toBe('pending · round 1 · re-run await');
@@ -81,7 +80,7 @@ describe('agent HTML frames', () => {
     await pageExpect(page.getByRole('button', { name: 'Light backdrop for Card' })).toBeHidden();
   });
 
-  it('loads Tailwind from the local server unless the fence says tailwind=false', async () => {
+  it('inlines Tailwind unless the fence says tailwind=false, and fetches nothing', async () => {
     const { page } = await open(
       html('id=with title="With"', '<div data-anchor="box" class="p-6">padded</div>'),
       html('id=without title="Without" tailwind=false', '<div data-anchor="box" class="p-6">plain</div>'),
@@ -92,17 +91,17 @@ describe('agent HTML frames', () => {
         .locator('[data-anchor="box"]')
         .evaluate((element) => getComputedStyle(element).paddingTop);
     await pageExpect.poll(() => padding('With')).toBe('24px');
-    const scripts = await page
+    await pageExpect(page.frameLocator('iframe[title="With"]').locator('script#vg-tailwind')).toHaveCount(1);
+    const frameFetches = await page
       .frameLocator('iframe[title="With"]')
-      .locator('script[src]')
-      .evaluateAll((list) => list.map((script) => (script as HTMLScriptElement).src));
-    expect(scripts.every((src) => new URL(src).origin === new URL(page.url()).origin)).toBe(true);
-    expect(scripts.some((src) => src.endsWith('/frame/assets/tailwind.js'))).toBe(true);
+      .locator('html')
+      .evaluate(() => performance.getEntriesByType('resource').map((entry) => entry.name));
+    expect(frameFetches).toEqual([]);
 
     await page.getByRole('tab', { name: 'Q2' }).click();
     await pageExpect(page.frameLocator('iframe[title="Without"]').locator('[data-anchor="box"]')).toHaveText('plain');
     expect(await padding('Without')).toBe('0px');
-    await pageExpect(page.frameLocator('iframe[title="Without"]').locator('script[src$="tailwind.js"]')).toHaveCount(0);
+    await pageExpect(page.frameLocator('iframe[title="Without"]').locator('script#vg-tailwind')).toHaveCount(0);
   });
 
   it('switches unreadable HTML to a light backdrop automatically, with a manual toggle', async () => {

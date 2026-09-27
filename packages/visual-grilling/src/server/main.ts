@@ -31,7 +31,7 @@ import {
   type SubmissionRecord,
 } from '../core/submission.ts';
 import { DrawCheck } from './draw-check.ts';
-import { frameDocument, FRAME_ASSETS } from './frame.ts';
+import { frameDocument, FRAME_ASSETS, type FrameScripts } from './frame.ts';
 import { BASE_HEADERS, FRAME_HEADERS, guardRequest, ROUND_PAGE_HEADERS } from './guards.ts';
 import { idleLimitMs, watchIdle } from './idle.ts';
 import { pageRound } from './render.ts';
@@ -51,6 +51,8 @@ const paths = sessionPaths(sessionDirArg);
 const pageDir = join(dirname(fileURLToPath(import.meta.url)), 'page');
 const drawCheck = new DrawCheck(pageDir);
 const frameDir = join(dirname(fileURLToPath(import.meta.url)), 'frame');
+/** Read on the first frame served, then kept: every frame inlines them. */
+let frameScripts: FrameScripts | undefined;
 
 // ------------------------------------------------------------------- state
 
@@ -141,10 +143,6 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     const asset = /^\/assets\/([a-z0-9-]+\.(?:js|css))$/.exec(route);
     if (asset) return sendFile(res, asset[1]!);
     if (route === '/events') return openEvents(req, res);
-    const frameAsset = /^\/frame\/assets\/([a-z0-9-]+\.js)$/.exec(route);
-    if (frameAsset && (FRAME_ASSETS as readonly string[]).includes(frameAsset[1]!)) {
-      return sendFile(res, frameAsset[1]!, BASE_HEADERS, frameDir);
-    }
     const theme = url.searchParams.get('theme');
     const frameRoute = /^\/frame\/r(\d+)\/([a-z0-9][a-z0-9-]*)$/.exec(route);
     if (frameRoute) return sendFrame(res, illustrationFrame(Number(frameRoute[1]), frameRoute[2]!), theme);
@@ -283,6 +281,9 @@ function sendFrame(res: ServerResponse, frame: FrameSource | undefined, theme: s
   const page = frameDocument(frame.source, {
     tailwind: frame.tailwind,
     theme: theme === 'light' ? 'light' : 'dark',
+    scripts: (frameScripts ??= Object.fromEntries(
+      FRAME_ASSETS.map((file) => [file, readFileSync(join(frameDir, file), 'utf8')]),
+    ) as FrameScripts),
   });
   res.writeHead(200, {
     ...FRAME_HEADERS,
@@ -465,10 +466,10 @@ const CONTENT_TYPES: Record<string, string> = {
   css: 'text/css; charset=utf-8',
 };
 
-function sendFile(res: ServerResponse, name: string, headers = BASE_HEADERS, dir = pageDir): void {
+function sendFile(res: ServerResponse, name: string, headers = BASE_HEADERS): void {
   let content: Buffer;
   try {
-    content = readFileSync(join(dir, name));
+    content = readFileSync(join(pageDir, name));
   } catch {
     return sendJson(res, 404, { error: 'not found' });
   }
