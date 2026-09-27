@@ -9,7 +9,7 @@
     {
       "name": "jatassi-skills",
       "source": "./",
-      "description": "Skills for grilling plans with an agent stand-in, turning them into specs and tickets, and orchestrating implementation loops."
+      "description": "Skills for grilling plans with an agent stand-in or through a visual browser channel, turning them into specs and tickets, and orchestrating implementation loops."
     }
   ]
 }

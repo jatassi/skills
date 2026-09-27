@@ -1,7 +1,7 @@
 {
   "name": "jatassi-skills",
   "version": "1.0.0",
-  "description": "Skills for grilling plans with an agent stand-in, turning them into specs and tickets, and orchestrating implementation loops.",
+  "description": "Skills for grilling plans with an agent stand-in or through a visual browser channel, turning them into specs and tickets, and orchestrating implementation loops.",
   "author": {
     "name": "Jackson Atassi",
     "url": "https://github.com/jatassi"
@@ -9,5 +9,5 @@
   "homepage": "https://github.com/jatassi/skills",
   "repository": "https://github.com/jatassi/skills",
   "license": "MIT",
-  "keywords": ["skills", "planning", "grilling", "specs", "tickets", "implementation"]
+  "keywords": ["skills", "planning", "grilling", "visual-grilling", "browser", "specs", "tickets", "implementation"]
 }
