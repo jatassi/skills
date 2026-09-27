@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.dataset.theme = new URLSearchParams(location.search).get('theme') || 'dark';</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE · Anchored comments</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --panel: #fff; --ink: #1d1d1b; --muted: #6b6a66; --line: #e2e0da;
+    --accent: #d9480f; --accent-soft: #fff1e8; --accent-ink: #7a2a06; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sunken: #faf9f6; --code-bg: #1d1d1b; --code-ink: #f4f1ea; --code-hi: #ffb38a; --shadow: rgba(0,0,0,.15);
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #141413; --panel: #1f1e1c; --ink: #ebe8e1; --muted: #a09d95; --line: #3a3834;
+    --accent: #f76b2a; --accent-soft: #3a2216; --accent-ink: #ffc3a3;
+    --sunken: #181816; --code-bg: #0d0d0c; --code-ink: #ebe8e1; --code-hi: #ff9e6b; --shadow: rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, sans-serif; }
+  .banner { display: flex; justify-content: space-between; align-items: center; background: var(--code-bg); color: var(--code-ink); border-bottom: 1px solid var(--line); font: 600 11px/1 var(--mono); letter-spacing: .08em; padding: 7px 16px; }
+  header { padding: 20px 24px 8px; max-width: 1500px; margin: 0 auto; }
+  header h1 { margin: 0 0 6px; font-size: 22px; }
+  header p { margin: 0 0 6px; max-width: 900px; color: var(--muted); }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 460px; gap: 20px; padding: 12px 24px 40px; max-width: 1500px; margin: 0 auto; }
+  @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+
+  /* round page */
+  .roundbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .roundbar h2 { margin: 0; font-size: 16px; }
+  .toggle { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; user-select: none; font-weight: 600; }
+  .toggle input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .card h3 { margin: 0 0 4px; font-size: 15px; }
+  .card .qnum { color: var(--accent); font-family: var(--mono); margin-right: 6px; }
+  .card .rec { color: var(--muted); margin: 0 0 12px; }
+  .illus { position: relative; border: 1px dashed var(--line); border-radius: 8px; padding: 10px; background: var(--panel); }
+  .illus-title { font: 600 11px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+  .illus-body { position: relative; }
+  .commenting .illus-body { cursor: crosshair; }
+  details.src { margin-top: 8px; }
+  details.src summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+  details.src pre { background: var(--sunken); border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: 12px/1.45 var(--mono); overflow: auto; max-height: 240px; margin: 6px 0 0; white-space: pre-wrap; }
+
+  table.block { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.block th, table.block td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  table.block th { background: var(--sunken); }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .option-card { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .option-card .ohead { padding: 6px 10px; background: var(--sunken); border-bottom: 1px solid var(--line); font-weight: 600; font-size: 13px; }
+  .option-card iframe, iframe.raw { display: block; width: 100%; border: 0; background: var(--panel); }
+  .option-card iframe { height: 190px; }
+  iframe.raw { height: 250px; }
+
+  /* overlays */
+  .ov { position: absolute; pointer-events: none; z-index: 5; }
+  .hl { border: 2px solid var(--accent); background: rgba(217,72,15,.08); border-radius: 3px; }
+  .hl.area { border-style: dashed; }
+  .pin { width: 22px; height: 22px; margin: -22px 0 0 -2px; border-radius: 11px 11px 11px 2px; background: var(--accent); color: #fff; font: 700 11px/22px var(--mono); text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .pin.sel { background: var(--ink); color: var(--bg); }
+
+  /* popover */
+  .pop { position: absolute; z-index: 50; width: 340px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 30px var(--shadow); padding: 12px; }
+  .pop .chip { font: 12px/1.4 var(--mono); background: var(--accent-soft); color: var(--accent-ink); border-radius: 6px; padding: 6px 8px; margin-bottom: 8px; word-break: break-word; }
+  .pop textarea { width: 100%; height: 64px; font: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; resize: vertical; background: var(--sunken); color: var(--ink); }
+  .pop .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button:hover { filter: brightness(.96); }
+
+  /* side panel */
+  aside { position: sticky; top: 12px; align-self: start; max-height: calc(100vh - 24px); overflow: auto; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+  .panel h2 { font-size: 13px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .tabs button { font-size: 12px; padding: 4px 8px; }
+  .tabs button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .scen p { margin: 0 0 8px; color: var(--muted); }
+  .steps { display: flex; flex-direction: column; gap: 6px; }
+  .steps button { text-align: left; }
+  .steps button.done { opacity: .5; }
+  .steps button.next { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+  .fields label { display: flex; gap: 6px; align-items: center; font-size: 13px; cursor: pointer; }
+  .fields input { accent-color: var(--accent); }
+  .agentline { font: 12.5px/1.5 var(--mono); background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; word-break: break-word; }
+  .agentline .c { color: var(--code-hi); }
+  .kv { display: grid; grid-template-columns: 110px 1fr; gap: 3px 10px; font-size: 13px; margin-top: 10px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; font-family: var(--mono); font-size: 12px; word-break: break-word; }
+  .kv .just { color: var(--accent); font-weight: 700; }
+  .crop { margin-top: 10px; }
+  .crop img { max-width: 100%; border: 1px solid var(--line); border-radius: 6px; display: block; }
+  .crop .meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .empty { color: var(--muted); font-style: italic; }
+  .clist { display: flex; flex-direction: column; gap: 4px; }
+  .clist button { text-align: left; font-size: 12.5px; }
+  .clist button.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .judge { margin: 0; padding-left: 18px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="banner"><span>PROTOTYPE · THROWAWAY · answers one question, then gets deleted</span><button id="theme" style="font:600 11px var(--mono);padding:3px 8px"></button></div>
+<header>
+  <h1>Anchored comments: what does the agent get when you click a spot?</h1>
+  <p><b>The question.</b> On a round page you can click any spot in a question's illustration and leave a comment on it. The agent that drew the illustration later reads that comment <i>without seeing the page</i>. What description of the spot lets it tell what you meant: the diagram's own ids, the element's text, its role or label, a CSS selector, click coordinates, or a small picture of the area?</p>
+  <p>Turn on <b>Comment mode</b>, hover an illustration to see what a click would point at, click to comment. The right-hand panel shows exactly what the agent would read, and lets you switch each kind of detail on or off. Each card has a "What the agent wrote" section so you can check whether the description maps back to it.</p>
+</header>
+
+<div class="layout">
+  <main id="round">
+    <div class="roundbar">
+      <h2>Round 2 of a grilling session <span style="color:var(--muted);font-weight:400">(mock round page)</span></h2>
+      <label class="toggle"><input type="checkbox" id="mode" checked> Comment mode</label>
+    </div>
+    <div id="cards"></div>
+  </main>
+
+  <aside>
+    <div class="panel">
+      <h2>Guided walkthroughs</h2>
+      <div class="tabs" id="tabs"></div>
+      <div class="scen" id="scen"></div>
+    </div>
+    <div class="panel">
+      <h2>What the agent reads for this comment</h2>
+      <div id="agentview"></div>
+    </div>
+    <div class="panel">
+      <h2>Details to include</h2>
+      <div class="fields" id="fields"></div>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 0">The pointed-at thing (the diagram's own id, a table cell, a chart datum, or the nearest named element) is always included.</p>
+    </div>
+    <div class="panel">
+      <h2>Round submission: comments as the agent reads them</h2>
+      <div id="submission"></div>
+      <div class="clist" id="clist" style="margin-top:10px"></div>
+      <div style="margin-top:10px"><button id="reset">Clear all comments</button></div>
+    </div>
+    <div class="panel">
+      <h2>Things to judge</h2>
+      <ul class="judge">
+        <li>From the dark box alone, could you (as the agent) say what was clicked?</li>
+        <li>Does the selector ever add something the other details don't?</li>
+        <li>When there is nothing named to point at, are the position and nearby text enough?</li>
+        <li>Is the picture worth its size, always, never, or only when nothing is named?</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<!-- ================================================================
+     PORTABLE MODULE: the part worth keeping.
+     Pure functions over a plain "snapshot" of the click. No DOM here,
+     except takeSnapshot/cssPath/nthOfKind, which are the thin DOM layer
+     and get injected into sandboxed iframes as-is.
+     ================================================================ -->
+<script id="anchor-dom">
+// ---- DOM layer: turns a click into a plain snapshot (runs in the page and inside iframes)
+function takeSnapshot(target, root, clientX, clientY) {
+  const rb = root.getBoundingClientRect();
+  const rel = r => ({ x: Math.round(r.left - rb.left), y: Math.round(r.top - rb.top), w: Math.round(r.width), h: Math.round(r.height) });
+  const chain = [], els = [];
+  for (let el = target; el && el.nodeType === 1; el = el.parentNode) {
+    const attrs = {};
+    for (const a of el.attributes) {
+      if (['id', 'role', 'class', 'placeholder', 'name', 'type', 'alt', 'href', 'value'].includes(a.name) || a.name.startsWith('data-') || a.name.startsWith('aria-'))
+        attrs[a.name] = String(a.value).slice(0, 200);
+    }
+    const titleChild = [...el.children].find(c => c.tagName.toLowerCase() === 'title');
+    chain.push({
+      tag: el.tagName.toLowerCase(), attrs,
+      text: visibleText(el).slice(0, 140),
+      title: titleChild ? titleChild.textContent.trim() : null,
+      nth: nthOfKind(el, root),
+      box: rel(el.getBoundingClientRect()),
+    });
+    els.push(el);
+    if (el === root) break;
+  }
+  const peers = [...root.querySelectorAll('[data-id], .messageText, .edgeLabel')].slice(0, 400).map(e => ({
+    tag: e.tagName.toLowerCase(), cls: e.getAttribute('class') || '', dataId: e.getAttribute('data-id'),
+    from: e.getAttribute('data-from'), to: e.getAttribute('data-to'), et: e.getAttribute('data-et'),
+    text: (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80),
+  }));
+  // short visible text leaves with their boxes, for "near ..." descriptions of unlabeled spots
+  const texts = [], svgs = [...root.querySelectorAll('svg')];
+  for (const e of root.querySelectorAll('*')) {
+    if (texts.length >= 300 || e.children.length || /^(style|script|title)$/i.test(e.tagName)) continue;
+    const t = visibleText(e);
+    if (t && t.length <= 40) texts.push({ text: t, box: rel(e.getBoundingClientRect()), svg: svgs.indexOf(e.closest('svg')) });
+  }
+  return { chain, els, root: { w: Math.round(rb.width), h: Math.round(rb.height) }, click: { x: Math.round(clientX - rb.left), y: Math.round(clientY - rb.top) }, selector: cssPath(target, root), peers, texts, clickSvg: svgs.indexOf(target.closest('svg')) };
+}
+function visibleText(el) {
+  let out = '';
+  const walk = n => { for (const c of n.childNodes) { if (c.nodeType === 3) out += c.nodeValue + ' '; else if (c.nodeType === 1 && !/^(style|script|title)$/i.test(c.tagName)) walk(c); } };
+  walk(el);
+  return out.replace(/\s+/g, ' ').trim();
+}
+function nthOfKind(el, root) {
+  const cls = (el.getAttribute('class') || '').split(/\s+/)[0];
+  if (!cls) return null;
+  const same = root.querySelectorAll(el.tagName.toLowerCase() + '.' + CSS.escape(cls));
+  return { cls, i: [...same].indexOf(el), of: same.length };
+}
+function cssPath(el, root) {
+  const parts = [];
+  for (; el && el !== root && el.nodeType === 1; el = el.parentNode) {
+    const tag = el.tagName.toLowerCase();
+    if (el.id) { parts.unshift(tag + '#' + el.id); break; }
+    const sibs = el.parentNode ? [...el.parentNode.children].filter(c => c.tagName === el.tagName) : [];
+    const cls = (el.getAttribute('class') || '').split(/\s+/)[0];
+    parts.unshift(tag + (cls ? '.' + cls : '') + (sibs.length > 1 ? ':nth-of-type(' + (sibs.indexOf(el) + 1) + ')' : ''));
+  }
+  return parts.join(' > ');
+}
+</script>
+
+<script id="anchor-model">
+// ---- Pure layer: snapshot + illustration context -> anchor -> the words the agent reads
+function attrOf(e, n) { return e && e.attrs ? e.attrs[n] : undefined; }
+function hasClass(e, c) { return (' ' + (attrOf(e, 'class') || '') + ' ').includes(' ' + c + ' '); }
+function short(s, n) { s = (s || '').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+
+// Library adapter: Mermaid diagrams. Maps rendered ids back to the ids the agent wrote.
+function mermaidAdapter(snap) {
+  const c = snap.chain;
+  for (let i = 0; i < c.length - 1; i++) {
+    const e = c[i], id = attrOf(e, 'id') || '', dataId = attrOf(e, 'data-id') || '';
+    let m = id.match(/flowchart-(.+)-\d+$/);
+    if (m) return { kind: 'node', ref: m[1], label: e.text, via: 'diagram id', chainIndex: i };
+    m = id.match(/state-(.+)-\d+$/);
+    if (m) return { kind: 'state', ref: m[1], label: e.text, via: 'diagram id', chainIndex: i };
+    if (attrOf(e, 'data-et') === 'participant' || attrOf(e, 'data-et') === 'life-line')
+      return { kind: 'participant', ref: dataId, label: participantName(snap, dataId), via: 'diagram id', chainIndex: i };
+    if (attrOf(e, 'data-et') === 'message')
+      return messageAnchor(snap, attrOf(e, 'data-from'), attrOf(e, 'data-to'), dataId, i);
+    if (hasClass(e, 'messageText') && e.nth) {
+      const msgs = snap.peers.filter(p => p.et === 'message');
+      const p = msgs[e.nth.i];
+      if (p) return messageAnchor(snap, p.from, p.to, p.dataId, i, e.text);
+    }
+    m = dataId.match(/^L_(.+?)_(.+)_\d+$/);
+    if (m && hasClass(e, 'label')) return { kind: 'edge label', ref: m[1] + ' → ' + m[2], label: e.text, via: 'diagram id', chainIndex: i };
+    if (m) return { kind: 'edge', ref: m[1] + ' → ' + m[2], label: edgeLabelText(snap, dataId), via: 'diagram id', chainIndex: i };
+    if (hasClass(e, 'edgeLabel') && e.nth) {
+      const lbls = snap.peers.filter(p => /\blabel\b/.test(p.cls) && /^L_/.test(p.dataId || ''));
+      const mm = lbls[e.nth.i] && lbls[e.nth.i].dataId.match(/^L_(.+?)_(.+)_\d+$/);
+      if (mm) return { kind: 'edge label', ref: mm[1] + ' → ' + mm[2], label: e.text, via: 'diagram id (label matched to its edge)', chainIndex: i };
+    }
+    if (hasClass(e, 'cluster')) return { kind: 'subgraph', ref: id.replace(/^.*?-/, ''), label: e.text, via: 'diagram id', chainIndex: i };
+  }
+  return null;
+}
+function participantName(snap, id) {
+  const p = snap.peers.find(p => p.dataId === id && p.et === 'participant');
+  return p ? p.text : id;
+}
+function messageAnchor(snap, from, to, dataId, i, text) {
+  const msgs = snap.peers.filter(p => p.et === 'message');
+  const idx = msgs.findIndex(p => p.dataId === dataId);
+  const texts = snap.peers.filter(p => /messageText/.test(p.cls));
+  return { kind: 'message', ref: `#${idx + 1} ${from} → ${to}`, label: text || (texts[idx] && texts[idx].text) || '', via: 'diagram id', chainIndex: i };
+}
+function edgeLabelText(snap, dataId) {
+  const lbl = snap.peers.find(p => /\blabel\b/.test(p.cls) && p.dataId === dataId);
+  return lbl ? lbl.text : '';
+}
+
+// Library adapter: Vega-Lite (SVG renderer). Every mark carries its datum in aria-label.
+function vegaAdapter(snap) {
+  const c = snap.chain;
+  for (let i = 0; i < c.length - 1; i++) {
+    const e = c[i];
+    const role = attrOf(e, 'aria-roledescription');
+    if (role === 'axis' || role === 'legend') {
+      const tick = c[0].tag === 'text' ? c[0].text : '';
+      const title = (attrOf(e, 'aria-label') || '').match(/titled '([^']+)'/);
+      return { kind: (title ? title[1] + ' ' : '') + role + (tick ? ' label' : ''), ref: null, label: tick || short(attrOf(e, 'aria-label'), 90), via: 'chart ' + role, chainIndex: tick ? 0 : i };
+    }
+    if (attrOf(e, 'role') === 'graphics-symbol' && attrOf(e, 'aria-label'))
+      return { kind: role || 'mark', ref: null, label: attrOf(e, 'aria-label'), via: 'chart datum', chainIndex: i };
+  }
+  return null;
+}
+
+// Block adapter: tables. The block stamps row/column labels on every cell.
+function tableAdapter(snap) {
+  const c = snap.chain;
+  for (let i = 0; i < c.length - 1; i++) {
+    const e = c[i];
+    if (attrOf(e, 'data-col') !== undefined) {
+      const row = attrOf(e, 'data-row-label'), col = attrOf(e, 'data-col-label');
+      if (e.tag === 'th') return { kind: 'column header', ref: null, label: col, via: 'table', chainIndex: i };
+      return { kind: 'cell', ref: `row "${row}", column "${col}"`, label: e.text, via: 'table', chainIndex: i };
+    }
+  }
+  return null;
+}
+
+// Generic layer: works for any HTML or SVG, including raw agent-written HTML.
+function genericIdentity(snap) {
+  const c = snap.chain, last = c.length - 1;
+  const autoId = id => !id || /^(mermaid|view_|flowsvg|m\d+$|q\d|vg)/i.test(id) || /\d{3,}/.test(id);
+  // 1. anything the author named on purpose
+  for (let i = 0; i < last; i++) {
+    const e = c[i];
+    if (attrOf(e, 'data-anchor')) return { kind: e.tag, ref: attrOf(e, 'data-anchor'), label: short(e.text, 60), via: 'data-anchor', chainIndex: i };
+    if (attrOf(e, 'id') && !autoId(attrOf(e, 'id'))) return { kind: e.tag, ref: attrOf(e, 'id'), label: short(e.text, 60), via: 'id', chainIndex: i };
+    if (attrOf(e, 'aria-label')) return { kind: attrOf(e, 'role') || e.tag, ref: null, label: attrOf(e, 'aria-label'), via: 'aria-label', chainIndex: i };
+    if (e.title) return { kind: e.tag, ref: null, label: e.title, via: 'title', chainIndex: i };
+  }
+  // 2. form controls describe themselves
+  const f = c[0];
+  if (['input', 'textarea', 'select'].includes(f.tag))
+    return { kind: f.tag === 'input' ? (attrOf(f, 'type') || 'text') + ' input' : f.tag, ref: attrOf(f, 'name') || null, label: attrOf(f, 'placeholder') || attrOf(f, 'value') || '', via: 'form control', chainIndex: 0 };
+  // 3. nothing named: the smallest enclosing element with short, readable text
+  //    (only close to the click: a far ancestor's text describes a whole group, not the spot)
+  for (let i = 0; i < Math.min(last, 3); i++) {
+    const e = c[i];
+    if (e.text && e.text.length <= 60 && !/^(svg|body|html)$/.test(e.tag)) return { kind: roleName(e), ref: null, label: e.text, via: 'text', chainIndex: i };
+  }
+  // 4. nothing near the click to name it by: an unlabeled shape, or empty space
+  const f0 = c[0];
+  if (f0 !== c[last] && !/^(svg|div|body|html|main|section)$/.test(f0.tag))
+    return { kind: 'unlabeled ' + roleName(f0), ref: null, label: '', via: 'position only', chainIndex: 0 };
+  return { kind: 'area', ref: null, label: '', via: 'position only', chainIndex: -1 };
+}
+function roleName(e) {
+  const r = attrOf(e, 'role');
+  if (r) return r;
+  return ({ button: 'button', a: 'link', input: 'input', li: 'list item', h1: 'heading', h2: 'heading', h3: 'heading', h4: 'heading', td: 'cell', th: 'header', label: 'label', text: 'text', tspan: 'text', g: 'shape group', rect: 'shape', circle: 'shape', path: 'shape', img: 'image' })[e.tag] || e.tag;
+}
+
+const ADAPTERS = { 'mermaid-flowchart': mermaidAdapter, 'mermaid-sequence': mermaidAdapter, 'vega-lite': vegaAdapter, table: tableAdapter };
+
+function resolveAnchor(snap, ctx) {
+  const adapter = ADAPTERS[ctx.kind];
+  const target = (adapter && adapter(snap)) || genericIdentity(snap);
+  const clicked = snap.chain[0];
+  const pointed = target.chainIndex >= 0 ? snap.chain[target.chainIndex] : null;
+  return {
+    question: ctx.question,
+    illustration: { id: ctx.illustration, kind: ctx.kind, title: ctx.title },
+    option: ctx.option || null,
+    target: { kind: target.kind, ref: target.ref, label: target.label, via: target.via, weak: target.via === 'position only' || (target.via === 'text' && target.chainIndex > 0) },
+    near: target.via === 'position only' || (target.via === 'text' && target.chainIndex > 0) ? nearestTexts(snap, 2, target.label) : [],
+    clicked: { tag: clicked.tag, role: attrOf(clicked, 'role') || null, text: short(clicked.text, 80) },
+    within: withinOf(snap, target.chainIndex),
+    selector: snap.selector,
+    position: { x: Math.round(100 * snap.click.x / Math.max(1, snap.root.w)), y: Math.round(100 * snap.click.y / Math.max(1, snap.root.h)) },
+    box: pointed ? pointed.box : null,
+  };
+}
+function nearestTexts(snap, k, skip) {
+  const d = b => { const dx = Math.max(b.x - snap.click.x, 0, snap.click.x - (b.x + b.w)), dy = Math.max(b.y - snap.click.y, 0, snap.click.y - (b.y + b.h)); return Math.hypot(dx, dy); };
+  const seen = new Set();
+  return (snap.texts || []).filter(t => t.box.w > 0 && t.text !== skip && (snap.clickSvg == null || snap.clickSvg < 0 || t.svg === snap.clickSvg)).map(t => ({ t: t.text, d: d(t.box) })).sort((a, b) => a.d - b.d)
+    .filter(x => !seen.has(x.t) && seen.add(x.t)).slice(0, k).map(x => x.t);
+}
+// For weakly-identified targets, the nearest named ancestor gives context ("inside the Storage section").
+function withinOf(snap, from) {
+  const c = snap.chain;
+  for (let i = Math.max(0, from) + 1; i < c.length - 1; i++) {
+    const e = c[i];
+    const name = attrOf(e, 'data-anchor') || attrOf(e, 'aria-label');
+    if (name) return name;
+  }
+  return null;
+}
+
+// How the anchor reads to the agent, given which details are switched on.
+function anchorLine(a, f) {
+  const where = [`Q${a.question}`, `${a.illustration.kind.replace(/^mermaid-/, '')} "${a.illustration.title}"`];
+  if (a.option) where.push(`option ${a.option.id} "${a.option.label}"`);
+  const t = a.target;
+  let what;
+  if (t.kind === 'area') what = 'empty area';
+  else what = t.kind + (t.ref ? ' ' + t.ref : '') + (t.label ? ` "${short(t.label, 70)}"` : '');
+  const extra = [];
+  if (t.weak) f = { ...f, clicked: true, position: true };
+  if (a.near && a.near.length) extra.push('near ' + a.near.map(n => `"${short(n, 30)}"`).join(', '));
+  if (f.within && a.within) extra.push(`inside "${a.within}"`);
+  if (f.clicked && t.kind !== 'area' && !t.kind.startsWith('unlabeled') && a.clicked.tag !== t.kind) extra.push(`clicked <${a.clicked.tag}${a.clicked.role ? ' role=' + a.clicked.role : ''}>` + (a.clicked.text && a.clicked.text !== t.label ? ` "${short(a.clicked.text, 40)}"` : ''));
+  if (f.via) extra.push(`matched by ${t.via}`);
+  if (f.position) extra.push(`at ${a.position.x}% across, ${a.position.y}% down`);
+  if (f.selector) extra.push(`selector ${a.selector || '(root)'}`);
+  return where.join(' · ') + ' → ' + what + (extra.length ? '  [' + extra.join('; ') + ']' : '');
+}
+
+// Page state: a small reducer.
+function initialState() {
+  return { comments: [], pending: null, images: {}, selected: null,
+    fields: { within: true, clicked: false, via: false, position: false, selector: false, image: false } };
+}
+function reduce(s, a) {
+  switch (a.type) {
+    case 'point': return { ...s, pending: { anchor: a.anchor, snapId: a.snapId, pin: a.pin } };
+    case 'cancel': return { ...s, pending: null };
+    case 'save': {
+      if (!s.pending || !a.text.trim()) return s;
+      const n = s.comments.length + 1;
+      return { ...s, pending: null, selected: n, comments: [...s.comments, { n, text: a.text.trim(), ...s.pending }] };
+    }
+    case 'image': return { ...s, images: { ...s.images, [a.snapId]: a.image } };
+    case 'select': return { ...s, selected: a.n };
+    case 'field': return { ...s, fields: { ...s.fields, [a.name]: !s.fields[a.name] } };
+    case 'reset': return { ...initialState(), fields: s.fields, images: s.images };
+  }
+  return s;
+}
+</script>
+
+<!-- ================================================================
+     THROWAWAY PAGE SHELL
+     ================================================================ -->
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@12/+esm';
+import vegaEmbed from 'https://cdn.jsdelivr.net/npm/vega-embed@7/+esm';
+import { domToCanvas } from 'https://cdn.jsdelivr.net/npm/modern-screenshot@4/+esm';
+
+// ---------- the round the agent wrote ----------
+const QUESTIONS = [
+  { n: 1, q: 'Where should the round server cache rendered round pages?', rec: 'Recommended: cache after rendering, invalidate on every new submission.',
+    illus: { id: 'request-path', kind: 'mermaid-flowchart', title: 'Request path', src:
+`flowchart LR
+  A[Browser asks for round] --> B{Cache hit?}
+  B -- yes --> C[Serve cached page]
+  B -- miss --> D[Render round page]
+  D --> E[(Store in cache)]
+  E --> C` } },
+  { n: 2, q: 'Who tells the agent that a round submission arrived?', rec: 'Recommended: the agent keeps re-calling await until the server answers.',
+    illus: { id: 'handshake', kind: 'mermaid-sequence', title: 'Submission handshake', src:
+`sequenceDiagram
+  participant A as Agent
+  participant S as Round server
+  participant U as User's browser
+  A->>S: await --timeout 120
+  U->>S: POST round submission
+  S-->>A: submission JSON
+  A->>U: open next round page` } },
+  { n: 3, q: 'Which runtime should the round server ship on?', rec: 'Recommended: Node, since it is already present for most agent installs.',
+    illus: { id: 'cold-start', kind: 'vega-lite', title: 'Cold start by runtime', spec: {
+      $schema: 'https://vega.github.io/schema/vega-lite/v6.json', width: 'container', height: 170,
+      data: { values: [ { runtime: 'Node', ms: 180 }, { runtime: 'Python', ms: 240 }, { runtime: 'Bun', ms: 60 }, { runtime: 'Deno', ms: 110 } ] },
+      mark: 'bar', encoding: { x: { field: 'runtime', type: 'nominal', sort: null }, y: { field: 'ms', type: 'quantitative', title: 'cold start (ms)' } } } } },
+  { n: 4, q: 'Which transport is the baseline?', rec: 'Recommended: local server; MCP wraps it later.',
+    illus: { id: 'transports', kind: 'table', title: 'Transports compared', table: {
+      cols: ['Transport', 'Works in any agent', 'Install', 'Wakes the agent'],
+      rows: [ ['Local server + await', 'yes', 'a runtime', 'agent re-calls await'], ['MCP server', 'most', 'MCP config', 'tool call returns'], ['MCP App view', 'no (not Claude Code CLI)', 'MCP config', 'ui/message'] ] } } },
+  { n: 5, q: 'Which round page layout?', rec: 'Recommended: A, cards stacked, because it reads top to bottom like the terminal.',
+    illus: { id: 'layouts', kind: 'options', title: 'Round page layouts', options: [
+      { id: 'A', label: 'Cards stacked', html:
+`<style>body{font:13px system-ui;margin:10px} .q{border:1px solid #ddd;border-radius:6px;padding:8px;margin-bottom:6px} .q b{display:block} button{margin-top:6px}</style>
+<div class="q"><b>1. Where should the cache live?</b><span>Recommended: after render</span><br><button>Accept</button> <button>Answer differently</button></div>
+<div class="q"><b>2. Who wakes the agent?</b><span>Recommended: re-call await</span></div>
+<button style="float:right">Submit round</button>` },
+      { id: 'B', label: 'Two-pane', html:
+`<style>body{font:13px system-ui;margin:10px;display:flex;gap:8px} nav{width:38%;border-right:1px solid #ddd} nav div{padding:4px 6px;border-radius:4px} nav .on{background:rgba(127,127,127,.2)} main{flex:1}</style>
+<nav><div class="on">1. Cache</div><div>2. Wake-up</div><div>3. Runtime</div></nav>
+<main><b>Where should the cache live?</b><p>Recommended: after render</p><input placeholder="Your answer"><br><br><button>Next question</button></main>` } ] } },
+  { n: 6, q: 'Where do round files live on disk?', rec: 'Recommended: a session folder under the OS temp dir, removed when the session ends.',
+    illus: { id: 'storage-sketch', kind: 'html', title: 'Storage sketch (raw agent HTML)', html:
+`<style>body{font:13px system-ui;margin:10px} .legend{display:flex;gap:10px;margin-top:6px} .legend div{padding:2px 8px;border-radius:10px;background:#eef} ul{margin:6px 0;padding-left:18px}</style>
+<svg width="460" height="120" viewBox="0 0 460 120">
+  <g><rect x="10" y="30" width="110" height="50" rx="6" fill="#e8f0fe" stroke="#88a"/><text x="65" y="60" text-anchor="middle">Browser</text></g>
+  <g><rect x="175" y="30" width="110" height="50" rx="6" fill="#fef3e8" stroke="#a86"/><text x="230" y="60" text-anchor="middle">Round server</text></g>
+  <g><rect x="340" y="10" width="110" height="40" rx="6" fill="#eef7ee" stroke="#6a6"/><text x="395" y="35" text-anchor="middle">rounds/</text></g>
+  <g><rect x="340" y="68" width="110" height="40" rx="6" fill="#eef7ee" stroke="#6a6"/><text x="395" y="93" text-anchor="middle">submissions/</text></g>
+  <path d="M120 55 H175" stroke="#555" marker-end="url(#ar)"/><path d="M285 50 L340 30 M285 60 L340 88" stroke="#555"/>
+  <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#555"/></marker></defs>
+</svg>
+<ul>
+  <li data-anchor="cleanup">Deleted when the session ends</li>
+  <li>One folder per session, named by start time</li>
+</ul>
+<div class="legend"><div>temp dir</div><div data-anchor="kept-files">kept after session</div></div>` } },
+];
+
+// ---------- state ----------
+let state = initialState();
+const snaps = {};          // snapId -> { snap(with els), rootEl, ctx }
+function dispatch(action) { state = reduce(state, action); render(); }
+
+// ---------- illustrations ----------
+const DARK = document.documentElement.dataset.theme === 'dark';
+const themeBtn = document.getElementById('theme');
+themeBtn.textContent = DARK ? '☀ Light' : '☾ Dark';
+themeBtn.onclick = () => { const u = new URL(location.href); u.searchParams.set('theme', DARK ? 'light' : 'dark'); location.href = u; };
+const BG = getComputedStyle(document.documentElement).getPropertyValue('--panel').trim();
+mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: DARK ? 'dark' : 'neutral' });
+const cardsEl = document.getElementById('cards');
+const frameCtx = new Map();  // iframe contentWindow -> { ctx, iframe, bodyEl }
+
+const FRAME_SCRIPT = `
+${takeSnapshot}\n${visibleText}\n${nthOfKind}\n${cssPath}\n${attrOf}\n${short}\n${genericIdentity}\n${roleName}
+let mode = true, seq = 0;
+const hl = document.createElement('div');
+hl.style.cssText = 'position:absolute;pointer-events:none;border:2px solid #d9480f;background:rgba(217,72,15,.08);border-radius:3px;display:none;z-index:9';
+document.body.appendChild(hl);
+function show(box) { if (!box) { hl.style.display = 'none'; return; } Object.assign(hl.style, { display: 'block', left: box.x - 2 + 'px', top: box.y - 2 + 'px', width: box.w + 4 + 'px', height: box.h + 4 + 'px' }); }
+function snapAt(el, x, y) { const s = takeSnapshot(el, document.documentElement, x, y); const hit = genericIdentity(s); return { s, hit }; }
+document.addEventListener('mousemove', e => { if (!mode || e.target === hl) return show(null); const { s, hit } = snapAt(e.target, e.clientX, e.clientY); show(hit.chainIndex >= 0 ? s.chain[hit.chainIndex].box : null); });
+document.addEventListener('mouseleave', () => show(null));
+document.addEventListener('click', e => { if (!mode) return; e.preventDefault(); e.stopPropagation(); fire(e.target, e.clientX, e.clientY); }, true);
+async function fire(el, x, y, autoText) {
+  const { s, hit } = snapAt(el, x, y); const id = 'f' + Math.random().toString(36).slice(2, 8);
+  delete s.els;
+  parent.postMessage({ type: 'snap', snapId: id, snapshot: s, clientX: x, clientY: y, autoText }, '*');
+  show(null);
+  try {
+    // modern-screenshot needs a helper iframe, which a sandbox blocks; html-to-image does not
+    const { toCanvas } = await import('https://cdn.jsdelivr.net/npm/html-to-image@1/+esm');
+    const canvas = await toCanvas(document.documentElement, { pixelRatio: 1, backgroundColor: getComputedStyle(document.body).backgroundColor, filter: n => n !== hl });
+    parent.postMessage({ type: 'img', snapId: id, canvasUrl: canvas.toDataURL('image/png'), box: hit.chainIndex >= 0 ? s.chain[hit.chainIndex].box : null, click: s.click }, '*');
+  } catch (err) { parent.postMessage({ type: 'img', snapId: id, error: String(err) }, '*'); }
+}
+addEventListener('message', e => {
+  const m = e.data || {};
+  if (m.type === 'mode') { mode = m.on; show(null); }
+  if (m.type === 'simulate') { const el = document.querySelector(m.selector); if (!el) return; const r = el.getBoundingClientRect(); fire(el, r.left + r.width / 2, r.top + r.height / 2, m.text); }
+});
+`;
+
+function frameDoc(html) {
+  return `<!doctype html><html><head><meta charset="utf-8"><style>:root{color-scheme:${DARK ? 'dark' : 'light'}} body{background:${BG};color:${DARK ? '#ebe8e1' : '#1d1d1b'}}</style></head><body>${html}<script>${FRAME_SCRIPT}<\/script></body></html>`;
+}
+
+async function buildCards() {
+  for (const Q of QUESTIONS) {
+    const card = document.createElement('section');
+    card.className = 'card';
+    card.innerHTML = `<h3><span class="qnum">Q${Q.n}</span>${Q.q}</h3><p class="rec">${Q.rec}</p>
+      <div class="illus" data-q="${Q.n}"><div class="illus-title">Illustration · ${Q.illus.title}</div><div class="illus-body"></div></div>
+      <details class="src"><summary>What the agent wrote for this illustration</summary><pre></pre></details>`;
+    cardsEl.appendChild(card);
+    const body = card.querySelector('.illus-body');
+    const I = Q.illus;
+    const ctx = { question: Q.n, illustration: I.id, kind: I.kind, title: I.title };
+    body._ctx = ctx;
+    let src;
+    if (I.kind.startsWith('mermaid')) {
+      src = I.src;
+      const { svg } = await mermaid.render('m' + Q.n, I.src);
+      body.innerHTML = svg;
+    } else if (I.kind === 'vega-lite') {
+      src = JSON.stringify(I.spec, null, 2);
+      await vegaEmbed(body, I.spec, { renderer: 'svg', actions: false, theme: DARK ? 'dark' : undefined, config: { background: 'transparent' } });
+    } else if (I.kind === 'table') {
+      src = JSON.stringify(I.table, null, 2);
+      const t = I.table;
+      body.innerHTML = `<table class="block"><thead><tr>${t.cols.map((c, j) => `<th data-row="0" data-col="${j}" data-col-label="${c}">${c}</th>`).join('')}</tr></thead>
+        <tbody>${t.rows.map((r, i) => `<tr>${r.map((v, j) => `<td data-row="${i + 1}" data-col="${j}" data-row-label="${r[0]}" data-col-label="${t.cols[j]}">${v}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    } else if (I.kind === 'options') {
+      src = I.options.map(o => `<!-- option ${o.id}: ${o.label} -->\n${o.html}`).join('\n\n');
+      body.innerHTML = `<div class="options">${I.options.map(o => `<div class="option-card" data-option="${o.id}"><div class="ohead" data-anchor="option-${o.id}">Option ${o.id} · ${o.label}</div></div>`).join('')}</div>`;
+      I.options.forEach((o, k) => {
+        const f = document.createElement('iframe');
+        f.setAttribute('sandbox', 'allow-scripts');
+        f.srcdoc = frameDoc(o.html);
+        body.querySelectorAll('.option-card')[k].appendChild(f);
+        frameCtx.set(f, { ctx: { ...ctx, option: { id: o.id, label: o.label } }, body });
+      });
+    } else if (I.kind === 'html') {
+      src = I.html;
+      const f = document.createElement('iframe');
+      f.className = 'raw';
+      f.setAttribute('sandbox', 'allow-scripts');
+      f.srcdoc = frameDoc(I.html);
+      body.appendChild(f);
+      frameCtx.set(f, { ctx, body });
+    }
+    card.querySelector('pre').textContent = src;
+    const layer = document.createElement('div');
+    layer.className = 'ov-layer';
+    body.appendChild(layer);
+  }
+}
+
+// ---------- pointing in the page (non-iframe illustrations) ----------
+const hl = document.createElement('div');
+hl.className = 'ov hl';
+function illusBodyOf(el) { return el && el.closest && el.closest('.illus-body'); }
+function showHl(body, box, area) {
+  if (!body || !box) { hl.remove(); return; }
+  body.appendChild(hl);
+  hl.classList.toggle('area', !!area);
+  Object.assign(hl.style, { left: box.x - 2 + 'px', top: box.y - 2 + 'px', width: box.w + 4 + 'px', height: box.h + 4 + 'px' });
+}
+function ctxFor(el, body) {
+  const card = el.closest && el.closest('.option-card');
+  const ctx = { ...body._ctx };
+  if (card) { const o = QUESTIONS.find(q => q.n === ctx.question).illus.options.find(o => o.id === card.dataset.option); ctx.option = { id: o.id, label: o.label }; }
+  return ctx;
+}
+cardsEl.addEventListener('mousemove', e => {
+  const body = illusBodyOf(e.target);
+  if (!modeOn() || !body || e.target.tagName === 'IFRAME' || state.pending) return showHl(null);
+  const snap = takeSnapshot(e.target, body, e.clientX, e.clientY);
+  const a = resolveAnchor(snap, ctxFor(e.target, body));
+  showHl(body, a.box || { x: snap.click.x - 12, y: snap.click.y - 12, w: 24, h: 24 }, !a.box);
+});
+cardsEl.addEventListener('mouseleave', () => showHl(null));
+cardsEl.addEventListener('click', e => {
+  const body = illusBodyOf(e.target);
+  if (!modeOn() || !body || e.target.tagName === 'IFRAME') return;
+  e.preventDefault();
+  pointAt(e.target, body, e.clientX, e.clientY);
+}, true);
+
+function pointAt(el, body, x, y, autoText) {
+  const snap = takeSnapshot(el, body, x, y);
+  const ctx = ctxFor(el, body);
+  const a = resolveAnchor(snap, ctx);
+  const snapId = 'p' + Math.random().toString(36).slice(2, 8);
+  snaps[snapId] = { body };
+  showHl(null);
+  dispatch({ type: 'point', anchor: a, snapId, pin: { q: ctx.question, x: snap.click.x, y: snap.click.y } });
+  openPopover(x + scrollX, y + scrollY, a, autoText);
+  capture(body, a.box, snap.click).then(image => dispatch({ type: 'image', snapId, image }));
+}
+
+// ---------- pointing inside sandboxed iframes ----------
+addEventListener('message', e => {
+  const entry = [...frameCtx.entries()].find(([f]) => f.contentWindow === e.source);
+  if (!entry) return;
+  const [iframe, { ctx, body }] = entry;
+  const m = e.data;
+  if (m.type === 'snap') {
+    const a = resolveAnchor(m.snapshot, ctx);
+    const fr = iframe.getBoundingClientRect(), br = body.getBoundingClientRect();
+    dispatch({ type: 'point', anchor: a, snapId: m.snapId, pin: { q: ctx.question, x: fr.left - br.left + m.clientX, y: fr.top - br.top + m.clientY } });
+    openPopover(fr.left + m.clientX + scrollX, fr.top + m.clientY + scrollY, a, m.autoText);
+  }
+  if (m.type === 'img') {
+    if (m.error) return dispatch({ type: 'image', snapId: m.snapId, image: { error: m.error } });
+    const img = new Image();
+    img.onload = () => { const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; c.getContext('2d').drawImage(img, 0, 0); dispatch({ type: 'image', snapId: m.snapId, image: crop(c, m.box, m.click) }); };
+    img.src = m.canvasUrl;
+  }
+});
+function modeOn() { return document.getElementById('mode').checked; }
+document.getElementById('mode').addEventListener('change', () => {
+  document.body.classList.toggle('commenting', modeOn());
+  for (const f of frameCtx.keys()) f.contentWindow.postMessage({ type: 'mode', on: modeOn() }, '*');
+});
+document.body.classList.add('commenting');
+
+// ---------- picture of the clicked area ----------
+async function capture(body, box, click) {
+  try {
+    const canvas = await domToCanvas(body, { scale: 1, backgroundColor: BG, filter: n => !(n.classList && (n.classList.contains('ov') || n.classList.contains('ov-layer'))) });
+    return crop(canvas, box, click);
+  } catch (err) { return { error: String(err) }; }
+}
+function crop(canvas, box, click) {
+  const pad = 28;
+  let x0 = Math.min(box ? box.x : click.x, click.x) - pad, y0 = Math.min(box ? box.y : click.y, click.y) - pad;
+  let x1 = Math.max(box ? box.x + box.w : click.x, click.x) + pad, y1 = Math.max(box ? box.y + box.h : click.y, click.y) + pad;
+  if (x1 - x0 < 200) { const d = (200 - (x1 - x0)) / 2; x0 -= d; x1 += d; }
+  if (y1 - y0 < 110) { const d = (110 - (y1 - y0)) / 2; y0 -= d; y1 += d; }
+  x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(canvas.width, x1); y1 = Math.min(canvas.height, y1);
+  const w = Math.round(x1 - x0), h = Math.round(y1 - y0);
+  const out = document.createElement('canvas'); out.width = w; out.height = h;
+  const g = out.getContext('2d');
+  g.drawImage(canvas, x0, y0, w, h, 0, 0, w, h);
+  g.strokeStyle = '#d9480f'; g.lineWidth = 2;
+  if (box) g.strokeRect(box.x - x0 - 2, box.y - y0 - 2, box.w + 4, box.h + 4);
+  g.fillStyle = '#d9480f'; g.beginPath(); g.arc(click.x - x0, click.y - y0, 4, 0, 7); g.fill();
+  const url = out.toDataURL('image/png');
+  return { url, w, h, kb: Math.round(url.length * 0.75 / 1024), tokens: Math.round(w * h / 750) };
+}
+
+// ---------- comment popover ----------
+let pop;
+function openPopover(x, y, a, autoText) {
+  pop && pop.remove();
+  pop = document.createElement('div');
+  pop.className = 'pop';
+  pop.innerHTML = `<div class="chip"></div><textarea placeholder="Your comment on this spot…"></textarea>
+    <div class="row"><button data-act="cancel">Cancel</button><button class="primary" data-act="save">Comment</button></div>`;
+  pop.querySelector('.chip').textContent = anchorLine(a, {});
+  const left = Math.min(x + 12, scrollX + innerWidth - 360);
+  Object.assign(pop.style, { left: left + 'px', top: y + 12 + 'px' });
+  document.body.appendChild(pop);
+  const ta = pop.querySelector('textarea');
+  ta.focus();
+  const close = act => { if (act === 'save') dispatch({ type: 'save', text: ta.value }); else dispatch({ type: 'cancel' }); pop.remove(); pop = null; };
+  pop.addEventListener('click', e => e.target.dataset.act && close(e.target.dataset.act));
+  const me = pop;
+  if (autoText) { ta.value = autoText; setTimeout(() => pop === me && close('save'), 500); }
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); close('save'); } if (e.key === 'Escape') close('cancel'); });
+  return { save: () => close('save') };
+}
+
+// ---------- side panel ----------
+const FIELDS = [
+  ['within', 'Named container it sits in'], ['clicked', 'The exact element clicked'], ['via', 'How it was matched'],
+  ['position', 'Click position (%)'], ['selector', 'CSS selector'], ['image', 'Picture of the area'],
+];
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+function render() {
+  // pins
+  document.querySelectorAll('.pin').forEach(p => p.remove());
+  for (const c of state.comments) {
+    const body = document.querySelector(`.illus[data-q="${c.pin.q}"] .illus-body`);
+    const p = document.createElement('div');
+    p.className = 'ov pin' + (c.n === state.selected ? ' sel' : '');
+    p.textContent = c.n;
+    Object.assign(p.style, { left: c.pin.x + 'px', top: c.pin.y + 'px' });
+    body.appendChild(p);
+  }
+  // agent view
+  const av = document.getElementById('agentview');
+  const c = state.comments.find(c => c.n === state.selected);
+  if (!c) av.innerHTML = '<p class="empty">Leave a comment on any illustration (or run a walkthrough) to see what the agent would read.</p>';
+  else {
+    const a = c.anchor, img = state.images[c.snapId];
+    av.innerHTML = `<div class="agentline">${esc(anchorLine(a, state.fields))}\n<span class="c">  “${esc(c.text)}”</span></div>
+      ${state.fields.image ? `<div class="crop">${!img ? '<div class="meta">Capturing picture…</div>' : img.error ? `<div class="meta">Picture failed: ${esc(img.error)}</div>` : `<img src="${img.url}"><div class="meta">${img.w}×${img.h}px · ${img.kb} KB · ≈${img.tokens} image tokens for the agent</div>`}</div>` : ''}
+      <dl class="kv">
+        <dt>Pointed at</dt><dd class="just">${esc(a.target.kind)}${a.target.ref ? ' ' + esc(a.target.ref) : ''}</dd>
+        <dt>Its label</dt><dd>${esc(a.target.label || '—')}</dd>
+        <dt>Matched by</dt><dd>${esc(a.target.via)}</dd>
+        <dt>Inside</dt><dd>${esc(a.within || '—')}</dd>
+        <dt>Near text</dt><dd>${esc((a.near || []).join(" · ") || "—")}</dd>
+        <dt>Clicked</dt><dd>&lt;${esc(a.clicked.tag)}&gt; ${esc(a.clicked.text || '')}</dd>
+        <dt>Position</dt><dd>${a.position.x}% across, ${a.position.y}% down</dd>
+        <dt>Selector</dt><dd>${esc(a.selector || '(root)')}</dd>
+      </dl>
+      <details class="src"><summary>Full anchor record (structured)</summary><pre>${esc(JSON.stringify(a, null, 2))}</pre></details>`;
+  }
+  // fields
+  document.getElementById('fields').innerHTML = FIELDS.map(([k, l]) => `<label><input type="checkbox" data-f="${k}" ${state.fields[k] ? 'checked' : ''}> ${l}</label>`).join('');
+  // submission
+  const sub = document.getElementById('submission');
+  if (!state.comments.length) sub.innerHTML = '<p class="empty">No anchored comments yet.</p>';
+  else sub.innerHTML = `<div class="agentline">${state.comments.map(c => `${c.n}. ${esc(anchorLine(c.anchor, state.fields))}\n<span class="c">   “${esc(c.text)}”</span>`).join('\n')}</div>`;
+  document.getElementById('clist').innerHTML = state.comments.map(c => `<button data-n="${c.n}" class="${c.n === state.selected ? 'sel' : ''}">#${c.n} · Q${c.anchor.question} · ${esc(c.text.slice(0, 50))}</button>`).join('');
+  renderScenario();
+}
+document.getElementById('fields').addEventListener('change', e => dispatch({ type: 'field', name: e.target.dataset.f }));
+document.getElementById('clist').addEventListener('click', e => e.target.dataset.n && dispatch({ type: 'select', n: +e.target.dataset.n }));
+document.getElementById('reset').addEventListener('click', () => { scenStep = 0; dispatch({ type: 'reset' }); });
+
+// ---------- guided walkthroughs ----------
+function inPage(q, selector, text) {
+  return () => {
+    const body = document.querySelector(`.illus[data-q="${q}"] .illus-body`);
+    const el = typeof selector === 'function' ? selector(body) : body.querySelector(selector);
+    if (!el) return alert('Could not find ' + selector);
+    el.scrollIntoView({ block: 'center' });
+    const r = el.getBoundingClientRect();
+    setTimeout(() => { const r2 = el.getBoundingClientRect(); pointAt(el, body, r2.left + r2.width / 2, r2.top + r2.height / 2, text); }, 250);
+  };
+}
+function blankSpot(q, fx, fy, text) {
+  return () => {
+    const body = document.querySelector(`.illus[data-q="${q}"] .illus-body`);
+    body.scrollIntoView({ block: 'center' });
+    setTimeout(() => {
+      const svg = body.querySelector('svg'), r = svg.getBoundingClientRect();
+      const x = r.left + r.width * fx, y = r.top + r.height * fy;
+      pointAt(document.elementFromPoint(x, y) || svg, body, x, y, text);
+     
+    }, 250);
+  };
+}
+function inFrame(q, optionIdx, selector, text) {
+  return () => {
+    const body = document.querySelector(`.illus[data-q="${q}"] .illus-body`);
+    const f = body.querySelectorAll('iframe')[optionIdx];
+    f.scrollIntoView({ block: 'center' });
+    setTimeout(() => f.contentWindow.postMessage({ type: 'simulate', selector, text }, '*'), 250);
+  };
+}
+const SCENARIOS = [
+  { name: 'Diagram node', text: 'A flowchart the agent wrote in Mermaid. Clicking a node or edge should come back as the ids the agent wrote (B, D → E), not the rendered SVG ids.', steps: [
+    ['Click the "Cache hit?" diamond', inPage(1, b => [...b.querySelectorAll('g.node')].find(g => /Cache hit/.test(g.textContent)), 'What about stale pages?')],
+    ['Click the arrow from Render to Store', inPage(1, b => b.querySelector('[data-id^="L_D_E"]'), 'Store before serving?')],
+    ['Click the "miss" edge label', inPage(1, b => [...b.querySelectorAll('g.edgeLabel')].find(g => /miss/.test(g.textContent)), 'Also on a stale hit')],
+    ['Click empty space in the diagram', blankSpot(1, 0.97, 0.08, 'Something missing up here')],
+  ] },
+  { name: 'Sequence message', text: 'The message text in a Mermaid sequence diagram has no id. The adapter matches it to its arrow, so the agent hears which message it is.', steps: [
+    ['Click the "POST round submission" text', inPage(2, b => [...b.querySelectorAll('.messageText')].find(t => /POST/.test(t.textContent)), 'Should this be a WebSocket?')],
+    ['Click the "Round server" box', inPage(2, b => [...b.querySelectorAll('[data-et="participant"]')].find(g => /Round server/.test(g.textContent)), 'Is this one process per session?')],
+  ] },
+  { name: 'Chart bar', text: 'A Vega-Lite chart rendered as SVG. Each bar carries its data point, so the agent gets "runtime: Bun; ms: 60" instead of coordinates.', steps: [
+    ['Click the Bun bar', inPage(3, b => [...b.querySelectorAll('[aria-roledescription="bar"]')].find(p => /Bun/.test(p.getAttribute('aria-label'))), 'Is Bun warm or cold here?')],
+    ['Click the "Python" axis label', inPage(3, b => [...b.querySelectorAll('text')].find(t => t.textContent === 'Python'), 'Which Python version?')],
+  ] },
+  { name: 'Table cell', text: 'A table block. Each cell knows its row and column name, so the comment reads like "row MCP server, column Install".', steps: [
+    ['Click "MCP config" in the MCP server row', inPage(4, 'td[data-row="2"][data-col="2"]', 'Plugins bundle this now')],
+    ['Click the "Wakes the agent" header', inPage(4, 'th[data-col="3"]', 'Rename to "How the agent hears back"')],
+  ] },
+  { name: 'Mockup (sandboxed)', text: 'Option mockups run in sandboxed iframes: the round page cannot see inside them, so the iframe describes the click itself and posts it back.', steps: [
+    ['Click "Submit round" in option A', inFrame(5, 0, 'button[style]', 'Should sit at the top too')],
+    ['Click the input in option B', inFrame(5, 1, 'input', 'Free text should be a textarea')],
+    ['Click the header of option B', inPage(5, '.option-card[data-option="B"] .ohead', 'I like this one best')],
+  ] },
+  { name: 'Raw HTML, no ids', text: 'Free-form agent HTML with a hand-drawn SVG and no ids. Only text and position are left; two list items carry a data-anchor the agent added on purpose.', steps: [
+    ['Click the "Round server" box (no id)', inFrame(6, 0, 'svg g:nth-of-type(2) rect', 'Show the port here')],
+    ['Click the arrow between boxes (no text)', inFrame(6, 0, 'svg path', 'Is this HTTP?')],
+    ['Click a list item with data-anchor', inFrame(6, 0, 'li[data-anchor="cleanup"]', 'What if the agent crashes?')],
+    ['Click a plain list item', inFrame(6, 0, 'li:nth-of-type(2)', 'Use the session id instead')],
+  ] },
+];
+let scenIdx = 0, scenStep = 0;
+function renderScenario() {
+  document.getElementById('tabs').innerHTML = SCENARIOS.map((s, i) => `<button data-i="${i}" class="${i === scenIdx ? 'on' : ''}">${s.name}</button>`).join('');
+  const s = SCENARIOS[scenIdx];
+  document.getElementById('scen').innerHTML = `<p>${s.text}</p><div class="steps">${s.steps.map(([l], i) => `<button data-s="${i}" class="${i < scenStep ? 'done' : i === scenStep ? 'next' : ''}">${i + 1}. ${l}</button>`).join('')}</div>`;
+}
+document.getElementById('tabs').addEventListener('click', e => { if (e.target.dataset.i) { scenIdx = +e.target.dataset.i; scenStep = 0; dispatch({ type: 'reset' }); } });
+document.getElementById('scen').addEventListener('click', e => { if (e.target.dataset.s !== undefined) { const i = +e.target.dataset.s; scenStep = i + 1; SCENARIOS[scenIdx].steps[i][1](); } });
+
+await buildCards();
+render();
+</script>
+</body>
+</html>
