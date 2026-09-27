@@ -2,7 +2,8 @@
 // page's round submission, and answers the CLI's control calls.
 //
 // Started by the CLI as `node server.mjs <session-dir>`. It binds 127.0.0.1 on
-// port 0 and writes server.json so the CLI can find it.
+// port 0 and writes server.json so the CLI can find it. It ends on `end` or
+// after the idle limit, deleting the session folder either way.
 
 import { readdirSync, readFileSync, rmSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
@@ -13,6 +14,7 @@ import type {
   AwaitRequest,
   AwaitResponse,
   PageEvents,
+  PingResponse,
   PresentRequest,
   PresentResponse,
 } from '../core/protocol.ts';
@@ -25,6 +27,7 @@ import {
   type SubmissionRecord,
 } from '../core/submission.ts';
 import { BASE_HEADERS, guardRequest, ROUND_PAGE_HEADERS } from './guards.ts';
+import { idleLimitMs, watchIdle } from './idle.ts';
 import { pageRound } from './render.ts';
 
 const MAX_BODY = 1024 * 1024;
@@ -51,6 +54,12 @@ const waiters = new Set<Waiter>();
 const eventClients = new Set<ServerResponse>();
 let port = 0;
 let ending = false;
+/** When this process started: with the pid, it tells this server from a reused pid. */
+const startTime = Math.round(performance.timeOrigin);
+
+// A waiting `await` is activity; an open event stream alone is not, so a
+// forgotten tab doesn't keep the server running.
+const idle = watchIdle(idleLimitMs(), () => waiters.size > 0, () => shutdown('idle'));
 
 loadSession();
 
@@ -85,19 +94,24 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   const route = new URL(req.url ?? '/', 'http://127.0.0.1').pathname;
   const rejection = guardRequest(req, route, port);
   if (rejection) return sendJson(res, rejection.status, { error: rejection.error });
+  // Every accepted CLI call and page request counts as activity, except ping:
+  // other sessions' sweeps ping this server, and that mustn't keep it alive.
+  if (route !== '/control/ping') idle.touch();
 
   if (route.startsWith('/control/')) {
     const body = await readJson(req);
     switch (route) {
-      case '/control/ping':
-        return sendJson(res, 200, { pid: process.pid });
+      case '/control/ping': {
+        const identity: PingResponse = { pid: process.pid, startTime };
+        return sendJson(res, 200, identity);
+      }
       case '/control/present':
         return present(res, body as PresentRequest);
       case '/control/await':
         return awaitRound(req, res, body as AwaitRequest);
       case '/control/end':
         sendJson(res, 200, {});
-        res.on('finish', shutdown);
+        res.on('finish', () => shutdown('end'));
         return;
     }
     return sendJson(res, 404, { error: 'no such route' });
@@ -113,13 +127,19 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       const n = roundRoute[1] === 'latest' ? latest : Number(roundRoute[1]);
       const round = rounds.get(n);
       if (!round) return sendJson(res, 404, { error: 'no such round' });
-      return sendJson(res, 200, pageRound(n, round, records.get(n)));
+      return sendJson(res, 200, pageRound(n, round, records.get(n), answeredInTerminal(n)));
     }
   }
 
   const submitRoute = /^\/api\/rounds\/(\d+)\/submission$/.exec(route);
   if (submitRoute && req.method === 'POST') {
     return submit(res, Number(submitRoute[1]), (await readJson(req)) as PageSubmission);
+  }
+
+  // The guard already checked it's a page write; being here was the activity.
+  if (route === '/api/activity' && req.method === 'POST') {
+    await readJson(req);
+    return sendJson(res, 200, {});
   }
 
   sendJson(res, 404, { error: 'not found' });
@@ -129,12 +149,12 @@ function present(res: ServerResponse, body: PresentRequest): void {
   const parsed = parseRound(String(body.source ?? ''));
   if (!parsed.ok) return sendJson(res, 422, { errors: parsed.errors });
 
+  // A new round means the user answered the open one in the terminal.
+  closeOpenRound();
   const n = latest + 1;
   writePrivateFile(paths.round(n), body.source);
   rounds.set(n, parsed.round);
   latest = n;
-  // A new round means the user answered the open one in the terminal.
-  supersedeWaiters();
   broadcast('round', { round: n });
   const response: PresentResponse = { round: n, url: `http://127.0.0.1:${port}/` };
   sendJson(res, 200, response);
@@ -172,6 +192,7 @@ function submit(res: ServerResponse, n: number, body: PageSubmission): void {
   const round = rounds.get(n);
   if (!round) return sendJson(res, 404, { error: 'no such round' });
   if (records.has(n)) return sendJson(res, 409, { error: `round ${n} was already submitted` });
+  if (answeredInTerminal(n)) return sendJson(res, 409, { error: `round ${n} was answered in the terminal` });
 
   let record: SubmissionRecord;
   try {
@@ -187,7 +208,23 @@ function submit(res: ServerResponse, n: number, body: PageSubmission): void {
   sendJson(res, 200, {});
 }
 
-function supersedeWaiters(): void {
+/**
+ * A round without a submission was answered in the terminal once a later
+ * round closed it. Derived rather than saved, so a restarted server gets the
+ * same answer from the files. (`end` closes the latest round too, but the
+ * server exits right after, so only the page hears about that.)
+ */
+function answeredInTerminal(n: number): boolean {
+  return unsubmitted(n) && n < latest;
+}
+
+function unsubmitted(n: number): boolean {
+  return rounds.has(n) && !records.has(n);
+}
+
+/** Marks the open round answered in the terminal and releases every `await` on it. */
+function closeOpenRound(): void {
+  if (unsubmitted(latest)) broadcast('terminal', { round: latest });
   for (const waiter of [...waiters]) {
     waiter.settle({ outcome: 'superseded', text: `superseded · round ${waiter.round} answered in the terminal` });
   }
@@ -221,11 +258,13 @@ function broadcast<E extends keyof PageEvents>(event: E, data: PageEvents[E]): v
 
 // -------------------------------------------------------------- shutdown
 
-function shutdown(): void {
+function shutdown(reason: 'end' | 'idle'): void {
   if (ending) return;
   ending = true;
-  // `end` closes the open round the same way a new round does.
-  supersedeWaiters();
+  if (reason === 'end') {
+    // `end` closes the open round the same way a new round does.
+    closeOpenRound();
+  }
   broadcast('finished', {});
   for (const client of eventClients) client.end();
   rmSync(paths.dir, { recursive: true, force: true });
@@ -300,6 +339,6 @@ function sendFile(res: ServerResponse, name: string, headers = BASE_HEADERS): vo
 
 server.listen(0, '127.0.0.1', () => {
   port = (server.address() as AddressInfo).port;
-  const info: ServerInfo = { port, pid: process.pid, startTime: Math.round(performance.timeOrigin) };
+  const info: ServerInfo = { port, pid: process.pid, startTime };
   writePrivateFile(paths.serverJson, `${JSON.stringify(info)}\n`);
 });

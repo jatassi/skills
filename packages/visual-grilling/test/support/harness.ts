@@ -146,6 +146,12 @@ export function isAlive(pid: number): boolean {
   }
 }
 
+/** Kills a process the way a crash would, and waits until it is gone. */
+export async function crash(pid: number): Promise<void> {
+  process.kill(pid, 'SIGKILL');
+  await waitFor(() => !isAlive(pid));
+}
+
 export async function waitFor(check: () => boolean, ms = 5_000): Promise<void> {
   const deadline = Date.now() + ms;
   while (!check()) {

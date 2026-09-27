@@ -183,3 +183,14 @@ textarea {
 .options li > .illustration {
   margin: 4px 0 0;
 }
+
+.notice {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 12px;
+}
+
+.notice.stopped {
+  border-color: var(--unsure);
+}
