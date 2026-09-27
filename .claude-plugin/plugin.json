@@ -1,6 +1,6 @@
 {
   "name": "jatassi-skills",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Skills for grilling plans with an agent stand-in, turning them into specs and tickets, and orchestrating implementation loops.",
   "author": {
     "name": "Jackson Atassi",
