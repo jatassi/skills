@@ -70,9 +70,9 @@ describe('the table adapter', () => {
     expect(line(snapshot, TABLE, tableAnchor)).toBe('table "Compare" → cell row "CLI", column "Install"');
   });
 
-  it('names a first-column cell by its row', () => {
+  it('names a first-column cell by its row and column too', () => {
     const snapshot = snap([cell('MCP server', 0, 'Tool'), tr('MCP server'), { tag: 'tbody' }, { tag: 'table' }]);
-    expect(line(snapshot, TABLE, tableAnchor)).toBe('table "Compare" → row "MCP server"');
+    expect(line(snapshot, TABLE, tableAnchor)).toBe('table "Compare" → cell row "MCP server", column "Tool"');
   });
 
   it('names a header cell by its column', () => {

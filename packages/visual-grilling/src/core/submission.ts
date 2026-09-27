@@ -238,14 +238,11 @@ function readComment(raw: unknown, question: Question, index: number): CommentRe
     subject = { option: letter };
   } else {
     const id = field(record(input.illustration)?.id, 'illustration.id', 100);
-    const illustration = question.illustrations.find((candidate) => candidate.id === id);
-    if (!illustration) fail(`Q${question.number} has no illustration "${id}"`);
+    const illustration =
+      question.illustrations.find((candidate) => candidate.id === id) ??
+      fail(`Q${question.number} has no illustration "${id}"`);
     subject = {
-      illustration: {
-        id,
-        kind: illustration!.kind,
-        ...(illustration!.title ? { title: illustration!.title } : {}),
-      },
+      illustration: { id, kind: illustration.kind, ...(illustration.title ? { title: illustration.title } : {}) },
     };
   }
 

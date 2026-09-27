@@ -127,8 +127,8 @@ const KIND_NOUN: Record<string, string> = { 'vega-lite': 'chart' };
 /**
  * How the anchor reads to the agent: `table "Compare" → cell row "MCP server",
  * column "Install"`. A weak match adds, in brackets, the element clicked, the
- * named container, the nearest text, the position and the crop, if any. The
- * selector stays in the record only.
+ * nearest text, the position and the crop, if any. The named container and
+ * the selector stay in the record only.
  */
 export function anchorLine(anchor: Anchor, crop?: string): string {
   const where = anchor.option
@@ -154,7 +154,6 @@ function weakDetail(anchor: Anchor, crop: string | undefined): string {
     if (clicked.text && clicked.text !== anchor.target.label) element += ` ${quote(short(clicked.text, 40))}`;
     parts.push(element);
   }
-  if (anchor.within) parts.push(`inside ${quote(anchor.within)}`);
   if (anchor.near.length > 0) parts.push(`near ${anchor.near.map((text) => quote(short(text, 30))).join(', ')}`);
   parts.push(`at ${anchor.position.x}% across, ${anchor.position.y}% down`);
   if (crop) parts.push(`crop ${crop}`);

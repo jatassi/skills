@@ -60,7 +60,7 @@ function uniqueLabels(texts: string[], mark: string): string[] {
   });
 }
 
-/** Header cells name their column, first-column cells their row, and any other cell both. */
+/** A body cell names its row and column, a header cell its column, and the gap between cells its row. */
 export function tableAnchor(snapshot: Snapshot): AdapterMatch | null {
   const { chain } = snapshot;
   for (let i = 0; i < chain.length - 1; i++) {
@@ -71,7 +71,6 @@ export function tableAnchor(snapshot: Snapshot): AdapterMatch | null {
       return { kind: 'column', ref: null, label: column, via: 'table', chainIndex: i };
     }
     if (tag === 'td' && row !== undefined && column !== undefined) {
-      if (attrs['data-col'] === '0') return { kind: 'row', ref: null, label: row, via: 'table', chainIndex: i };
       return {
         kind: 'cell',
         ref: `row ${JSON.stringify(row)}, column ${JSON.stringify(column)}`,

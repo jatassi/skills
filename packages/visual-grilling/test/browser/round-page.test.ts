@@ -221,7 +221,7 @@ Q6 Retry policy · accepted
     await compare.getByRole('button', { name: 'Delete comment 2' }).click();
     await pageExpect(pins).toHaveText(['1']);
     await compare.getByRole('cell', { name: 'CLI' }).click();
-    await compare.getByRole('textbox', { name: 'Comment on row "CLI"' }).fill('brew only');
+    await compare.getByRole('textbox', { name: 'Comment on cell row "CLI", column "Tool"' }).fill('brew only');
     await compare.getByRole('button', { name: 'Add comment' }).click();
 
     // Comments go with any answer mode: accept Q1 too.
@@ -245,7 +245,7 @@ Q6 Retry policy · accepted
     expect(result.stdout).toContain(`Q1 Install path
    accepted: The MCP server.
    comment 1 · table "Compare" → cell row "MCP server", column "Install": "does this need Node?"
-   comment 2 · table "Compare" → row "CLI": "brew only"
+   comment 2 · table "Compare" → cell row "CLI", column "Tool": "brew only"
 Q2 Costs
    comments only, no verdict
    comment 1 · table "costs" → cell row "Team", column "Price": "per seat?"
