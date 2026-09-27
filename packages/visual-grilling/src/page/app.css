@@ -6,7 +6,7 @@
  * amber unsure. Dark is the default; light is the same roles on white.
  *
  * The tokens below are the page's one theme: blocks that draw with page
- * colours read them from :root by name (the Mermaid block reads canvas, panel,
+ * colours read them from :root by name (the Mermaid and dot blocks read canvas, panel,
  * line, fg, muted, accent, answered, unsure and risk), and redraw when
  * data-theme flips.
  */
@@ -1340,15 +1340,15 @@ textarea[readonly] {
 /* Capped at min(50vh, 440px) when well over it, with a fade. The block caps
    itself, so its frame's stage doesn't. */
 
-.kind-mermaid .stage {
+:is(.kind-mermaid, .kind-dot) .stage {
   max-height: none;
 }
 
-.kind-mermaid .block-content {
+:is(.kind-mermaid, .kind-dot) .block-content {
   width: auto;
 }
 
-.mermaid-block {
+.diagram-block {
   padding: 16px;
 }
 

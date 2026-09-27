@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { postJson, rawRequest, Sandbox, STORAGE_ROUND, type RawResponse } from '../support/harness.ts';
 
 const ROUND_PAGE_CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
+  "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
   "connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
 const SUBMISSION = JSON.stringify({ round: 1, answers: [{ question: 1, mode: 'accepted' }] });

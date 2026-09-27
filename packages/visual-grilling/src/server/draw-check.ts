@@ -4,24 +4,42 @@
 //
 // Mermaid needs a DOM, so the server installs jsdom globals and size shims and
 // then imports the page's own chunk (page/mermaid.js). The import is lazy and
-// kept warm for the rest of the grilling session.
+// kept warm for the rest of the grilling session. Other kinds' checks live in
+// their own modules (dot-check.ts) and are dispatched from `drawers`.
 
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type * as MermaidChunk from '../chunks/mermaid.ts';
 import type { Illustration, Round, RoundError } from '../core/round.ts';
 import { installDomGlobals } from './dom-shim.ts';
+import { DotCheck } from './dot-check.ts';
 import { explainMermaidFailure } from './mermaid-explain.ts';
+
+/** Why a block failed the check, and the line of its source to point at. */
+export interface DrawFailure {
+  message: string;
+  sourceLine?: number;
+}
 
 export class DrawCheck {
   private mermaid: Promise<typeof MermaidChunk> | undefined;
   private drawn = 0;
+  private readonly dot: DotCheck;
 
-  constructor(private readonly pageDir: string) {}
+  constructor(private readonly pageDir: string) {
+    this.dot = new DotCheck(pageDir);
+  }
+
+  /** The check for each kind that has one. */
+  private readonly drawers: Partial<Record<Illustration['kind'], (illustration: Illustration) => Promise<DrawFailure | undefined>>> = {
+    mermaid: (illustration) => this.drawMermaid(illustration),
+    dot: (illustration) => this.dot.draw(illustration),
+  };
 
   /** Starts loading the drawing libraries so the first `present` doesn't wait on them. */
   warm(): void {
     void this.loadMermaid().catch(() => undefined);
+    this.dot.warm();
   }
 
   /** Draws every block in the round; returns one error per block that fails. */
@@ -29,8 +47,7 @@ export class DrawCheck {
     const errors: RoundError[] = [];
     for (const question of round.questions) {
       for (const illustration of question.illustrations) {
-        if (illustration.kind !== 'mermaid') continue;
-        const failure = await this.drawMermaid(illustration);
+        const failure = await this.drawers[illustration.kind]?.(illustration);
         if (!failure) continue;
         errors.push({
           line: illustration.line + (failure.sourceLine ?? 0),
@@ -55,7 +72,7 @@ export class DrawCheck {
     return this.mermaid;
   }
 
-  private async drawMermaid(illustration: Illustration): Promise<{ message: string; sourceLine?: number } | undefined> {
+  private async drawMermaid(illustration: Illustration): Promise<DrawFailure | undefined> {
     let chunk: typeof MermaidChunk;
     try {
       chunk = await this.loadMermaid();
