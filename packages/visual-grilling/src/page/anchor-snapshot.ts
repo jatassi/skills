@@ -23,7 +23,7 @@ export function takeSnapshot(target: Element, root: Element, clientX: number, cl
   });
 
   const chain: SnapshotElement[] = [];
-  for (let element: Element | null = target; element; element = element.parentElement) {
+  for (let element: Element | null = target; element; element = parentOf(element)) {
     const titleChild = [...element.children].find((child) => child.tagName.toLowerCase() === 'title');
     chain.push({
       tag: element.tagName.toLowerCase(),
@@ -66,6 +66,13 @@ export function takeSnapshot(target: Element, root: Element, clientX: number, cl
   };
 }
 
+/** The parent element, crossing out of a shadow root to its host. */
+function parentOf(element: Element): Element | null {
+  if (element.parentElement) return element.parentElement;
+  const parent = element.parentNode;
+  return parent instanceof ShadowRoot ? parent.host : null;
+}
+
 function keptAttributes(element: Element): Record<string, string> {
   const attrs: Record<string, string> = {};
   for (const attribute of element.attributes) {
@@ -103,7 +110,7 @@ function svgIndex(svgs: SVGSVGElement[], element: Element): number {
 
 function cssPath(target: Element, root: Element): string {
   const parts: string[] = [];
-  for (let element: Element | null = target; element && element !== root; element = element.parentElement) {
+  for (let element: Element | null = target; element && element !== root; element = parentOf(element)) {
     const tag = element.tagName.toLowerCase();
     if (element.id) {
       parts.unshift(`${tag}#${CSS.escape(element.id)}`);

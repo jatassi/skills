@@ -13,6 +13,7 @@ import { fromMarkdown } from 'mdast-util-from-markdown';
 import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { toString } from 'mdast-util-to-string';
 import { gfm } from 'micromark-extension-gfm';
+import { codeLanguage } from './code-languages.ts';
 import { parseTable, type TableData } from './table.ts';
 import type { Code, List, ListItem, Nodes, Paragraph, RootContent } from 'mdast';
 
@@ -110,7 +111,13 @@ export interface RoundError {
   message: string;
 }
 
-export type ParseResult = { ok: true; round: Round } | { ok: false; errors: RoundError[] };
+/**
+ * Something `present` tells the agent without rejecting the round, in the same
+ * shape and place as an error (an unknown code language, say).
+ */
+export type RoundNote = RoundError;
+
+export type ParseResult = { ok: true; round: Round; notes: RoundNote[] } | { ok: false; errors: RoundError[] };
 
 // ----------------------------------------------------------------- grammar
 
@@ -161,6 +168,7 @@ const PART_NAME: Record<Part, string> = { prose: 'prose', illustration: 'an illu
 
 class RoundParser {
   private readonly errors: RoundError[] = [];
+  private readonly notes: RoundNote[] = [];
   /** Illustration id → the question it first appeared in. */
   private readonly ids = new Map<string, number>();
 
@@ -241,7 +249,7 @@ class RoundParser {
       errors.sort((a, b) => a.error.line - b.error.line || a.index - b.index);
       return { ok: false, errors: errors.map(({ error }) => error) };
     }
-    return { ok: true, round };
+    return { ok: true, round, notes: this.notes };
   }
 
   // ------------------------------------------------------------- question
@@ -515,6 +523,10 @@ class RoundParser {
 
     if (kind === 'code') {
       illustration.code = this.codeSettings(node, fence, attributes, report);
+      const { lang } = illustration.code;
+      if (codeLanguage(lang) === undefined && this.errors.length === errorCount) {
+        this.notes.push({ line, question: number, illustration: subject, message: `"${lang}" is not a highlighted language, so it shows as plain text` });
+      }
     }
 
     if (kind === 'table') {
@@ -837,6 +849,11 @@ function plainText(markdown: string): string {
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** A note in the same form, marked `note:`; `present` prints it to stderr and still shows the round. */
+export function formatRoundNote(file: string, note: RoundNote): string {
+  return formatRoundError(file, { ...note, message: `note: ${note.message}` });
 }
 
 /** `round.md:LINE · Qn · illustration "id" (lang): message`, the form `present` prints to stderr. */

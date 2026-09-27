@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatRoundError, parseRound, type Round } from '../../src/core/round.ts';
+import { formatRoundError, formatRoundNote, parseRound, type Round } from '../../src/core/round.ts';
 
 /** Parses a round that must be accepted. */
 function accept(source: string): Round {
@@ -462,6 +462,18 @@ describe('illustrations', () => {
         'round.md:3 · Q1 · illustration "a" (ts): highlight line 4 is outside the code, which runs from line 1 to 3',
         'round.md:9 · Q1 · illustration "b" (ts): highlight line 3 is outside the code, which runs from line 20 to 20',
       ]);
+    });
+
+    it('notes an unknown language, which shows as plain text, without rejecting the round', () => {
+      const source = Q(1, fence('zig id=a', 'x') + fence('code id=b lang=mermaid', 'x') + fence('py id=c', 'x') + fence('text id=d', 'x') + fence('code id=e lang=HTML', 'x'));
+      const result = parseRound(source);
+      expect(result.ok).toBe(true);
+      expect(result.ok && result.notes.map((note) => formatRoundNote('round.md', note))).toEqual([
+        'round.md:3 · Q1 · illustration "a" (zig): note: "zig" is not a highlighted language, so it shows as plain text',
+        'round.md:7 · Q1 · illustration "b" (code): note: "mermaid" is not a highlighted language, so it shows as plain text',
+      ]);
+      // The language stays as written; the block resolves it.
+      expect(accept(source).questions[0]!.illustrations[0]!.code).toEqual({ lang: 'zig' });
     });
 
     it('a code fence needs a language name', () => {

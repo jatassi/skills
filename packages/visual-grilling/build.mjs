@@ -10,6 +10,7 @@
 //   <out>/page/vega-lite.js  the Vega + Vega-Lite chunk, used the same way
 //   <out>/frame/             sandboxed agent-HTML frames: inject.js (the frame
 //                            script) and tailwind.js (@tailwindcss/browser)
+//   <out>/page/code.js       the Shiki + @pierre/diffs chunk, loaded the same way
 
 import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -73,6 +74,29 @@ const jsdomFiles = {
   },
 };
 
+/**
+ * Keeps the code chunk to Shiki's core. `shiki` (which @pierre/diffs imports)
+ * becomes our cut-down stand-in with the JavaScript regex engine and only the
+ * code-block grammars, the oniguruma engine and wasm are left out, and
+ * @pierre/theming's collection of every Shiki and Pierre theme is stubbed: the
+ * chunk draws with its own CSS-variables theme.
+ */
+const shikiCore = {
+  name: 'shiki-core',
+  setup(build) {
+    const standIn = join(here, 'src/chunks/shiki.ts');
+    build.onResolve({ filter: /^shiki(\/wasm|\/engine\/oniguruma)?$/ }, () => ({ path: standIn }));
+    build.onLoad({ filter: /@pierre[\\/]theming[\\/]dist[\\/]themes\.js$/ }, () => ({
+      contents: [
+        'export { createTheme } from "./modules/createTheme.js";',
+        'const none = { getThemes: () => [], getTheme: () => undefined };',
+        'export const pierreThemes = none, shikiThemes = none, themes = none;',
+      ].join('\n'),
+      loader: 'js',
+    }));
+  },
+};
+
 await Promise.all([
   // Must stay parseable by old Node: esbuild fails the build on newer syntax.
   esbuild.build({
@@ -105,6 +129,7 @@ await Promise.all([
     outfile: join(out, 'frame/inject.js'),
     format: 'iife',
   }),
+  esbuild.build({ ...browser, entryPoints: [join(here, 'src/chunks/code.ts')], outfile: join(out, 'page/code.js'), plugins: [shikiCore] }),
 ]);
 
 // Served from the local server into every frame (unless tailwind=false), never from a CDN.

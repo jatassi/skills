@@ -185,7 +185,7 @@ async function present(res: ServerResponse, body: PresentRequest): Promise<void>
   rounds.set(n, parsed.round);
   latest = n;
   broadcast('round', { round: n });
-  const response: PresentResponse = { round: n, url: `http://127.0.0.1:${port}/` };
+  const response: PresentResponse = { round: n, url: `http://127.0.0.1:${port}/`, notes: parsed.notes };
   sendJson(res, 200, response);
 }
 

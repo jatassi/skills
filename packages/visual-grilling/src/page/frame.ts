@@ -232,7 +232,9 @@ export class IllustrationFrame {
     event.preventDefault();
     event.stopPropagation();
     const renderer = blockFor(this.subject.illustration.kind);
-    this.pickSnapshot(takeSnapshot(event.target as Element, this.content, event.clientX, event.clientY, renderer.peers));
+    // The element clicked, even inside a block's shadow root (a diff file).
+    const clicked = event.composedPath().find((node): node is Element => node instanceof Element) ?? (event.target as Element);
+    this.pickSnapshot(takeSnapshot(clicked, this.content, event.clientX, event.clientY, renderer.peers));
   }
 
   /** A click, snapshotted here or inside a sandboxed frame, becomes the pending comment's anchor. */
