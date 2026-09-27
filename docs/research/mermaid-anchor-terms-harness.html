@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mermaid anchor harness</title>
+<!--
+  Test page for docs/research/mermaid-anchor-terms.md (ticket #10).
+  No build step: serve this folder (e.g. `python3 -m http.server`) and open the page,
+  or load it headless and call window.harness.dumpAll().
+  Renders one sample per diagram type Mermaid 12.0.0 ships, with look `neo` and the
+  default layout (ELK), then lets you click any element to see what the SVG exposes
+  for it and what the nearest identity-carrying ancestor is.
+-->
+<style>
+  :root { --bg:#fff; --fg:#1b1b1f; --muted:#666; --line:#ddd; --hi:#fff3bf; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#16161a; --fg:#eee; --muted:#aaa; --line:#333; --hi:#4a3f00; } }
+  body { margin:0; font:14px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:12px 16px; border-bottom:1px solid var(--line); }
+  main { display:grid; grid-template-columns: minmax(0,1fr) 380px; gap:0; }
+  #diagrams { padding:16px; }
+  section.d { border:1px solid var(--line); border-radius:8px; margin:0 0 16px; padding:8px 12px; }
+  section.d h2 { font-size:14px; margin:0 0 6px; }
+  section.d .err { color:#c33; white-space:pre-wrap; }
+  section.d svg { max-width:100%; height:auto; }
+  aside { position:sticky; top:0; height:100vh; overflow:auto; border-left:1px solid var(--line); padding:12px; font:12px/1.4 ui-monospace, monospace; white-space:pre-wrap; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } aside { position:static; height:auto; border-left:0; border-top:1px solid var(--line); } }
+  .picked { outline:2px solid orange; }
+</style>
+</head>
+<body>
+<header><strong>Mermaid 12 anchor harness</strong> · click any element in a diagram to see its attribute chain</header>
+<main><div id="diagrams"></div><aside id="out">Rendering…</aside></main>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@12/dist/mermaid.esm.min.mjs';
+
+// look: neo for every type; layout left at the 12.0 global default (elk).
+mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', look: 'neo' });
+
+// One sample per diagram type. Ids differ from labels on purpose, so the dump shows
+// whether the SVG carries the source id, the label, or neither.
+const SAMPLES = {
+flowchart: `flowchart LR
+  subgraph edge["Edge tier"]
+    A["Browser"] -->|"GET /round"| B{"Cached?"}
+  end
+  B -->|yes| C["Serve cache"]
+  B -->|no| D["Render page"]
+  D --> E[("Store")]
+  D -.-> C`,
+sequence: `sequenceDiagram
+  actor U as User
+  participant S as Server
+  participant DB as Database
+  U->>S: Submit round
+  activate S
+  S->>DB: Save answers
+  DB-->>S: ok
+  Note over S,DB: One transaction
+  alt valid
+    S-->>U: 200 OK
+  else invalid
+    S-->>U: 400 Bad request
+  end
+  deactivate S`,
+class: `classDiagram
+  class Round {
+    +String roundId
+    +submit() bool
+  }
+  class Question {
+    +String prompt
+  }
+  class OpenQuestion
+  Round "1" *-- "many" Question : contains
+  Question <|-- OpenQuestion
+  note for Round "Holds one page"`,
+state: `stateDiagram-v2
+  [*] --> Draft
+  Draft --> Review : submit
+  state Review {
+    [*] --> Checking
+    Checking --> Done
+  }
+  Review --> Published : approve
+  Published --> [*]
+  note right of Draft : editable`,
+er: `erDiagram
+  ROUND ||--o{ QUESTION : has
+  QUESTION ||--o{ COMMENT : receives
+  ROUND {
+    string roundId PK
+    int number
+  }`,
+gantt: `gantt
+  title Plan
+  dateFormat YYYY-MM-DD
+  section Research
+    Libraries :done, lib, 2026-09-01, 3d
+    Anchors :active, anc, after lib, 2d
+  section Build
+    Prototype :proto, after anc, 4d
+    Launch :milestone, m1, after proto, 0d`,
+pie: `pie title Time spent
+  "Reading" : 40
+  "Writing" : 35
+  "Testing" : 25`,
+quadrantChart: `quadrantChart
+  title Reach and engagement
+  x-axis Low Reach --> High Reach
+  y-axis Low Engagement --> High Engagement
+  quadrant-1 Expand
+  quadrant-2 Promote
+  quadrant-3 Re-evaluate
+  quadrant-4 Improve
+  Campaign A: [0.3, 0.6]
+  Campaign B: [0.45, 0.23]
+  Campaign C: [0.57, 0.69]`,
+xychart: `xychart-beta
+  title "Sales"
+  x-axis [jan, feb, mar, apr]
+  y-axis "Revenue" 0 --> 100
+  bar [30, 50, 70, 60]
+  line [20, 40, 80, 50]`,
+requirement: `requirementDiagram
+  requirement rider_safety {
+    id: 1
+    text: Riders stop safely.
+    risk: high
+    verifymethod: test
+  }
+  functionalRequirement brake_response {
+    id: 1.1
+    text: Brakes engage fast.
+    risk: medium
+    verifymethod: test
+  }
+  element brake_controller {
+    type: hardware
+  }
+  rider_safety - contains -> brake_response
+  brake_controller - satisfies -> brake_response`,
+journey: `journey
+  title My working day
+  section Go to work
+    Make tea: 5: Me
+    Go upstairs: 3: Me
+    Do work: 1: Me, Cat
+  section Go home
+    Go downstairs: 5: Me`,
+timeline: `timeline
+  title Social media
+  section Early
+    2002 : LinkedIn
+    2004 : Facebook : Google
+  section Later
+    2005 : YouTube`,
+mindmap: `mindmap
+  root((Grilling))
+    ch[Channel]
+      Terminal
+      Browser
+    ill(Illustrations)`,
+kanban: `kanban
+  todo[Todo]
+    docs[Create documentation]
+    blog[Write blog post]@{ priority: 'Low' }
+  doing[In progress]
+    renderer[Improve renderer]@{ assigned: 'knsv', priority: 'High' }
+  done[Done]
+    grammar[Design grammar]@{ ticket: 2036 }`,
+sankey: `sankey-beta
+
+Salary,Budget,3000
+Freelance,Budget,1200
+Budget,Rent,1300
+Budget,Savings,1700
+Budget,Fun,1200`,
+packet: `packet
+0-15: "Source Port"
+16-31: "Destination Port"
+32-63: "Sequence Number"
+64-67: "Offset"
+68-71: "Flags"`,
+radar: `radar-beta
+  axis m["Math"], s["Science"], e["English"]
+  curve a["Alice"]{85, 90, 80}
+  curve b["Bob"]{70, 75, 85}
+  max 100
+  min 0`,
+block: `block-beta
+  columns 3
+  user(("User")):3
+  space:3
+  ui["Web UI"] api["API Server"] db[("Database")]
+  user --> ui
+  ui -- "calls" --> api
+  api --> db`,
+architecture: `architecture-beta
+  group cloud(cloud)[API tier]
+  service db(database)[Database] in cloud
+  service server(server)[Server] in cloud
+  service disk(disk)[Storage] in cloud
+  junction j1 in cloud
+  db:L -- R:server
+  disk:T -- B:j1
+  j1:T -- B:server`,
+gitGraph: `gitGraph
+  commit id: "a3f82c1"
+  branch develop
+  checkout develop
+  commit id: "b7e41d9" tag: "v1"
+  checkout main
+  merge develop id: "d4e8f3a"
+  commit`,
+c4: `C4Context
+  title System context
+  Person(cust, "Customer", "Buys things")
+  System_Boundary(b1, "Shop") {
+    System(web, "Web shop", "Sells things")
+    SystemDb(db, "Orders DB")
+  }
+  System_Ext(mail, "Mail system")
+  Rel(cust, web, "Uses", "HTTPS")
+  Rel(web, db, "Reads/writes")
+  Rel(web, mail, "Sends e-mail")`,
+treeView: `treeView-beta
+  my-project/
+    src/
+      App.tsx
+      index.js
+    package.json
+    README.md`,
+eventmodeling: `eventmodeling
+
+tf 01 ui ShopUI
+tf 02 cmd AddItemToCart
+tf 03 evt ItemAdded
+tf 04 rmo CartView ->> 03`,
+ishikawa: `ishikawa-beta
+  Blurry Photo
+  Process
+    Out of focus
+    Shutter too slow
+  Equipment
+    LENS
+      Dirty lens
+  Environment
+    Too dark`,
+venn: `venn-beta
+  title "Sweet spot"
+  set Desirable
+  set Feasible
+  set Viable
+  union Desirable,Feasible["Worth prototyping"]
+  union Desirable,Feasible,Viable["Sweet spot"]`,
+treemap: `treemap-beta
+"Budget"
+  "Housing"
+    "Rent": 1400
+    "Utilities": 220
+  "Food"
+    "Groceries": 480
+    "Dining out": 180`,
+usecase: `usecase-beta
+actor Customer("Customer")
+actor Agent("Support agent")
+systemBoundary "Shop"
+  Browse("Browse products")
+  Order("Place order")
+end
+Customer --> Browse
+Customer --> Order
+Agent --> Order
+Customer -- "asks" --> Agent`,
+wardley: `wardley-beta
+title Tea Shop
+anchor Business [0.95, 0.63]
+component Cup of Tea [0.79, 0.61]
+component Hot Water [0.52, 0.80]
+component Kettle [0.43, 0.35]
+Business -> Cup of Tea
+Cup of Tea -> Hot Water
+Hot Water -> Kettle
+evolve Kettle 0.62
+note "Kettles evolve" [0.30, 0.49]`,
+cynefin: `cynefin-beta
+  title Incident Response
+  complex
+    "Investigate root cause"
+  complicated
+    "Expert review"
+  clear
+    "Restart service"
+  chaotic
+    "Page on-call"
+  confusion
+    "Unknown failure"
+  complex --> complicated : "Pattern identified"`,
+railroad: `railroad-beta
+  title Expr
+  expression = sequence(nonterminal("term"), zeroOrMore(sequence(choice(terminal("+"), terminal("-")), nonterminal("term")))) ;
+  term = choice(terminal("x"), terminal("1")) ;`,
+railroadEbnf: `railroad-ebnf-beta
+  title Expr
+  expression = term ( "+" term | "-" term )* ;
+  term = "x" | "1" ;`,
+railroadAbnf: `railroad-abnf-beta
+  title Email
+  address = local "@" domain ;
+  domain = label *( "." label ) ;`,
+railroadPeg: `railroad-peg-beta
+  title Calc
+  Expression <- Term (("+" / "-") Term)* ;
+  Term <- "x" / "1" ;`,
+agentflow: `agentflow-beta TB
+  flow reviewer["Review Agent"]
+    changes["Gather changes"]@{ shape: input }
+    analyse["Analyse diff"]@{ shape: task }
+    lint["run_linter"]@{ shape: tool }
+    ok["Clean?"]@{ shape: decision }
+    changes --> analyse --> lint --> ok
+  end
+  publish["Publish"]@{ shape: action }
+  ok -- "yes" --> publish`,
+swimlane: `swimlane-beta LR
+  subgraph Customer
+    Browse[Browse catalogue]
+    Pay[Pay]
+  end
+  subgraph Warehouse
+    Pick[Pick items]
+  end
+  Browse --> Pay
+  Pay -- "paid" --> Pick`,
+};
+
+// Edge cases behind specific findings in mermaid-anchor-terms.md.
+Object.assign(SAMPLES, {
+'x-flowchart-edge-ids': `flowchart LR
+  my_node["U"] --> other-node["H"]
+  A --> B
+  A --> B
+  A -->|again| B
+  A e1@--> C`,
+'x-flowchart-id-collision': `flowchart TD
+  a_b --> c
+  a --> b_c`,
+'x-sequence-multiline': `sequenceDiagram
+  participant A as Alice
+  participant B
+  A->>B: one
+  B-->>A: two<br/>lines
+  loop every hour
+    A->>A: self
+  end
+  Note right of B: a note
+  A-)B: async`,
+'x-class-terminals': `classDiagram
+  A "1" --> "many" B
+  B "x" --> "y" C : lbl
+  C --> A
+  note for B "For B"`,
+'x-state-numbering': `stateDiagram-v2
+  state Review {
+    [*] --> Checking
+    Checking --> Done : ok
+  }
+  [*] --> Draft
+  Draft --> Review : submit
+  Draft --> Review : again
+  state pick <<choice>>
+  Review --> pick
+  pick --> Draft : no`,
+'x-er-attributes': `erDiagram
+  CUSTOMER["Customer table"] {
+    string name PK "the name"
+    string email UK
+  }
+  ORDER { int id PK }
+  CUSTOMER ||--o{ ORDER : places
+  CUSTOMER ||--o{ ORDER : returns`,
+'x-gantt-auto-ids': `gantt
+  dateFormat YYYY-MM-DD
+  section Alpha
+    First task :2026-09-01, 2d
+    Second :after task1, 1d
+  section Beta
+    Named :nm, 2026-09-02, 2d
+    Crit :crit, 2026-09-03, 1d`,
+'x-pie-small-slice': `pie
+  "Small" : 10
+  "Big" : 60
+  "Tiny" : 0.2
+  "Big" : 5`,
+'x-timeline-before-section': `timeline
+  2001 : E1 : E2
+  section S1
+    2002 : E3`,
+'x-packet-wrap': `packet
+0-15: "A"
+16-47: "Spans rows"`,
+'x-gitgraph-auto-ids': `gitGraph
+  commit
+  commit id: "named"
+  branch feat
+  commit
+  checkout main
+  merge feat`,
+'x-treeview-duplicates': `treeView-beta
+  root/
+    a/
+      index.js
+    b/
+      index.js`,
+'x-treemap-duplicates': `treemap-beta
+"Root"
+  "A"
+    "x": 5
+    "y": 50
+  "B"
+    "x": 20`,
+});
+
+const host = document.getElementById('diagrams');
+const out = document.getElementById('out');
+const results = {};
+
+// ---- attribute helpers -------------------------------------------------------
+// Styling-only attributes Mermaid stamps everywhere; they say nothing about which element it is.
+const NOT_IDENTITY = new Set(['data-look', 'data-color-id', 'data-points', 'data-edge', 'aria-hidden']);
+const IDENTITY = e => e.nodeType === 1 && (!!e.id || [...e.attributes].some(a => (a.name.startsWith('data-') || a.name.startsWith('aria-')) && !NOT_IDENTITY.has(a.name)));
+function attrs(e) {
+  const o = {};
+  for (const a of e.attributes) if (a.name === 'id' || a.name === 'class' || a.name.startsWith('data-') || a.name.startsWith('aria-') || a.name === 'role') o[a.name] = a.value;
+  const t = [...e.children].find(c => c.tagName === 'title');
+  if (t) o['<title>'] = t.textContent.trim();
+  return o;
+}
+const ownText = e => (e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+function chain(e, svg) {
+  const c = [];
+  for (let n = e; n && n !== svg.parentNode; n = n.parentNode) c.push({ tag: n.tagName.toLowerCase(), ...attrs(n) });
+  return c;
+}
+function nearestIdentity(e, svg) {
+  for (let n = e; n && n !== svg; n = n.parentNode) if (IDENTITY(n) && n.tagName.toLowerCase() !== 'svg') return n;
+  return null;
+}
+const sig = e => {
+  const cls = (e.getAttribute('class') || '').replace(/\d+/g, '#');
+  const names = [...e.attributes].map(a => a.name).filter(n => n === 'id' || n.startsWith('data-') || n.startsWith('aria-') || n === 'role').sort();
+  return `${e.tagName.toLowerCase()}.${cls}[${names.join(',')}]`;
+};
+
+// ---- per-diagram dump ---------------------------------------------------------
+function dump(name) {
+  const sec = document.getElementById('sec-' + name);
+  const svg = sec.querySelector('svg');
+  if (!svg) return { error: results[name]?.error || 'no svg' };
+  sec.scrollIntoView({ block: 'start' });
+  // 1. Every element carrying identity, grouped by signature.
+  const groups = {};
+  for (const e of svg.querySelectorAll('*')) {
+    if (!IDENTITY(e) && !e.getAttribute('class')) continue;
+    const s = sig(e);
+    (groups[s] ||= { count: 0, samples: [] }).count++;
+    if (groups[s].samples.length < 4) groups[s].samples.push({ ...attrs(e), text: ownText(e) });
+  }
+  // 2. Every visible text leaf: what a click on it hits, and where the walk up lands.
+  const leaves = [...svg.querySelectorAll('text, tspan, span, p, div')].filter(e => ![...e.children].some(c => ['tspan', 'span', 'p', 'div'].includes(c.tagName.toLowerCase())) && ownText(e));
+  const texts = leaves.map(e => {
+    const r = e.getBoundingClientRect();
+    const hit = r.width && r.height ? document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) : null;
+    const target = hit && svg.contains(hit) ? hit : e;
+    const idn = nearestIdentity(target, svg);
+    return { text: ownText(e), hitTag: hit ? hit.tagName.toLowerCase() : null, hitInSvg: !!(hit && svg.contains(hit)), identity: idn ? { tag: idn.tagName.toLowerCase(), ...attrs(idn) } : null };
+  });
+  // 3. Identity-carrying graphics: does a click at their centre reach them (or a descendant)?
+  const shapes = [...svg.querySelectorAll('*')].filter(e => IDENTITY(e) && !e.closest('defs, marker, symbol, filter') && e.tagName.toLowerCase() !== 'svg').slice(0, 60).map(e => {
+    const r = e.getBoundingClientRect();
+    const hit = r.width || r.height ? document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) : null;
+    const lands = hit ? nearestIdentity(hit, svg) : null;
+    return { el: { tag: e.tagName.toLowerCase(), ...attrs(e) }, hitTag: hit && hit.tagName.toLowerCase(), reachesSelf: !!(hit && (hit === e || e.contains(hit))), landsOn: lands && (lands === e ? 'self' : { tag: lands.tagName.toLowerCase(), ...attrs(lands) }) };
+  });
+  return { svgId: svg.id, groups, texts, shapes };
+}
+
+async function renderAll() {
+  for (const [name, src] of Object.entries(SAMPLES)) {
+    const sec = document.createElement('section');
+    sec.className = 'd'; sec.id = 'sec-' + name;
+    sec.innerHTML = `<h2>${name}</h2>`;
+    host.append(sec);
+    const t0 = performance.now();
+    try {
+      const { svg, diagramType } = await mermaid.render('d-' + name, src);
+      sec.insertAdjacentHTML('beforeend', svg);
+      results[name] = { diagramType, ms: Math.round(performance.now() - t0) };
+    } catch (err) {
+      sec.insertAdjacentHTML('beforeend', `<pre class="err"></pre>`);
+      sec.querySelector('.err').textContent = String(err && err.message || err);
+      results[name] = { error: String(err && err.message || err) };
+    }
+  }
+  out.textContent = 'Rendered. Click any element.';
+}
+
+host.addEventListener('click', ev => {
+  const svg = ev.target.closest('svg');
+  if (!svg) return;
+  document.querySelectorAll('.picked').forEach(e => e.classList.remove('picked'));
+  const idn = nearestIdentity(ev.target, svg);
+  if (idn) idn.classList.add('picked');
+  out.textContent = JSON.stringify({ diagram: svg.id, target: ev.target.tagName, nearestIdentity: idn && attrs(idn), chain: chain(ev.target, svg) }, null, 2);
+});
+
+window.harness = {
+  SAMPLES, results, dump,
+  ready: renderAll(),
+  async dumpAll() { await this.ready; const o = {}; for (const n of Object.keys(SAMPLES)) o[n] = { ...results[n], ...dump(n) }; return o; },
+  mermaidVersion: () => mermaid.version ?? null,
+};
+</script>
+</body>
+</html>
