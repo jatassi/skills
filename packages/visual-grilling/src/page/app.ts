@@ -843,14 +843,12 @@ function renderTree(view: RoundView): void {
   side.hidden = drawer.hidden = scrim.hidden = !nodes;
   if (!nodes) return;
   const current = view.round.questions[view.step]?.number;
+  const roundOf = (question: number) => view.round.questionRounds?.[question] ?? view.round.number;
   const open = (question: number) => {
     state.drawer = false;
-    void openQuestion(view.round.questionRounds?.[question] ?? view.round.number, question);
+    void openQuestion(roundOf(question), question);
   };
-  const elsewhere = (question: number) => {
-    const round = view.round.questionRounds?.[question];
-    return round === undefined || round === view.round.number ? undefined : round;
-  };
+  const elsewhere = (question: number) => (roundOf(question) === view.round.number ? undefined : roundOf(question));
   side.replaceChildren(designTree(nodes, { current, open, elsewhere, keyPrefix: 'side' }));
   drawer.replaceChildren(
     h(
@@ -871,7 +869,8 @@ function renderTree(view: RoundView): void {
 
 /** Opens a question the design tree links to, switching to its round first when it's an earlier one. */
 async function openQuestion(round: number, question: number): Promise<void> {
-  if (round !== state.shown) await showRound(round);
+  // A failed fetch leaves this round on screen; the render below still closes the drawer.
+  if (round !== state.shown) await showRound(round).catch(() => undefined);
   const view = state.views.get(round);
   if (!view || state.shown !== round) return render();
   const index = view.round.questions.findIndex((candidate) => candidate.number === question);

@@ -64,6 +64,7 @@ function linked(text: string, questions: number[], context: TreeContext): (Node 
   for (const match of text.matchAll(/\bQ(\d+)\b/g)) {
     const n = Number(match[1]);
     if (!questions.includes(n)) continue;
+    const round = context.elsewhere(n);
     parts.push(text.slice(last, match.index));
     parts.push(
       h(
@@ -72,7 +73,7 @@ function linked(text: string, questions: number[], context: TreeContext): (Node 
           class: 'qref',
           href: `#q${n}`,
           'data-key': `${context.keyPrefix}-q${n}`,
-          title: context.elsewhere(n) === undefined ? undefined : `Opens round ${context.elsewhere(n)}`,
+          title: round === undefined ? undefined : `Opens round ${round}`,
           onclick: (event) => {
             event.preventDefault();
             context.open(n);

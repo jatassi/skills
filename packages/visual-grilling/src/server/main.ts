@@ -19,7 +19,7 @@ import type {
   PresentResponse,
   RoundIndex,
 } from '../core/protocol.ts';
-import { parseRound, type DesignTreeNode, type Mockup, type Round } from '../core/round.ts';
+import { parseRound, treeQuestions, type Mockup, type Round } from '../core/round.ts';
 import { makeDir, sessionPaths, writePrivateFile, type ServerInfo } from '../core/session.ts';
 import {
   buildRecord,
@@ -87,7 +87,7 @@ function loadSession(): void {
     .filter((n) => n > 0)
     .sort((a, b) => a - b);
   for (const n of numbers) {
-    const parsed = parseRound(readFileSync(paths.round(n), 'utf8'), sessionQuestions());
+    const parsed = parseRound(readFileSync(paths.round(n), 'utf8'), questionsSoFar());
     if (!parsed.ok) continue;
     rounds.set(n, parsed.round);
     latest = Math.max(latest, n);
@@ -182,7 +182,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
 }
 
 async function present(res: ServerResponse, body: PresentRequest): Promise<void> {
-  const parsed = parseRound(String(body.source ?? ''), sessionQuestions());
+  const parsed = parseRound(String(body.source ?? ''), questionsSoFar());
   if (!parsed.ok) return sendJson(res, 422, { errors: parsed.errors });
   const drawErrors = await drawCheck.check(parsed.round);
   if (drawErrors.length > 0) return sendJson(res, 422, { errors: drawErrors });
@@ -331,7 +331,7 @@ function answeredInTerminal(n: number): boolean {
 }
 
 /** Every question number the grilling session's rounds have had so far. */
-function sessionQuestions(): Set<number> {
+function questionsSoFar(): Set<number> {
   return new Set([...rounds.values()].flatMap((round) => round.questions.map((question) => question.number)));
 }
 
@@ -341,17 +341,9 @@ function sessionQuestions(): Set<number> {
  * `n` don't count, so a past round's links stay as they were.
  */
 function questionRounds(n: number, round: Round): Record<number, number> {
-  const named = new Set<number>();
-  const walk = (nodes: DesignTreeNode[]): void => {
-    for (const node of nodes) {
-      for (const question of node.questions) named.add(question);
-      walk(node.children);
-    }
-  };
-  walk(round.designTree ?? []);
   const found: Record<number, number> = {};
   const candidates = [...rounds.keys()].filter((m) => m <= n).sort((a, b) => b - a);
-  for (const question of named) {
+  for (const question of treeQuestions(round.designTree ?? [])) {
     const holder = candidates.find((m) => rounds.get(m)!.questions.some((q) => q.number === question));
     if (holder !== undefined) found[question] = holder;
   }

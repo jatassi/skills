@@ -156,15 +156,20 @@ const ALLOWED_KEYS: Record<IllustrationKind, string[]> = {
   code: CODE_KEYS,
 };
 
+/** Every question a design tree names, in the order its branches name them. */
+export function treeQuestions(tree: DesignTreeNode[]): number[] {
+  return [...new Set(tree.flatMap((node) => [...node.questions, ...treeQuestions(node.children)]))];
+}
+
 // ------------------------------------------------------------------ parser
 
 /**
- * Parses one round file. `earlier` holds the question numbers of the grilling
+ * Parses one round file. `earlierQuestions` holds the question numbers of the grilling
  * session's earlier rounds, which the design tree may name too: numbers carry
  * on across rounds. Only the server knows them; the parse is otherwise pure.
  */
-export function parseRound(source: string, earlier: ReadonlySet<number> = new Set()): ParseResult {
-  return new RoundParser(source, earlier).parse();
+export function parseRound(source: string, earlierQuestions: ReadonlySet<number> = new Set()): ParseResult {
+  return new RoundParser(source, earlierQuestions).parse();
 }
 
 type Part = 'prose' | 'illustration' | 'options';
@@ -179,7 +184,7 @@ class RoundParser {
 
   constructor(
     private readonly source: string,
-    private readonly earlier: ReadonlySet<number>,
+    private readonly earlierQuestions: ReadonlySet<number>,
   ) {}
 
   parse(): ParseResult {
@@ -248,7 +253,7 @@ class RoundParser {
     }
 
     if (treeFence) {
-      const known = new Set([...this.earlier, ...groups.map(({ match }) => Number(match[1]))]);
+      const known = new Set([...this.earlierQuestions, ...groups.map(({ match }) => Number(match[1]))]);
       const designTree = this.designTree(treeFence, known);
       if (designTree) round.designTree = designTree;
     }
