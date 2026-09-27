@@ -4,10 +4,13 @@
 //     rounds/round-N.md        the round files as presented
 //     submissions/round-N.json the structured round submissions
 //     server.json              how the CLI finds the server
+//
+// Folders are 0700 and files 0600. `present` checks `visual-grilling/` and the
+// session folder before trusting them (preparePrivateSessionDir).
 
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 const DIR_MODE = 0o700;
 const FILE_MODE = 0o600;
@@ -48,6 +51,42 @@ export function sessionDir(id: string): string {
 
 export function makeDir(dir: string): void {
   mkdirSync(dir, { recursive: true, mode: DIR_MODE });
+}
+
+/**
+ * Makes `visual-grilling/` and the session folder if they are missing, then
+ * refuses (throws) unless each is safe to trust with the session's files.
+ *
+ * On POSIX each must be a real directory (not a symlink), owned by the current
+ * uid, with no group or other access, so another local user can neither plant
+ * the folder nor read it. Windows relies on the per-user %TEMP% ACL instead.
+ */
+export function preparePrivateSessionDir(paths: SessionPaths): void {
+  for (const dir of [dirname(paths.dir), paths.dir]) {
+    try {
+      // Recursive so a missing temp folder is made too; it never widens an existing folder.
+      mkdirSync(dir, { recursive: true, mode: DIR_MODE });
+    } catch (error) {
+      // Something that isn't a directory is in the way; the check below names it.
+      if (!['EEXIST', 'ENOTDIR'].includes((error as { code?: string }).code ?? '')) throw error;
+    }
+    if (process.platform !== 'win32') checkPrivateDir(dir);
+  }
+}
+
+function checkPrivateDir(dir: string): void {
+  const stat = lstatSync(dir);
+  const refuse = (reason: string): never => {
+    throw new Error(`refusing to use ${dir}: ${reason}`);
+  };
+  if (stat.isSymbolicLink()) refuse('it is a symlink, not a real directory; remove it and present again');
+  if (!stat.isDirectory()) refuse('it is not a directory; remove it and present again');
+  const uid = process.getuid!();
+  if (stat.uid !== uid) refuse(`it is owned by uid ${stat.uid}, not the current user (uid ${uid})`);
+  if ((stat.mode & 0o077) !== 0) {
+    const mode = (stat.mode & 0o777).toString(8).padStart(4, '0');
+    refuse(`its mode ${mode} allows group or other access; it must be 0700 (chmod 700 it, or remove it)`);
+  }
 }
 
 /** Writes a file with owner-only access, via a rename so readers never see half of it. */

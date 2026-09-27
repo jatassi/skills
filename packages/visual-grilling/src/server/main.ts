@@ -24,6 +24,7 @@ import {
   type PageSubmission,
   type SubmissionRecord,
 } from '../core/submission.ts';
+import { BASE_HEADERS, guardRequest, ROUND_PAGE_HEADERS } from './guards.ts';
 import { pageRound } from './render.ts';
 
 const MAX_BODY = 1024 * 1024;
@@ -81,11 +82,11 @@ const server = createServer((req, res) => {
 });
 
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const url = new URL(req.url ?? '/', 'http://127.0.0.1');
-  const route = url.pathname;
+  const route = new URL(req.url ?? '/', 'http://127.0.0.1').pathname;
+  const rejection = guardRequest(req, route, port);
+  if (rejection) return sendJson(res, rejection.status, { error: rejection.error });
 
   if (route.startsWith('/control/')) {
-    if (req.method !== 'POST') return sendJson(res, 405, { error: 'control routes are POST-only' });
     const body = await readJson(req);
     switch (route) {
       case '/control/ping':
@@ -103,7 +104,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   }
 
   if (req.method === 'GET') {
-    if (route === '/') return sendFile(res, 'index.html');
+    if (route === '/') return sendFile(res, 'index.html', ROUND_PAGE_HEADERS);
     const asset = /^\/assets\/([a-z0-9-]+\.(?:js|css))$/.exec(route);
     if (asset) return sendFile(res, asset[1]!);
     if (route === '/events') return openEvents(req, res);
@@ -118,9 +119,6 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
 
   const submitRoute = /^\/api\/rounds\/(\d+)\/submission$/.exec(route);
   if (submitRoute && req.method === 'POST') {
-    if (!/^application\/json\b/.test(req.headers['content-type'] ?? '')) {
-      return sendJson(res, 415, { error: 'submissions must be JSON' });
-    }
     return submit(res, Number(submitRoute[1]), (await readJson(req)) as PageSubmission);
   }
 
@@ -203,6 +201,7 @@ function submittedResponse(record: SubmissionRecord): AwaitResponse {
 
 function openEvents(req: IncomingMessage, res: ServerResponse): void {
   res.writeHead(200, {
+    ...BASE_HEADERS,
     'content-type': 'text/event-stream; charset=utf-8',
     'cache-control': 'no-store',
     connection: 'keep-alive',
@@ -267,6 +266,7 @@ function readJson(req: IncomingMessage): Promise<unknown> {
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
+    ...BASE_HEADERS,
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
     'content-length': Buffer.byteLength(payload),
@@ -280,7 +280,7 @@ const CONTENT_TYPES: Record<string, string> = {
   css: 'text/css; charset=utf-8',
 };
 
-function sendFile(res: ServerResponse, name: string): void {
+function sendFile(res: ServerResponse, name: string, headers = BASE_HEADERS): void {
   let content: Buffer;
   try {
     content = readFileSync(join(pageDir, name));
@@ -288,6 +288,7 @@ function sendFile(res: ServerResponse, name: string): void {
     return sendJson(res, 404, { error: 'not found' });
   }
   res.writeHead(200, {
+    ...headers,
     'content-type': CONTENT_TYPES[name.split('.').pop()!] ?? 'application/octet-stream',
     'cache-control': 'no-store',
     'content-length': content.length,
