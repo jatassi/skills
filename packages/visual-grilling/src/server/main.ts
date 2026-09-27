@@ -81,16 +81,16 @@ function loadSession(): void {
   makeDir(paths.rounds);
   makeDir(paths.submissions);
   makeDir(paths.crops);
-  // In round order, so each round's design tree is checked against the rounds before it.
-  const numbers = readdirSync(paths.rounds)
-    .map((name) => Number(/^round-(\d+)\.md$/.exec(name)?.[1]))
-    .filter((n) => n > 0)
-    .sort((a, b) => a - b);
-  for (const n of numbers) {
-    const parsed = parseRound(readFileSync(paths.round(n), 'utf8'), questionsSoFar());
+  for (const name of readdirSync(paths.rounds)) {
+    const n = Number(/^round-(\d+)\.md$/.exec(name)?.[1]);
+    if (!n) continue;
+    // Numbering carries on past every round file, so one that no longer parses is never overwritten.
+    latest = Math.max(latest, n);
+    // Its tree's Q<n> links were checked when it was presented; checking again
+    // would let one unparseable round drop every later round that names it.
+    const parsed = parseRound(readFileSync(paths.round(n), 'utf8'), 'unchecked');
     if (!parsed.ok) continue;
     rounds.set(n, parsed.round);
-    latest = Math.max(latest, n);
     try {
       records.set(n, JSON.parse(readFileSync(paths.submission(n), 'utf8')) as SubmissionRecord);
     } catch {

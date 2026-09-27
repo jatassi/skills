@@ -1,11 +1,12 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { crash, Sandbox } from '../support/harness.ts';
 
 let sandbox: Sandbox;
 
 afterEach(async () => {
-  await sandbox?.dispose(['r1', 'r2', 'r3', 'r4']);
+  await sandbox?.dispose(['r1', 'r2', 'r3', 'r4', 'r5']);
 });
 
 const BROKEN_ROUND = `# Broken
@@ -145,20 +146,37 @@ describe('present with a design tree that names earlier rounds', () => {
     });
   });
 
-  it('keeps those rounds after a restart, reloading them in round order', async () => {
-    sandbox = new Sandbox('r4');
-    // Ten rounds, so round-10.md sorts before round-2.md by name.
-    for (let n = 1; n <= 9; n++) {
-      const result = await sandbox.cli(['present', sandbox.writeRound(`round-${n}.md`, question(n)), '--no-open']);
+  /** Presents rounds 1 and 2 (round 2's tree names round 1's Q1), then crashes the server. */
+  async function twoRoundsThenCrash(id: string): Promise<void> {
+    sandbox = new Sandbox(id);
+    for (const [n, source] of [[1, question(1)], [2, tree('- [x] Storage Q1: folder') + question(2)]] as const) {
+      const result = await sandbox.cli(['present', sandbox.writeRound(`round-${n}.md`, source), '--no-open']);
       expect(result).toMatchObject({ code: 0, stderr: '' });
     }
-    const tenth = sandbox.writeRound('round-10.md', tree('- [ ] Runtime Q2') + question(10));
-    expect(await sandbox.cli(['present', tenth, '--no-open'])).toMatchObject({ code: 0, stderr: '' });
-    await crash(sandbox.serverInfo('r4').pid);
+    await crash(sandbox.serverInfo(id).pid);
+  }
+  const roundFile = (id: string, n: number) => join(sandbox.sessionDir(id), 'rounds', `round-${n}.md`);
 
-    const eleventh = sandbox.writeRound('round-11.md', question(11));
-    const url = (await sandbox.cli(['present', eleventh, '--no-open'])).stdout.trim();
-    const round = await (await fetch(`${url}api/rounds/10`)).json();
-    expect(round).toMatchObject({ number: 10, questionRounds: { 2: 2 } });
+  it('reloads a round after a restart even when the round its tree names no longer parses', async () => {
+    await twoRoundsThenCrash('r4');
+    writeFileSync(roundFile('r4', 1), 'no longer a round\n');
+
+    const url = (await sandbox.cli(['present', sandbox.writeRound('round-3.md', question(3)), '--no-open'])).stdout.trim();
+    const round = await (await fetch(`${url}api/rounds/2`)).json();
+    expect(round).toMatchObject({
+      number: 2,
+      designTree: [{ label: 'Storage Q1', settled: true, gist: 'folder', questions: [1], children: [] }],
+    });
+  });
+
+  it('numbers the next round past every round file on disk, so an unparseable one is never overwritten', async () => {
+    await twoRoundsThenCrash('r5');
+    writeFileSync(roundFile('r5', 2), 'no longer a round\n');
+
+    const result = await sandbox.cli(['present', sandbox.writeRound('round-3.md', question(3)), '--no-open']);
+    expect(result).toMatchObject({ code: 0, stderr: '' });
+    const latest = await (await fetch(`${result.stdout.trim()}api/rounds/latest`)).json();
+    expect(latest.number).toBe(3);
+    expect(readFileSync(roundFile('r5', 2), 'utf8')).toBe('no longer a round\n');
   });
 });

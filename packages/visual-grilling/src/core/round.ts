@@ -164,11 +164,15 @@ export function treeQuestions(tree: DesignTreeNode[]): number[] {
 // ------------------------------------------------------------------ parser
 
 /**
- * Parses one round file. `earlierQuestions` holds the question numbers of the grilling
- * session's earlier rounds, which the design tree may name too: numbers carry
- * on across rounds. Only the server knows them; the parse is otherwise pure.
+ * Which questions a design tree may name besides the round's own: the question
+ * numbers of the grilling session's earlier rounds (numbers carry on across
+ * rounds), or `'unchecked'` to skip the check for a round that already passed
+ * it when it was presented.
  */
-export function parseRound(source: string, earlierQuestions: ReadonlySet<number> = new Set()): ParseResult {
+export type EarlierQuestions = ReadonlySet<number> | 'unchecked';
+
+/** Parses one round file. Only the server knows the earlier rounds; the parse is otherwise pure. */
+export function parseRound(source: string, earlierQuestions: EarlierQuestions = new Set()): ParseResult {
   return new RoundParser(source, earlierQuestions).parse();
 }
 
@@ -184,7 +188,7 @@ class RoundParser {
 
   constructor(
     private readonly source: string,
-    private readonly earlierQuestions: ReadonlySet<number>,
+    private readonly earlierQuestions: EarlierQuestions,
   ) {}
 
   parse(): ParseResult {
@@ -253,7 +257,8 @@ class RoundParser {
     }
 
     if (treeFence) {
-      const known = new Set([...this.earlierQuestions, ...groups.map(({ match }) => Number(match[1]))]);
+      const earlier = this.earlierQuestions;
+      const known = earlier === 'unchecked' ? earlier : new Set([...earlier, ...groups.map(({ match }) => Number(match[1]))]);
       const designTree = this.designTree(treeFence, known);
       if (designTree) round.designTree = designTree;
     }
@@ -634,7 +639,7 @@ class RoundParser {
 
   // ---------------------------------------------------------- design tree
 
-  private designTree(node: Code, questions: Set<number>): DesignTreeNode[] | undefined {
+  private designTree(node: Code, questions: Set<number> | 'unchecked'): DesignTreeNode[] | undefined {
     const inner = parseMarkdown(node.value);
     const offset = this.lineOf(node);
     const errorCount = this.errors.length;
@@ -665,7 +670,9 @@ class RoundParser {
         const named: number[] = [];
         for (const match of text.matchAll(/\bQ(\d+)\b/g)) {
           const n = Number(match[1]);
-          if (!questions.has(n)) report(line, `Q${n} is not in this round or an earlier one`);
+          if (questions !== 'unchecked' && !questions.has(n)) {
+            report(line, `Q${n} is not in this round or an earlier one`);
+          }
           else if (!named.includes(n)) named.push(n);
         }
 
