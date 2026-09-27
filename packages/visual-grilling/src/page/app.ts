@@ -2,7 +2,7 @@
 // round submission sent from the Review step.
 
 import type { PageEvents, PageQuestion, PageRound } from '../core/protocol.ts';
-import type { PageAnswer, PageComment, PageSubmission, Verdict } from '../core/submission.ts';
+import type { PageAnswer, PageComment, PageSubmission, PageWarning, Verdict } from '../core/submission.ts';
 import { IllustrationFrame, type FrameSubject } from './frame.ts';
 
 type Draft = PageAnswer & { ownText?: string; writing?: boolean };
@@ -363,6 +363,10 @@ function frameFor(question: PageQuestion, readOnly: boolean, subject: FrameSubje
         list.splice(list.indexOf(comment), 1);
         render();
       },
+      reportFailure: (message) => {
+        // Mockups have no illustration id; their script errors travel another way.
+        if (!subject.option) void reportDrawFailure(question.number, subject.illustration.id, message);
+      },
     });
     frames.set(key, frame);
   }
@@ -378,6 +382,22 @@ function frameFor(question: PageQuestion, readOnly: boolean, subject: FrameSubje
     readOnly,
   });
   return frame.element;
+}
+
+/**
+ * A block that failed only on the page: the server keeps it for the round's
+ * submission, where the agent reads it as a warning. Failing to report is
+ * fine; the frame still shows the error.
+ */
+async function reportDrawFailure(question: number, illustration: string, message: string): Promise<void> {
+  const round = state.round;
+  if (!round || round.submitted) return;
+  const warning: PageWarning = { question, illustration, kind: 'draw', message };
+  await fetch(`/api/rounds/${round.number}/warnings`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(warning),
+  }).catch(() => undefined);
 }
 
 function toggleCommenting(): void {

@@ -19,6 +19,18 @@ export type PageAnswer =
  */
 export type PageComment = Anchor & { text: string };
 
+/**
+ * A block that failed to draw only on the page, reported as it happens
+ * (POST /api/rounds/<n>/warnings) and carried by the round's submission.
+ */
+export interface PageWarning {
+  question: number;
+  /** The illustration's id. */
+  illustration: string;
+  kind: 'draw';
+  message: string;
+}
+
 export interface PageSubmission {
   round: number;
   answers: ({ question: number; comments?: PageComment[] } & PageAnswer)[];
@@ -69,6 +81,7 @@ export function buildRecord(
   round: Round,
   submission: PageSubmission,
   submittedAt: Date,
+  warnings: PageWarning[] = [],
 ): SubmissionRecord {
   if (submission.round !== roundNumber) {
     throw new Error(`submission is for round ${submission.round}, not round ${roundNumber}`);
@@ -121,7 +134,13 @@ export function buildRecord(
         throw new Error(`Q${question.number}: unknown answer mode`);
     }
     if (verdict.mode === 'none' && comments.length > 0) verdict = { mode: 'comments' };
-    return { number: question.number, title: question.title, verdict, comments, warnings: [] };
+    const questionWarnings = warnings
+      .filter((warning) => warning.question === question.number)
+      .map((warning): WarningRecord => {
+        const illustration = question.illustrations.find((candidate) => candidate.id === warning.illustration)!;
+        return { kind: warning.kind, illustration: { id: illustration.id, lang: illustration.fence }, message: warning.message };
+      });
+    return { number: question.number, title: question.title, verdict, comments, warnings: questionWarnings };
   });
 
   return {
@@ -130,6 +149,21 @@ export function buildRecord(
     submittedAt: submittedAt.toISOString(),
     questions,
   };
+}
+
+const WARNING_MESSAGE_LIMIT = 2_000;
+
+/** Checks a page warning against its round. Throws with a readable message when it doesn't fit. */
+export function checkWarning(round: Round, payload: unknown): PageWarning {
+  const body = (typeof payload === 'object' && payload !== null ? payload : {}) as Partial<Record<keyof PageWarning, unknown>>;
+  const question = round.questions.find((candidate) => candidate.number === body.question);
+  if (!question) throw new Error(`the round has no Q${String(body.question)}`);
+  const illustration = question.illustrations.find((candidate) => candidate.id === body.illustration);
+  if (!illustration) throw new Error(`Q${question.number} has no illustration "${String(body.illustration)}"`);
+  if (body.kind !== 'draw') throw new Error('unknown warning kind');
+  const message = typeof body.message === 'string' ? body.message.trim().slice(0, WARNING_MESSAGE_LIMIT) : '';
+  if (!message) throw new Error('a warning needs a message');
+  return { question: question.number, illustration: illustration.id, kind: 'draw', message };
 }
 
 /** The text `await` prints for a submitted round. */
