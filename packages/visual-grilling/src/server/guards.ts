@@ -5,7 +5,8 @@
 //   control     /control/*, from the CLI. POST-only, and never from a browser:
 //               any Origin or Sec-Fetch-* header is refused.
 //   page write  any other POST, from the round page. Origin must be exactly
-//               http://127.0.0.1:<port> and the body JSON.
+//               http://<the request's Host>, so the page's own address
+//               (127.0.0.1 or localhost) and only that; the body JSON.
 //   page read   GET (only) for the page, its assets, rounds and the event stream.
 // Every request must name the server in Host (127.0.0.1:<port> or
 // localhost:<port>), which blocks DNS rebinding. The server never answers a
@@ -67,11 +68,10 @@ export function guardRequest(req: IncomingMessage, route: string, port: number):
   }
 
   if (method === 'POST') {
-    if (req.headers.origin !== `http://127.0.0.1:${port}`) {
-      return {
-        status: 403,
-        error: `page writes must come from the round page's Origin, http://127.0.0.1:${port} (open the page at that address)`,
-      };
+    // Host is already one of our two names, so this admits only the page
+    // itself, at whichever of them it was opened, and never a mixed pair.
+    if (req.headers.origin !== `http://${host}`) {
+      return { status: 403, error: `page writes must come from the round page's own Origin, http://${host}` };
     }
     if (!isJson(req.headers['content-type'])) {
       return { status: 415, error: 'page writes must be application/json' };

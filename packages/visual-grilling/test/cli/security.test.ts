@@ -94,6 +94,29 @@ describe('page writes', () => {
     expectNoCors(response);
   });
 
+  it('accepts JSON from the page opened at localhost', async () => {
+    const response = await submit({
+      host: `localhost:${port}`,
+      origin: `http://localhost:${port}`,
+      'content-type': 'application/json',
+    });
+    expect(response.status).toBe(200);
+    expectNoCors(response);
+  });
+
+  it.each([
+    ['Host 127.0.0.1 with a localhost Origin', '127.0.0.1', 'localhost'],
+    ['Host localhost with a 127.0.0.1 Origin', 'localhost', '127.0.0.1'],
+  ])('rejects a mismatched pair: %s', async (_, host, origin) => {
+    const response = await submit({
+      host: `${host}:${port}`,
+      origin: `http://${origin}:${port}`,
+      'content-type': 'application/json',
+    });
+    expect(response.status).toBe(403);
+    expect((await box.cli(['await', '--timeout', '0'])).stdout).toBe('pending · round 1 · re-run await\n');
+  });
+
   it.each([
     ['no Origin', null],
     ['a null Origin', 'null'],
