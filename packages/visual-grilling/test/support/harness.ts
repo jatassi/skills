@@ -45,7 +45,12 @@ export class Sandbox {
       const child = execFile(
         process.execPath,
         [...nodeArgs, CLI, ...args],
-        { env: this.env, cwd: this.tmp, timeout: 60_000 },
+        // Roomy on purpose: this spawns a real server and, on a busy machine
+        // running the suite under load, the product's own 10 s server-start
+        // budget (src/cli/main.ts) can take a while to be met. Give the CLI
+        // itself plenty of slack rather than let this budget be what fails
+        // the test.
+        { env: this.env, cwd: this.tmp, timeout: 120_000 },
         (error, stdout, stderr) => {
           const code = error ? (typeof error.code === 'number' ? error.code : 1) : 0;
           done({ code, stdout, stderr });
