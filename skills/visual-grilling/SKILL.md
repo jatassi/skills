@@ -1,10 +1,9 @@
 ---
 name: visual-grilling
 description: Grilling with each round shown as a page in the browser, answered and commented on there.
-disable-model-invocation: true
 ---
 
-Call the Skill tool with "grilling" and follow it. This skill changes only the channel: each round goes to the user as a round page in the browser, and the round submission comes back through the CLI. The terminal stays a channel too.
+Call the Skill tool with "grilling" and follow it. This skill changes only the channel: each round goes to the user as a round page in the browser, and the round submission comes back through the CLI. Your conversation with the user stays a channel too.
 
 The CLI is `node ${CLAUDE_SKILL_DIR}/dist/cli.mjs`, where `${CLAUDE_SKILL_DIR}` is this skill's folder; `--help` lists its commands, flags and outcome lines. Read [`round-file.md`](round-file.md) before your first round. Read [`illustrating.md`](illustrating.md) before a round that illustrates.
 
