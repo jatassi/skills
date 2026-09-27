@@ -1,0 +1,15 @@
+{
+  "name": "jatassi",
+  "description": "Jackson Atassi's agent skills.",
+  "owner": {
+    "name": "Jackson Atassi",
+    "url": "https://github.com/jatassi"
+  },
+  "plugins": [
+    {
+      "name": "jatassi-skills",
+      "source": "./",
+      "description": "Skills for grilling plans with an agent stand-in, turning them into specs and tickets, and orchestrating implementation loops."
+    }
+  ]
+}

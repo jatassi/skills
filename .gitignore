@@ -1,0 +1,4 @@
+.DS_Store
+# Local agent workspace (includes third-party skills); symlinks into skills/
+.agents/
+.claude/

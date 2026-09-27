@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "jatassi-skills",
+  "version": "0.1.0",
+  "description": "Skills for grilling plans with an agent stand-in, turning them into specs and tickets, and orchestrating implementation loops.",
+  "author": {
+    "name": "Jackson Atassi",
+    "url": "https://github.com/jatassi"
+  },
+  "homepage": "https://github.com/jatassi/skills",
+  "repository": "https://github.com/jatassi/skills",
+  "license": "MIT",
+  "keywords": ["skills", "planning", "grilling", "specs", "tickets", "implementation"]
+}
