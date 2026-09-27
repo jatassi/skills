@@ -55,6 +55,12 @@ const UNREADABLE: Block[] = [
       "%%{init: {'themeVariables': {'primaryColor': 'transparent', 'primaryTextColor': '#222222', 'textColor': '#222222', 'lineColor': '#333333'}}}%%\nflowchart LR\n  a[Browser] --> b[Server] --> c[Agent]",
   },
   {
+    kind: 'mermaid',
+    title: 'Paper states',
+    source:
+      "---\nconfig:\n  themeVariables:\n    primaryColor: transparent\n    primaryTextColor: '#222222'\n    textColor: '#222222'\n    lineColor: '#333333'\n---\nflowchart LR\n  draft[Draft] --> review[Review] --> done[Done]",
+  },
+  {
     kind: 'dot',
     title: 'Paper graph',
     source: 'digraph {\n  node [shape=plaintext, fontcolor="#222222"]\n  edge [color="#333333", fontcolor="#333333"]\n  browser -> server [label="calls"]\n  server -> agent [label="asks"]\n}',

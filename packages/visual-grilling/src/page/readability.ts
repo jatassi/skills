@@ -11,6 +11,10 @@ import type { BlockContext } from './blocks/registry.ts';
 const UNREADABLE_CONTRAST = 3;
 /** The block is unreadable when more than this share of its text is. */
 const UNREADABLE_SHARE = 0.3;
+/** A fill or background at least this opaque is what text is read against. */
+const OPAQUE = 0.5;
+/** No one piece of text weighs more than this many characters. */
+const MAX_WEIGHT = 200;
 
 export type Rgba = [number, number, number, number];
 
@@ -20,7 +24,7 @@ export class Tally {
   private unreadable = 0;
 
   add(text: string, colour: Rgba, under: Rgba): void {
-    const weight = Math.min(text.length, 200);
+    const weight = Math.min(text.length, MAX_WEIGHT);
     this.total += weight;
     if (contrast(blend(colour, under), under) < UNREADABLE_CONTRAST) this.unreadable += weight;
   }
@@ -34,6 +38,13 @@ export class Tally {
 
 const SHAPES = 'rect, polygon, ellipse, circle, path';
 
+/** A filled shape a label may sit on, where it was laid out. */
+interface Shape {
+  element: SVGGraphicsElement;
+  fill: Rgba;
+  box: DOMRect;
+}
+
 /**
  * Reports, once the drawing is laid out, whether a page-drawn block (an SVG
  * the agent coloured itself) is unreadable on the dark backdrop. Only a draw
@@ -44,7 +55,9 @@ export function checkDrawing(target: HTMLElement, context: BlockContext): void {
   if (context.theme !== 'dark' || context.backdrop) return;
   // Steps that aren't showing are mounted but hidden: judge once there's a layout.
   const observer = new ResizeObserver(() => {
-    if (!target.isConnected || target.getClientRects().length === 0) return;
+    // Replaced by a redraw before it was ever shown: nothing left to judge.
+    if (!target.isConnected) return observer.disconnect();
+    if (target.getClientRects().length === 0) return;
     observer.disconnect();
     context.events.readability(drawingUnreadable(target));
   });
@@ -60,7 +73,7 @@ export function drawingUnreadable(target: HTMLElement): boolean {
   const backdrop = backdropColour(target);
   const shapes = [...target.querySelectorAll<SVGGraphicsElement>(SHAPES)]
     .map((element) => ({ element, fill: shapeFill(element), box: element.getBoundingClientRect() }))
-    .filter((shape): shape is { element: SVGGraphicsElement; fill: Rgba; box: DOMRect } => shape.fill !== null);
+    .filter((shape): shape is Shape => shape.fill !== null);
   const tally = new Tally();
   const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -81,11 +94,11 @@ export function drawingUnreadable(target: HTMLElement): boolean {
   return tally.verdict;
 }
 
-/** The first opaque background from `element` up to `root`, over the backdrop. */
-function ownBackground(element: Element, root: Element): Rgba | null {
+/** The first opaque background from `element` up to (not including) `root`, or up to the document's root. */
+function ownBackground(element: Element, root?: Element): Rgba | null {
   for (let current: Element | null = element; current && current !== root; current = current.parentElement) {
     const colour = parseColour(getComputedStyle(current).backgroundColor);
-    if (colour && colour[3] >= 0.5) return colour;
+    if (colour && colour[3] >= OPAQUE) return colour;
   }
   return null;
 }
@@ -93,7 +106,7 @@ function ownBackground(element: Element, root: Element): Rgba | null {
 function shapeUnder(
   text: Element,
   box: DOMRect,
-  shapes: { element: SVGGraphicsElement; fill: Rgba; box: DOMRect }[],
+  shapes: Shape[],
   backdrop: Rgba,
 ): Rgba {
   const x = box.left + box.width / 2;
@@ -116,15 +129,13 @@ function shapeFill(element: SVGGraphicsElement): Rgba | null {
   const colour = parseColour(style.fill);
   if (!colour) return null;
   const alpha = colour[3] * Number(style.fillOpacity || 1) * Number(style.opacity || 1);
-  return alpha >= 0.5 ? [colour[0], colour[1], colour[2], alpha] : null;
+  return alpha >= OPAQUE ? [colour[0], colour[1], colour[2], alpha] : null;
 }
 
 /** The colour the block sits on: the first opaque background above it. */
 function backdropColour(target: HTMLElement): Rgba {
-  for (let current: Element | null = target; current; current = current.parentElement) {
-    const colour = parseColour(getComputedStyle(current).backgroundColor);
-    if (colour && colour[3] >= 0.5) return [colour[0], colour[1], colour[2], 1];
-  }
+  const colour = ownBackground(target);
+  if (colour) return [colour[0], colour[1], colour[2], 1];
   return parseColour(getComputedStyle(document.documentElement).getPropertyValue('--canvas')) ?? [14, 16, 20, 1];
 }
 

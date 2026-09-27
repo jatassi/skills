@@ -14,7 +14,10 @@ import type { IllustrationKind } from '../../core/round.ts';
 
 const MERMAID_DIRECTIVE = /%%\{\s*(?:init|initialize)\s*:/;
 const MERMAID_FRONTMATTER = /^\s*---[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*---/;
-const DOT_COLOUR = /\b(?:color|fillcolor|fontcolor|bgcolor|pencolor|labelfontcolor|colorscheme)\s*=/i;
+const DOT_COLOUR_NAMES = 'color|fillcolor|fontcolor|bgcolor|pencolor|labelfontcolor|colorscheme';
+const DOT_COLOUR = new RegExp(`\\b(?:${DOT_COLOUR_NAMES})\\s*=`, 'i');
+/** DOT allows an attribute name in quotes too: `"fillcolor"="red"`. */
+const DOT_QUOTED_COLOUR = new RegExp(`"(?:${DOT_COLOUR_NAMES})"\\s*=`, 'i');
 
 export function overridesTheme(kind: IllustrationKind, source: string): boolean {
   switch (kind) {
@@ -31,8 +34,8 @@ export function overridesTheme(kind: IllustrationKind, source: string): boolean 
         return false;
       }
     case 'dot':
-      // A quoted string is a label or an id, never an attribute name.
-      return DOT_COLOUR.test(source.replace(/"(?:[^"\\]|\\.)*"/g, '""'));
+      // Past a quoted attribute name, a quoted string is a label or an id: it can't name a colour attribute.
+      return DOT_QUOTED_COLOUR.test(source) || DOT_COLOUR.test(source.replace(/"(?:[^"\\]|\\.)*"/g, '""'));
     default:
       return false;
   }

@@ -23,6 +23,7 @@ describe('overridesTheme', () => {
     expect(overridesTheme('dot', 'digraph { a [label=<<font color="red">A</font>>] }')).toBe(true);
     expect(overridesTheme('dot', 'digraph { a [label="color=red", class=risk] }')).toBe(false);
     expect(overridesTheme('dot', 'digraph { a -> b }')).toBe(false);
+    expect(overridesTheme('dot', 'digraph { a ["fillcolor"="red"] }')).toBe(true);
   });
 
   it('never calls another kind overridden', () => {

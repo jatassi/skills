@@ -74,7 +74,7 @@ export class IllustrationFrame {
   /** The block's own verdict: unreadable on the dark backdrop. */
   private unreadable = false;
   /** Whether the block judges its readability at all (agent HTML, an overridden drawing). */
-  private judged = false;
+  private reportsReadability = false;
   /** The backdrop the current draw of a block that isn't live was made for. */
   private drawnBackdrop = false;
   /** The user's backdrop toggle, once used; until then the backdrop follows `unreadable`. */
@@ -149,7 +149,7 @@ export class IllustrationFrame {
         },
         readability: (unreadable) => {
           if (!current()) return;
-          this.judged = true;
+          this.reportsReadability = true;
           this.unreadable = unreadable;
           this.pushState();
         },
@@ -196,7 +196,7 @@ export class IllustrationFrame {
     if (!this.live && backdrop !== this.drawnBackdrop) return void this.draw();
     this.element.classList.toggle('light-backdrop', backdrop);
     // The toggle matters on dark only; on the light theme every backdrop is light.
-    this.backdropToggle.hidden = !this.judged || pageTheme() !== 'dark';
+    this.backdropToggle.hidden = !this.reportsReadability || pageTheme() !== 'dark';
     this.backdropToggle.setAttribute('aria-pressed', String(backdrop));
     this.live?.setState({
       theme: pageTheme(),
