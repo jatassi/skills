@@ -1413,6 +1413,112 @@ textarea[readonly] {
   pointer-events: visible;
 }
 
+/* Code and diff blocks. Shiki and @pierre/diffs colour through CSS variables
+   (--shiki-*, --diffs-*), set here from the page tokens, so a theme flip
+   recolours them without highlighting again. */
+
+:root {
+  --code-keyword: #ff7b72;
+  --code-string: #a5d6ff;
+  --code-constant: #79c0ff;
+  --code-comment: #8b949e;
+  --code-function: #d2a8ff;
+  --code-parameter: #ffa657;
+  --code-mark: rgb(210 153 34 / 18%);
+}
+
+:root[data-theme='light'] {
+  --code-keyword: #cf222e;
+  --code-string: #0a3069;
+  --code-constant: #0550ae;
+  --code-comment: #59636e;
+  --code-function: #8250df;
+  --code-parameter: #953800;
+  --code-mark: rgb(212 167 44 / 22%);
+}
+
+.kind-code {
+  --shiki-foreground: var(--fg);
+  --shiki-background: transparent;
+  --shiki-token-keyword: var(--code-keyword);
+  --shiki-token-string: var(--code-string);
+  --shiki-token-string-expression: var(--code-string);
+  --shiki-token-constant: var(--code-constant);
+  --shiki-token-comment: var(--code-comment);
+  --shiki-token-function: var(--code-function);
+  --shiki-token-parameter: var(--code-parameter);
+  --shiki-token-punctuation: var(--fg);
+  --shiki-token-link: var(--code-string);
+}
+
+.code-block {
+  font: 12px/1.5 var(--mono);
+  padding: 6px 0;
+}
+
+.code-file {
+  color: var(--muted);
+  padding: 0 12px 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.code-line {
+  display: flex;
+  white-space: pre;
+}
+
+.code-line.highlighted {
+  background: var(--code-mark);
+}
+
+.code-number {
+  flex: none;
+  min-width: 3ch;
+  padding: 0 12px 0 10px;
+  text-align: right;
+  color: var(--muted);
+  user-select: none;
+}
+
+.code-text {
+  padding-right: 12px;
+  color: var(--fg);
+  background: none;
+}
+
+/* One shadow root per diff file; custom properties reach into it. */
+.diff-file {
+  display: block;
+  color-scheme: dark;
+  --diffs-font-family: var(--mono);
+  --diffs-header-font-family: var(--sans);
+  --diffs-font-size: 12px;
+  --diffs-line-height: 18px;
+  --diffs-foreground: var(--fg);
+  --diffs-background: var(--panel);
+  --diffs-addition-color: var(--answered);
+  --diffs-deletion-color: var(--risk);
+  --diffs-modified-color: var(--accent);
+  --diffs-token-keyword: var(--code-keyword);
+  --diffs-token-string: var(--code-string);
+  --diffs-token-string-expression: var(--code-string);
+  --diffs-token-constant: var(--code-constant);
+  --diffs-token-comment: var(--code-comment);
+  --diffs-token-function: var(--code-function);
+  --diffs-token-parameter: var(--code-parameter);
+  --diffs-token-punctuation: var(--fg);
+  --diffs-token-link: var(--code-string);
+}
+
+:root[data-theme='light'] .diff-file {
+  color-scheme: light;
+}
+
+.diff-file + .diff-file {
+  border-top: 1px solid var(--line);
+}
+
 /* The light backdrop, for a block whose own colours are unreadable on dark. */
 .illustration.light-backdrop .block-content {
   background: #ffffff;

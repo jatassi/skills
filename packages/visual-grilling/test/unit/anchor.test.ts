@@ -7,6 +7,7 @@ import {
   type Snapshot,
   type SnapshotElement,
 } from '../../src/core/anchor.ts';
+import { codeAnchor } from '../../src/page/blocks/code.ts';
 import { tableAnchor } from '../../src/page/blocks/table.ts';
 
 // Snapshots written by hand: the clicked element first, up to the root.
@@ -91,6 +92,41 @@ describe('the table adapter', () => {
     expect(line(snapshot, TABLE, tableAnchor)).toBe(
       'table "Compare" → unlabeled table  [clicked <table>; near "Install"; at 25% across, 25% down]',
     );
+  });
+});
+
+describe('the code adapter', () => {
+  const CODE: AnchorSubject = { illustration: { id: 'start', kind: 'code', title: 'Start' } };
+  const DIFF: AnchorSubject = { illustration: { id: 'change', kind: 'diff' } };
+  const row = (attrs: Record<string, string>): Node => ({ tag: 'div', attrs });
+  const file = (name: string): Node => ({ tag: 'div', attrs: { 'data-code-file': name } });
+
+  it('names a code line by its file and its line in the file', () => {
+    const snapshot = snap([{ tag: 'span' }, row({ 'data-code-line': '42', 'data-code-text': 'return server;' }), { tag: 'div' }, file('src/server.ts')]);
+    expect(line(snapshot, CODE, codeAnchor)).toBe('code "Start" → line 42 of src/server.ts "return server;"');
+  });
+
+  it('names a line of code with no file by its number alone', () => {
+    expect(line(snap([row({ 'data-code-line': '3', 'data-code-text': '' }), { tag: 'div' }]), CODE, codeAnchor)).toBe('code "Start" → line 3');
+  });
+
+  it('names a diff line by its file, side and line, and a context line by both numbers', () => {
+    const at = (attrs: Record<string, string>) => line(snap([row(attrs), { tag: 'code' }, file('src/app.ts')]), DIFF, codeAnchor);
+    expect(at({ 'data-code-line': '11', 'data-code-side': 'old', 'data-code-text': 'a' })).toBe('diff "change" → old line 11 of src/app.ts "a"');
+    expect(at({ 'data-code-line': '12', 'data-code-side': 'new', 'data-code-text': 'b' })).toBe('diff "change" → new line 12 of src/app.ts "b"');
+    expect(at({ 'data-code-line': '13', 'data-code-side': 'context', 'data-code-old-line': '12', 'data-code-text': 'c' })).toBe(
+      'diff "change" → context line 13 of src/app.ts (old 12) "c"',
+    );
+  });
+
+  it("names a diff file's header by the file", () => {
+    const snapshot = snap([{ tag: 'bdi' }, { tag: 'div', attrs: { 'data-code-header': '' } }, file('README.md')]);
+    expect(line(snapshot, DIFF, codeAnchor)).toBe('diff "change" → file README.md');
+  });
+
+  it('falls back to the generic reading between lines', () => {
+    const snapshot = snap([{ tag: 'span', text: '39 unmodified lines' }, file('src/app.ts')]);
+    expect(line(snapshot, DIFF, codeAnchor)).toBe('diff "change" → span "39 unmodified lines"');
   });
 });
 

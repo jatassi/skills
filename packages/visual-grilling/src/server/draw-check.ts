@@ -5,12 +5,14 @@
 // Mermaid needs a DOM, so the server installs jsdom globals and size shims and
 // then imports the page's own chunk (page/mermaid.js). The import is lazy and
 // kept warm for the rest of the grilling session. Other kinds' checks live in
-// their own modules (dot-check.ts) and are dispatched from `drawers`.
+// their own modules (dot-check.ts, vega-lite-check.ts, code-check.ts) and are dispatched from
+// `drawers`.
 
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type * as MermaidChunk from '../chunks/mermaid.ts';
 import type { Illustration, Round, RoundError } from '../core/round.ts';
+import { CodeCheck } from './code-check.ts';
 import { installDomGlobals } from './dom-shim.ts';
 import { DotCheck } from './dot-check.ts';
 import { explainMermaidFailure } from './mermaid-explain.ts';
@@ -26,9 +28,11 @@ export class DrawCheck {
   private mermaid: Promise<typeof MermaidChunk> | undefined;
   private drawn = 0;
   private readonly dot: DotCheck;
+  private readonly code: CodeCheck;
 
   constructor(private readonly pageDir: string) {
     this.dot = new DotCheck(pageDir);
+    this.code = new CodeCheck(pageDir);
   }
 
   /** The check for each kind that has one. */
@@ -36,6 +40,8 @@ export class DrawCheck {
     mermaid: (illustration) => this.drawMermaid(illustration),
     dot: (illustration) => this.dot.draw(illustration),
     'vega-lite': (illustration) => checkVegaLite(this.pageDir, illustration),
+    code: (illustration) => this.code.draw(illustration),
+    diff: (illustration) => this.code.draw(illustration),
   };
 
   /** Starts loading the drawing libraries so the first `present` doesn't wait on them. Settles once Mermaid is loaded (or failed). */

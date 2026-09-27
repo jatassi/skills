@@ -18,7 +18,7 @@
 //   GET  /frame/r<n>/<illustration-id>     an html illustration's sandboxed frame document
 //   GET  /frame/assets/<file>              the frame's scripts (inject.js, tailwind.js)
 
-import type { DesignTreeNode, Illustration, RoundError } from './round.ts';
+import type { DesignTreeNode, Illustration, RoundError, RoundNote } from './round.ts';
 import type { CommentRecord, Verdict } from './submission.ts';
 
 /** The server's identity: a live pid that answers with a different start time is a reused pid. */
@@ -34,6 +34,8 @@ export interface PresentRequest {
 export interface PresentResponse {
   round: number;
   url: string;
+  /** What the agent should know about a round that was still shown (an unknown code language). */
+  notes: RoundNote[];
 }
 
 export interface PresentRejection {

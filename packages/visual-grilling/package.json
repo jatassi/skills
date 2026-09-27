@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@mermaid-js/layout-elk": "^1.0.0",
+    "@pierre/diffs": "^1.5.1",
     "@tailwindcss/browser": "^4.3.3",
     "@types/jsdom": "^30.0.0",
     "@types/mdast": "^4.0.4",
@@ -27,6 +28,7 @@
     "micromark": "^4.0.3",
     "micromark-extension-gfm": "^3.0.0",
     "playwright": "^1.63.0",
+    "shiki": "^4.4.3",
     "typescript": "^7.0.2",
     "vega": "^6.4.0",
     "vega-interpreter": "^2.3.2",

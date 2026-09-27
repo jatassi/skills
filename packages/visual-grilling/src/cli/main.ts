@@ -10,7 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import type { AwaitResponse, PresentRejection, PresentResponse } from '../core/protocol.ts';
-import { formatRoundError } from '../core/round.ts';
+import { formatRoundError, formatRoundNote } from '../core/round.ts';
 import {
   isValidSessionId,
   preparePrivateSessionDir,
@@ -123,6 +123,9 @@ await's first line names the outcome:
   superseded · round N answered in the terminal                  exit 0
   ended · <reason>                the server is gone              exit 1
 
+present prints rejections to stderr and exits 1. It prints notes (an unknown code
+language, shown as plain text) to stderr as "…: note: …" and still shows the round.
+
 Exit codes: 0 ok, 1 rejected round or failure, 2 usage error.
 
 Round-file guide: ${resolve(distDir, '..', 'round-file.md')}
@@ -183,7 +186,8 @@ async function present(
     }
     if (response.status !== 200) throw serverError(response);
 
-    const { url } = response.body as PresentResponse;
+    const { url, notes } = response.body as PresentResponse;
+    for (const note of notes) io.err(formatRoundNote(file, note));
     if (session.generated) io.out(`session: ${session.id}`);
     io.out(url);
     // A new or restarted server has a new link; any open tab can't follow it.

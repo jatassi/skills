@@ -71,7 +71,7 @@ Every fence in a question is an illustration; an indented code block stays prose
 
 - `startLine` is a positive whole number.
 - `highlight` takes lines and ranges like `3,5-7`, in the file's own line numbers when `startLine` is set, and must stay inside the code.
-- An unknown code language falls back to plain text, with a note from `present`.
+- An unknown code language falls back to plain text. `present` still shows the round and prints a note to stderr, in the rejection format with the message starting `note:`.
 - To show a fence inside a source, wrap it in a longer outer fence or in `~~~`.
 - In one `html` illustration or mockup, each `data-anchor` name is unique.
 
@@ -111,7 +111,7 @@ Question-level errors drop the illustration part; round-level errors drop the qu
 - **Illustrations**: a fence with no language; a `design-tree` fence inside a question; a missing, malformed or duplicate `id`; an unknown key, a key that isn't lower camelCase, a key given twice, or a token that isn't `key=value`; a quoted value with no closing quote, a quote that doesn't wrap the whole value, or no space after it; an empty `title` or `file`; a bad `tailwind`, `startLine` or `highlight` value, or a `highlight` outside the code; a `code` fence without `lang=`, or a `lang` that isn't a language name; a duplicate `data-anchor` in one html illustration or mockup.
 - **Mockups**: an `id`; any key but `tailwind`.
 - **Design tree**: anything but one task list in the fence; a branch without `[ ]` or `[x]`, with no name, or running past one line; a `Q<n>` that isn't in the round; a second design-tree fence.
-- **Drawing**: any block that fails to draw (it throws or comes out empty). Where `present` recognises the failure, its message says how to fix it.
+- **Drawing**: any block that fails to draw (it throws or comes out empty, like a `diff` with no files). Where `present` recognises the failure, its message says how to fix it.
 
 ## Worked example
 
