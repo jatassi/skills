@@ -1,6 +1,6 @@
 # The browser channel is a bundled Node CLI driving a detached local server
 
-`visual-grilling` carries its browser channel through one path on every host: the agent writes a Markdown round file and runs a CLI bundled in the skill folder (`present`, `await --timeout`, `end`); the first `present` starts a detached Node server that serves the round page, and `await` returns the round submission or `pending`. We chose this because it works in any agent with a shell, runs only while a grilling session is live, and lets the CLI validate blocks with the same libraries the page draws them with. Host features change only where the page shows (the Claude Code desktop Browser pane when present) and how the agent waits (a background `await` where the shell can wake the agent), never the payload.
+`visual-grilling` carries its browser channel through one path on every host: the agent writes a Markdown round file and runs a CLI bundled in the skill folder (`present`, `await --timeout`, `end`); the first `present` starts a detached Node server that serves the round page, and `await` returns the round submission or `pending`. We chose this because it works in any agent with a shell, runs only while a grilling session is live, and lets blocks be validated with the same libraries the page draws them with. Host features change only where the page shows (the Claude Code desktop Browser pane when present) and how the agent waits (a background `await` where the shell can wake the agent), never the payload.
 
 ## Considered Options
 
@@ -16,3 +16,4 @@
 - Node (a pinned minimum version) is a hard requirement of the skill.
 - Release commits carry built bundles (CLI plus page libraries); Shiki ships a curated language set to keep them small.
 - The terminal stays a channel: a reply typed there answers the round, and the page marks it answered in the terminal.
+- Validation draws every block, not just parses it, in the warm server at `present`, with the same library the page uses (Mermaid under jsdom with size shims, Vega via `View.toSVG()`). A block that throws or comes out empty rejects the round. happy-dom is not enough for this: its sanitised Mermaid output is empty. See [Decide how blocks that pass `present` but fail to draw reach the agent](https://github.com/jatassi/skills/issues/12).
