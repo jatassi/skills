@@ -1411,6 +1411,8 @@ textarea[readonly] {
 /* Points are hollow by default: let a click inside one name it. */
 .vega-lite-block .mark-symbol.role-mark > path {
   pointer-events: visible;
+}
+
 /* Code and diff blocks. Shiki and @pierre/diffs colour through CSS variables
    (--shiki-*, --diffs-*), set here from the page tokens, so a theme flip
    recolours them without highlighting again. */
