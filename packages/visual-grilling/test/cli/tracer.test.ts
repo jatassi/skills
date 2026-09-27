@@ -125,7 +125,7 @@ describe('await', () => {
 record: <record>
 
 Q1 Where are rounds saved?
-   accepted: A · Session folder in \`$TMPDIR\`
+   accepted: A · Session folder in $TMPDIR
 Q2 Which runtime?
    picked B: Bun
 Q3 Retention?
@@ -151,7 +151,7 @@ Q6 Retry policy · accepted
       round: 1,
       title: 'Storage choices',
       questions: [
-        { number: 1, verdict: { mode: 'accepted', option: 'A', label: 'Session folder in `$TMPDIR`' } },
+        { number: 1, verdict: { mode: 'accepted', option: 'A', label: 'Session folder in $TMPDIR' } },
         { number: 2, verdict: { mode: 'picked', option: 'B', label: 'Bun' } },
         { number: 3, verdict: { mode: 'own', text: 'keep them until the repo is cleaned' } },
         { number: 4, verdict: { mode: 'unsure' } },

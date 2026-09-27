@@ -1,7 +1,7 @@
 // The round page: one question per step, tabs Q1…Qn and Review, and one
 // round submission sent from the Review step.
 
-import type { PageEvents, PageQuestion, PageRound } from '../core/protocol.ts';
+import type { PageEvents, PageIllustration, PageQuestion, PageRound } from '../core/protocol.ts';
 import type { PageAnswer, PageSubmission, Verdict } from '../core/submission.ts';
 
 type Draft = PageAnswer & { ownText?: string; writing?: boolean };
@@ -155,6 +155,7 @@ function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
         h('span', { class: 'key' }, option.letter),
         label,
       ),
+      option.mockup && sourceFrame(`Mockup ${option.letter}`, 'html mockup', option.mockup.source),
     );
   });
 
@@ -191,6 +192,7 @@ function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
         'Accept',
       ),
     ),
+    ...question.illustrations.map(illustrationFrame),
     optionItems.length > 0 && h('ul', { class: 'options', 'aria-label': 'Options' }, ...optionItems),
     h(
       'div',
@@ -219,6 +221,20 @@ function questionPanel(question: PageQuestion, readOnly: boolean): HTMLElement {
       h('button', { onclick: () => go(state.step + 1) }, isLast ? 'Review' : 'Next'),
     ),
     writing && textarea,
+  );
+}
+
+/** Until each block's renderer lands, an illustration shows as its raw source. */
+function illustrationFrame(illustration: PageIllustration): HTMLElement {
+  return sourceFrame(illustration.title ?? illustration.id, illustration.kind, illustration.source);
+}
+
+function sourceFrame(title: string, kind: string, source: string): HTMLElement {
+  return h(
+    'figure',
+    { class: 'illustration', 'aria-label': title },
+    h('figcaption', {}, h('span', {}, title), h('span', { class: 'muted' }, kind)),
+    h('pre', {}, h('code', {}, source)),
   );
 }
 
