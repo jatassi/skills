@@ -150,19 +150,21 @@ describe('the Mermaid adapters that match by position', () => {
   });
 
   it('reads C4 boundaries inner first, and a relationship label through the line before it', () => {
-    const source = 'C4Context\n  Boundary(outer, "Outer") {\n    Boundary(inner, "Inner") {\n    }\n  }\n  Rel(a, b, "Uses")\n  BiRel(b, c, "Syncs")';
+    const source = 'C4Context\n  Boundary(outer, "Outer") {\n    Boundary(inner, "Inner") {\n    }\n  }\n  Rel(a, b, "Uses")\n  RelIndex(1, c, d, "Numbered")\n  BiRel(b, c, "Syncs")';
     const peers = [
       peer('rect', {}, '', at(10, 10, 50, 50)),
       peer('rect', {}, '', at(0, 0, 100, 100)),
       peer('line', {}, '', at(1, 1, 5, 5)),
       peer('text', {}, 'Uses', at(2, 2, 5, 5)),
       peer('path', {}, '', at(3, 3, 5, 5)),
-      peer('text', {}, 'Syncs', at(4, 4, 5, 5)),
+      peer('text', {}, 'Numbered', at(4, 4, 5, 5)),
+      peer('path', {}, '', at(5, 5, 5, 5)),
+      peer('text', {}, 'Syncs', at(6, 6, 5, 5)),
     ];
     const top = (box: Box): Node => ({ tag: 'g', box });
     expect(term(snap('c4', [{ tag: 'rect', box: at(0, 0, 100, 100) }, top(at(0, 0, 100, 100))], peers), source)).toBe('boundary outer "Outer"');
     expect(term(snap('c4', [{ tag: 'text', box: at(10, 10, 5, 5) }, top(at(10, 10, 50, 50))], peers), source)).toBe('boundary inner "Inner"');
-    expect(term(snap('c4', [{ tag: 'tspan' }, { tag: 'text', box: at(4, 4, 5, 5) }, top(at(1, 1, 8, 8))], peers), source)).toBe(
+    expect(term(snap('c4', [{ tag: 'tspan' }, { tag: 'text', box: at(6, 6, 5, 5) }, top(at(1, 1, 8, 8))], peers), source)).toBe(
       'relationship b ↔ c "Syncs"',
     );
   });

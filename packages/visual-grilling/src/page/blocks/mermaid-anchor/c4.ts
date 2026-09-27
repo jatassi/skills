@@ -16,6 +16,7 @@ import {
   match,
   pairRef,
   peerAt,
+  sameBox,
   sourceLines,
   unprefixed,
   VIA_NEIGHBOUR,
@@ -44,7 +45,7 @@ export const c4Adapter: DiagramAdapter = {
     const group = click.chain[top];
     if (!group || group.tag !== 'g') return null;
     const boundaries = click.peers.filter(isBoundary);
-    const k = boundaries.findIndex((rect) => rect.box && rect.box.x === group.box.x && rect.box.y === group.box.y && rect.box.w === group.box.w && rect.box.h === group.box.h);
+    const k = boundaries.findIndex((rect) => sameBox(rect.box, group.box));
     if (k >= 0) {
       const boundary = parse(click.source).boundaries[k];
       return boundary ? match('boundary', boundary.alias, boundary.label, top, VIA_POSITION) : null;
@@ -84,7 +85,8 @@ function parse(source: string): { relationships: { ends: string; label: string |
   const root: Boundary = { alias: '', label: null, children: [] };
   const open = [root];
   for (const { text } of sourceLines(source)) {
-    const rel = /^(Bi)?Rel(?:_\w+)?\s*\(\s*([^,\s)]+)\s*,\s*([^,\s)]+)\s*(?:,\s*"([^"]*)")?/.exec(text);
+    // RelIndex(index, from, to, ...) leads with its index; Rel_Back keeps from and to as written.
+    const rel = /^(Bi)?Rel(?:_\w+|Index\s*\(\s*[^,]+,)?\s*\(?\s*([^,\s)]+)\s*,\s*([^,\s)]+)\s*(?:,\s*"([^"]*)")?/.exec(text);
     if (rel) relationships.push({ ends: `${rel[2]} ${rel[1] ? '↔' : '→'} ${rel[3]}`, label: rel[4] ?? null });
     const boundary = /^(?:\w*Boundary|Deployment_Node|Node(?:_[LR])?)\s*\(\s*([^,\s)]+)\s*(?:,\s*"([^"]*)")?.*\{\s*$/.exec(text);
     if (boundary) {

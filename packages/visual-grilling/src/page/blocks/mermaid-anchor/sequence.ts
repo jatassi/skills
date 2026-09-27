@@ -12,7 +12,7 @@
 // sits on, found by geometry, and is counted top to bottom on it.
 
 import type { AdapterMatch, Box, SnapshotPeer } from '../../../core/anchor.ts';
-import { classes, find, hasClass, labelUnlessId, match, peerIndex, VIA_GEOMETRY, VIA_NEIGHBOUR, type DiagramAdapter, type DiagramClick } from './shared.ts';
+import { classes, find, hasClass, labelUnlessId, match, peerIndex, sameBox, VIA_GEOMETRY, VIA_NEIGHBOUR, type DiagramAdapter, type DiagramClick } from './shared.ts';
 
 const et = (element: { attrs: Record<string, string> }, value: string) => element.attrs['data-et'] === value;
 
@@ -67,7 +67,7 @@ function activationMatch(click: DiagramClick, box: Box, chainIndex: number): Ada
     .filter((peer) => peer.tag === 'rect' && classes(peer).some((name) => /^activation\d+$/.test(name)) && peer.box && on(peer.box)(lifeline))
     .map((peer) => peer.box!)
     .sort((a, b) => a.y - b.y || a.x - b.x);
-  const k = bars.findIndex((bar) => bar.x === box.x && bar.y === box.y && bar.w === box.w && bar.h === box.h);
+  const k = bars.findIndex((bar) => sameBox(bar, box));
   const ref = bars.length > 1 && k >= 0 ? `#${k + 1} of ${lifeline.attrs['data-id']}` : `of ${lifeline.attrs['data-id']}`;
   return match('activation', ref, null, chainIndex, VIA_GEOMETRY);
 }

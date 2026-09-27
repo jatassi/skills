@@ -7,7 +7,8 @@
 // Adding a type: write a DiagramAdapter in its own module (types drawn by
 // one renderer, like the graph family, share a module) and list it in
 // ADAPTERS with the type names it reads. Its `peers` selector joins the
-// block's, scoped to drawings of those types.
+// block's, scoped to drawings of those types. Lines too thin to click also
+// need a selector in hit.ts's THIN.
 //
 // The rules come from the research on Mermaid 12's SVG output: docs/research/
 // mermaid-anchor-terms.md on the research/mermaid-anchor-terms branch.

@@ -4,7 +4,7 @@
 // in source order, so a repeated symbol is told apart by its place:
 // `nonterminal #2 in rule expression "term"`.
 
-import { find, hasClass, match, ordinal, peerIndex, VIA_POSITION, type DiagramAdapter } from './shared.ts';
+import { find, hasClass, match, ordinal, peerIndex, VIA_POSITION, words, type DiagramAdapter } from './shared.ts';
 
 const SYMBOLS: [cls: string, kind: string][] = [
   ['railroad-terminal', 'terminal'],
@@ -27,7 +27,7 @@ export const railroadAdapter: DiagramAdapter = {
         inRule.map((peer) => peer.text),
         inRule.indexOf(click.peers[at]!),
       );
-      return match(kind, `${ref ? `${ref} ` : ''}in rule ${ruleName(click.peers, start)}`, symbol.element.text, symbol.index, VIA_POSITION);
+      return match(kind, words(ref, `in rule ${ruleName(click.peers, start)}`), symbol.element.text, symbol.index, VIA_POSITION);
     }
     const rule = find(click, (element) => element.tag === 'g' && isRule(element));
     if (!rule) return null;

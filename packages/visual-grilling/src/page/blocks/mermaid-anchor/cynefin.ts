@@ -4,7 +4,7 @@
 // statement. Domains are named by their keyword. The practice subtitles
 // are generated.
 
-import { find, findPeer, hasClass, match, ordinal, sourceLines, unquote, VIA_POSITION, type DiagramAdapter } from './shared.ts';
+import { find, findPeer, hasClass, match, ordinal, sourceLines, unquote, VIA_POSITION, words, type DiagramAdapter } from './shared.ts';
 
 const DOMAINS = ['complex', 'complicated', 'chaotic', 'clear', 'confusion'];
 const TRANSITION = /^(\w+)\s*-+>\s*(\w+)\s*(?::\s*(.*))?$/;
@@ -17,7 +17,7 @@ export const cynefinAdapter: DiagramAdapter = {
     if (item?.element.nth) {
       const found = items[item.element.nth.i];
       const names = items.map((other) => `${other.domain} ${other.name}`);
-      return found ? match('item', `in ${found.domain}${suffix(ordinal(names, item.element.nth.i))}`, found.name, item.index, VIA_POSITION) : null;
+      return found ? match('item', words(`in ${found.domain}`, ordinal(names, item.element.nth.i)), found.name, item.index, VIA_POSITION) : null;
     }
     const arrow = findPeer(click, (element) => hasClass(element, 'cynefinArrowLine'));
     const label = find(click, (element) => hasClass(element, 'cynefinArrowLabel'));
@@ -36,8 +36,6 @@ export const cynefinAdapter: DiagramAdapter = {
     return confusion ? match('domain', 'confusion', null, confusion.index, VIA_POSITION) : null;
   },
 };
-
-const suffix = (ref: string | null) => (ref ? ` ${ref}` : '');
 
 /** Items in drawing order (by domain, then source order), and the transitions in source order. */
 function parse(source: string): {

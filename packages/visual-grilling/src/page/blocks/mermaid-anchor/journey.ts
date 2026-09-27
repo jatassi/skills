@@ -14,6 +14,7 @@ import {
   sourceLines,
   VIA_NEIGHBOUR,
   VIA_POSITION,
+  words,
   type DiagramAdapter,
 } from './shared.ts';
 
@@ -51,11 +52,11 @@ export const journeyAdapter: DiagramAdapter = {
     const ref = ordinal(names, k);
     if (isTaskLine(part.element)) return match('task', ref, task.name, part.index, VIA_POSITION);
     if (isFace(part.element)) {
-      return match('score', `${task.score} of task${ref ? ` ${ref}` : ''}`, task.name, part.index, VIA_NEIGHBOUR);
+      return match('score', words(task.score, 'of task', ref), task.name, part.index, VIA_NEIGHBOUR);
     }
     if (isActor(part.element)) {
       const actor = part.element.title ?? '';
-      return match('actor', `${actor} of task${ref ? ` ${ref}` : ''}`.trim(), task.name, part.index, VIA_NEIGHBOUR);
+      return match('actor', words(actor, 'of task', ref), task.name, part.index, VIA_NEIGHBOUR);
     }
     return match('task', ref, task.name, part.index, VIA_NEIGHBOUR);
   },

@@ -767,14 +767,16 @@ evolve Kettle 0.62`,
     "Restart service"
   chaotic
     "Page on-call"
-  complex --> complicated : "Pattern identified"`,
+  complex --> complicated : "Pattern identified"
+  chaotic --> clear : "Stabilised"`,
     anchors: [
       { text: 'Expert review', term: 'item in complicated "Expert review"' },
       { text: 'Page on-call', term: 'item in chaotic "Page on-call"' },
       { text: 'Pattern identified', term: 'transition complex → complicated "Pattern identified"' },
+      { text: 'Stabilised', term: 'transition chaotic → clear "Stabilised"' },
       { text: 'Chaotic', term: 'domain chaotic' },
       // A generated subtitle.
-      { text: 'Novel Practices', term: 'text "Novel Practices"' },
+      { text: 'Disorder', term: 'text "Disorder"' },
     ],
   },
   {

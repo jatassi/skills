@@ -7,7 +7,7 @@
 // rather than split.
 
 import type { AdapterMatch } from '../../../core/anchor.ts';
-import { find, hasClass, match, VIA_GEOMETRY, type DiagramAdapter, type DiagramClick } from './shared.ts';
+import { find, hasClass, match, VIA_GEOMETRY, VIA_ID, type DiagramAdapter, type DiagramClick } from './shared.ts';
 
 export const vennAdapter: DiagramAdapter = {
   peers: 'g.venn-area',
@@ -24,19 +24,18 @@ export const vennAdapter: DiagramAdapter = {
     const text = click.peers.find((peer) => joined.includes(peer.attrs['data-venn-sets'] ?? ''))?.text || null;
     // The area clicked names the region only when it is the one the point is in.
     const own = area && joined.includes(area.element.attrs['data-venn-sets']!) ? area.index : -1;
-    const found = named(click, sets.length === 1 ? sets[0]! : sets.join('_'), text, own, sets);
-    return found && { ...found, via: VIA_GEOMETRY };
+    return named(click, sets.length === 1 ? sets[0]! : sets.join('_'), text, own, VIA_GEOMETRY, sets);
   },
 };
 
 /** The set or declared region for `joined` (data-venn-sets), or null for a region the agent didn't declare. */
-function named(click: DiagramClick, joined: string, text: string | null, chainIndex: number, sets?: string[]): AdapterMatch | null {
+function named(click: DiagramClick, joined: string, text: string | null, chainIndex: number, via = VIA_ID, sets?: string[]): AdapterMatch | null {
   const union = unions(click.source).find((declared) =>
     sets ? declared.length === sets.length && sets.every((set) => declared.includes(set)) : orders(declared).some((order) => order.join('_') === joined),
   );
-  if (union) return match('region', union.join(' ∩ '), text, chainIndex);
+  if (union) return match('region', union.join(' ∩ '), text, chainIndex, via);
   // A set's own area; its name may hold "_", which also joins intersections.
-  if (setNames(click.source).has(joined)) return match('set', joined, text === joined ? null : text, chainIndex);
+  if (setNames(click.source).has(joined)) return match('set', joined, text === joined ? null : text, chainIndex, via);
   return null;
 }
 

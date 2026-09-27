@@ -168,7 +168,7 @@ export function findPeer(
   return null;
 }
 
-function sameBox(a: Box | undefined, b: Box): boolean {
+export function sameBox(a: Box | undefined, b: Box): boolean {
   return a !== undefined && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
 }
 
@@ -193,6 +193,11 @@ export function sourceLines(source: string): SourceLine[] {
   return lines
     .filter((line) => line.trim() && !line.trim().startsWith('%%'))
     .map((line) => ({ text: line.trim(), indent: line.length - line.trimStart().length }));
+}
+
+/** The parts of a ref that are there, space-separated: `words('#2', 'in rule x')` → `#2 in rule x`. */
+export function words(...parts: (string | null | undefined)[]): string {
+  return parts.filter(Boolean).join(' ');
 }
 
 /** A name as the source writes it, quoted or bare: `"Big"` → `Big`. */
