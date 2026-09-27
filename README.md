@@ -7,6 +7,7 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 | Skill | What it does |
 | --- | --- |
 | [`auto-grill`](skills/auto-grill/SKILL.md) | A relentless interview where an agent stand-in answers in your place. |
+| [`visual-grilling`](skills/visual-grilling/SKILL.md) | Grilling with each round shown as a page in the browser, answered and commented on there. Needs Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`. |
 | [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Take a build-graph parent: spec it in a comment on the parent, then cut it into linked, blocked sub-issues. |
 | [`implement-loop`](skills/implement-loop/SKILL.md) | Orchestrate the implementation of a large task with several sub-tasks. |
 
@@ -31,6 +32,7 @@ Point your client at this repository; the manifest is [`plugin.json`](plugin.jso
 ├── .claude-plugin/
 │   ├── plugin.json              # Claude Code plugin manifest
 │   └── marketplace.json         # Claude Code marketplace (this repo = one plugin)
+├── hooks/hooks.json             # Codex SessionEnd hook for visual-grilling (Claude Code also loads it)
 └── skills/                      # Shared by both formats
     └── <skill>/SKILL.md
 ```
