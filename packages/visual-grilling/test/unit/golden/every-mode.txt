@@ -15,8 +15,9 @@ Q5 Tree column
    no answer (sent as unsure)
 Q6 Error copy
    comments only, no verdict
-   comment 1 · html "Error banner" → unlabeled shape  [near "Retry"; at 72% across, 40% down; crop /tmp/visual-grilling/a1b2/crops/r3-q6-c1.png]: "too loud"
+   comment 1 · html "Error banner" → unlabeled shape  [clicked <rect>; near "Retry"; at 72% across, 40% down; crop /tmp/visual-grilling/a1b2/crops/r3-q6-c1.png]: "too loud"
    comment 2 · html "Error banner" → button "Retry": "fine"
+   comment 3 · mockup B → list item "Retry"  [clicked <span>; inside "toolbar"; near "Cancel", "Save"; at 5% across, 95% down]: "clicked beside it"
    ⚠ html "banner" script error: x is not defined
 Q7 Retry policy
    accepted: Retry three times with backoff.
@@ -27,5 +28,5 @@ Q2 Which runtime? · picked B · 1 comment · 1 warning
 Q3 Retention? · own answer
 Q4 Submit control placement · unsure
 Q5 Tree column · no answer
-Q6 Error copy · comments only · 2 comments · 1 warning
+Q6 Error copy · comments only · 3 comments · 1 warning
 Q7 Retry policy · accepted

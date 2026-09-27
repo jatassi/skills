@@ -10,6 +10,9 @@
   --accent: #2f81f7;
   --answered: #3fb950;
   --unsure: #d29922;
+  --comment: #a371f7;
+  --comment-soft: rgb(163 113 247 / 15%);
+  --on-comment: #fff;
   font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -162,22 +165,188 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 6px;
   margin: 12px 0;
+  overflow: hidden;
 }
 
 .illustration figcaption {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  padding: 4px 8px;
+  padding: 4px 4px 4px 8px;
   border-bottom: 1px solid var(--line);
+}
+
+.illustration figcaption .title {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.illustration figcaption .kind {
+  color: var(--muted);
+  font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-right: auto;
+}
+
+.comment-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+}
+
+.comment-toggle kbd {
+  font-size: 11px;
+  margin: 0;
+}
+
+.comment-toggle[aria-pressed='true'] {
+  border-color: var(--comment);
+  color: var(--comment);
+}
+
+.stage {
+  overflow: auto;
+  max-height: 440px;
+}
+
+.block-content {
+  position: relative;
+  width: max-content;
+  min-width: 100%;
+}
+
+.illustration.commenting .block-content,
+.illustration.commenting .block-content * {
+  cursor: crosshair !important;
 }
 
 .illustration pre {
   margin: 0;
   padding: 8px;
-  overflow: auto;
-  max-height: 440px;
   font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.block-error {
+  margin: 0;
+  padding: 8px;
+  color: var(--unsure);
+}
+
+.block-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.block-table th,
+.block-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.block-table th {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.block-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.pins {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pin {
+  display: inline-block;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 10px 10px 10px 2px;
+  background: var(--comment);
+  color: var(--on-comment);
+  font: 600 11px/20px system-ui, sans-serif;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pins .pin {
+  position: absolute;
+  transform: translate(0, -100%);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+}
+
+.pin.pending {
+  opacity: 0.7;
+}
+
+.composer,
+.threads {
+  border-top: 1px solid var(--line);
+  padding: 8px;
+}
+
+.composer-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.comment-save {
+  background: var(--comment);
+  border-color: var(--comment);
+  color: var(--on-comment);
+}
+
+.composer textarea {
+  border-color: var(--comment);
+}
+
+.threads {
+  list-style: none;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.thread {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.thread p {
+  margin: 2px 0 0;
+}
+
+.anchor-text {
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.review-bar {
+  margin: -8px 0 12px;
+}
+
+.comment-count {
+  color: var(--comment);
+  font-variant-numeric: tabular-nums;
 }
 
 .options li > .illustration {

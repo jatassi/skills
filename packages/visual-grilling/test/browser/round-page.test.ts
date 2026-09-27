@@ -148,4 +148,112 @@ Q6 Retry policy · accepted
     await pageExpect(page.getByText('Grilling finished')).toHaveCount(0);
     await expectReadOnlyWithDrafts(page);
   });
+
+  it('pins anchored comments on table cells and sends them in the table\'s own terms', async () => {
+    sandbox = new Sandbox('p1');
+    const wide = 'x'.repeat(400);
+    const round = [
+      '# Tools',
+      '',
+      '❓ **Q1** - **Install path**: Compare them.',
+      '',
+      '```table id=compare title="Compare"',
+      '| Tool | Install | Notes |',
+      '|---|---|---|',
+      `| MCP server | \`npx\` | ${wide} |`,
+      '| CLI | **brew** | fine |',
+      '```',
+      '',
+      '➡️ The MCP server.',
+      '',
+      '❓ **Q2** - **Costs**: Push back?',
+      '',
+      '```table id=costs',
+      '| Plan | Price |',
+      '|---|---|',
+      '| Team | $10 |',
+      '```',
+      '',
+      '➡️ Keep it.',
+      '',
+    ].join('\n');
+    const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', round), '--no-open']);
+    const page = await browser.newPage({ viewport: { width: 600, height: 900 } });
+    await page.goto(presented.stdout.trim());
+
+    const compare = page.getByRole('figure', { name: 'Compare' });
+    await pageExpect(compare.getByRole('cell', { name: 'npx' })).toBeVisible();
+    await pageExpect(compare.getByRole('columnheader', { name: 'Install' })).toBeVisible();
+
+    // Outside comment mode a click does nothing.
+    await compare.getByRole('cell', { name: 'npx' }).click();
+    await pageExpect(page.locator('.composer:not([hidden])')).toHaveCount(0);
+
+    // M turns comment mode on; the toggle shows it.
+    await page.keyboard.press('m');
+    const toggle = compare.getByRole('button', { name: 'Comment on Compare' });
+    await pageExpect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+    await compare.getByRole('cell', { name: 'npx' }).click();
+    const composer = compare.getByRole('textbox', { name: 'Comment on cell row "MCP server", column "Install"' });
+    await composer.fill('does this need Node?');
+    await compare.getByRole('button', { name: 'Add comment' }).click();
+
+    // A header, with the keyboard shortcut to save.
+    await compare.getByRole('columnheader', { name: 'Notes' }).click();
+    await compare.getByRole('textbox', { name: 'Comment on column "Notes"' }).fill('too wide');
+    await page.keyboard.press('ControlOrMeta+Enter');
+
+    const pins = compare.locator('.pins .pin');
+    await pageExpect(pins).toHaveText(['1', '2']);
+    await pageExpect(compare.getByRole('list', { name: 'Comments on Compare' })).toContainText('does this need Node?');
+    await pageExpect(page.locator('.comment-count')).toHaveText('2 comments');
+
+    // Pins scroll with the illustration.
+    const before = (await pins.first().boundingBox())!;
+    await compare.locator('.stage').evaluate((stage) => {
+      stage.scrollLeft = 150;
+    });
+    const after = (await pins.first().boundingBox())!;
+    expect(Math.round(before.x - after.x)).toBe(150);
+
+    // Delete one, then add it back on a cell of another row.
+    await compare.getByRole('button', { name: 'Delete comment 2' }).click();
+    await pageExpect(pins).toHaveText(['1']);
+    await compare.getByRole('cell', { name: 'CLI' }).click();
+    await compare.getByRole('textbox', { name: 'Comment on row "CLI"' }).fill('brew only');
+    await compare.getByRole('button', { name: 'Add comment' }).click();
+
+    // Comments go with any answer mode: accept Q1 too.
+    await page.getByRole('button', { name: 'Accept' }).click();
+    await page.getByRole('tab', { name: 'Q2' }).click();
+    const costs = page.getByRole('figure', { name: 'costs' });
+    await costs.getByRole('cell', { name: '$10' }).click();
+    await costs.getByRole('textbox').fill('per seat?');
+    await costs.getByRole('button', { name: 'Add comment' }).click();
+    await pageExpect(page.getByRole('heading', { level: 2 })).toContainText('(comments only)');
+
+    await page.getByRole('tab', { name: 'Review' }).click();
+    const review = page.getByRole('region', { name: 'Review' });
+    await pageExpect(review).toContainText('Q1 Install path · accepted · 2 comments');
+    await pageExpect(review).toContainText('Q2 Costs · comments only · 1 comment');
+    await pageExpect(review).not.toContainText('will be sent as unsure');
+
+    const waiting = sandbox.cli(['await', '--timeout', '30']);
+    await page.getByRole('button', { name: 'Submit round' }).click();
+    const result = await waiting;
+    expect(result.stdout).toContain(`Q1 Install path
+   accepted: The MCP server.
+   comment 1 · table "Compare" → cell row "MCP server", column "Install": "does this need Node?"
+   comment 2 · table "Compare" → row "CLI": "brew only"
+Q2 Costs
+   comments only, no verdict
+   comment 1 · table "costs" → cell row "Team", column "Price": "per seat?"
+`);
+
+    // Read-only after submitting, with the pins still in place.
+    await page.getByRole('tab', { name: 'Q1' }).click();
+    await pageExpect(page.getByRole('figure', { name: 'Compare' }).locator('.pins .pin')).toHaveText(['1', '2']);
+    await pageExpect(page.getByRole('button', { name: 'Comment on Compare' })).toBeDisabled();
+  });
 });

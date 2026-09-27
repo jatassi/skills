@@ -3,8 +3,9 @@
 
 import { micromark } from 'micromark';
 import { gfm, gfmHtml } from 'micromark-extension-gfm';
-import type { PageRound } from '../core/protocol.ts';
+import type { PageRound, PageTable } from '../core/protocol.ts';
 import type { Round } from '../core/round.ts';
+import type { TableData } from '../core/table.ts';
 import type { SubmissionRecord } from '../core/submission.ts';
 
 export function markdownHtml(source: string): string {
@@ -32,7 +33,10 @@ export function pageRound(
       number: question.number,
       title: question.title,
       proseHtml: markdownHtml(question.prose),
-      illustrations: question.illustrations.map(({ line: _line, ...illustration }) => illustration),
+      illustrations: question.illustrations.map(({ line: _line, table, ...illustration }) => ({
+        ...illustration,
+        ...(table ? { table: pageTable(table) } : {}),
+      })),
       options: question.options.map((option) => ({
         letter: option.letter,
         labelHtml: inlineHtml(option.label),
@@ -44,8 +48,16 @@ export function pageRound(
       },
     })),
     ...(record
-      ? { submitted: Object.fromEntries(record.questions.map((question) => [question.number, question.verdict])) }
+      ? {
+          submitted: Object.fromEntries(record.questions.map((question) => [question.number, question.verdict])),
+          comments: Object.fromEntries(record.questions.map((question) => [question.number, question.comments])),
+        }
       : {}),
     ...(answeredInTerminal ? { answeredInTerminal: true as const } : {}),
   };
+}
+
+function pageTable(table: TableData): PageTable {
+  const cell = ({ markdown, text }: TableData['header'][number]) => ({ html: inlineHtml(markdown), text });
+  return { align: table.align, header: table.header.map(cell), rows: table.rows.map((row) => row.map(cell)) };
 }
