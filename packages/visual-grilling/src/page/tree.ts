@@ -14,13 +14,22 @@ export interface TreeContext {
   elsewhere: (question: number) => number | undefined;
   /** Tells this copy's links apart from another copy's (column and drawer) for focus keeping. */
   keyPrefix: string;
+  /** The round was submitted and the agent hasn't sent the next round's tree yet. */
+  stale?: boolean;
 }
 
 export function designTree(nodes: DesignTreeNode[], context: TreeContext): HTMLElement {
   return h(
     'div',
-    { class: 'tree' },
+    { class: context.stale ? 'tree stale' : 'tree' },
     h('h2', { class: 'tree-h' }, 'Design tree'),
+    context.stale &&
+      h(
+        'p',
+        { class: 'tree-note' },
+        h('span', { class: 'wait-dot', 'aria-hidden': 'true' }),
+        'Out of date until the next round',
+      ),
     h(
       'div',
       { class: 'legend', 'aria-hidden': 'true' },

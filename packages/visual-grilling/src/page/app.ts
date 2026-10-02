@@ -275,7 +275,7 @@ function mount(view: RoundView): void {
 function barContent(view: RoundView, readOnly: boolean): Child[] {
   const round = view.round;
   const answered = countAnswered(view);
-  const tree = Boolean(round.designTree);
+  const tree = Boolean(treeRound());
   const current = round.number === state.latest;
   return [
     tree &&
@@ -877,18 +877,30 @@ function firstSentence(text: string): string {
 
 // ------------------------------------------------------------ design tree
 
+/**
+ * The round whose design tree shows beside any round: the latest, since each round's
+ * tree replaces the one before. A past round on screen keeps the current tree.
+ */
+function treeRound(): PageRound | undefined {
+  const latest = state.views.get(state.latest)?.round ?? shownView()?.round;
+  return latest?.designTree ? latest : undefined;
+}
+
 function renderTree(view: RoundView): void {
-  const nodes = view.round.designTree;
-  side.hidden = drawer.hidden = scrim.hidden = !nodes;
-  if (!nodes) return;
+  const holder = treeRound();
+  side.hidden = drawer.hidden = scrim.hidden = !holder;
+  if (!holder?.designTree) return;
+  const nodes = holder.designTree;
   const current = view.round.questions[view.step]?.number;
-  const roundOf = (question: number) => view.round.questionRounds?.[question] ?? view.round.number;
+  const roundOf = (question: number) => holder.questionRounds?.[question] ?? holder.number;
   const open = (question: number) => {
     state.drawer = false;
     void openQuestion(roundOf(question), question);
   };
   const elsewhere = (question: number) => (roundOf(question) === view.round.number ? undefined : roundOf(question));
-  side.replaceChildren(designTree(nodes, { current, open, elsewhere, keyPrefix: 'side' }));
+  // Submitted answers can reshape the tree, so it waits for the agent's next one.
+  const stale = holder.number === state.latest && Boolean(holder.submitted) && state.connection === 'open';
+  side.replaceChildren(designTree(nodes, { current, open, elsewhere, keyPrefix: 'side', stale }));
   drawer.replaceChildren(
     h(
       'button',
@@ -900,7 +912,7 @@ function renderTree(view: RoundView): void {
       },
       icon('x'),
     ),
-    designTree(nodes, { current, open, elsewhere, keyPrefix: 'drawer' }),
+    designTree(nodes, { current, open, elsewhere, keyPrefix: 'drawer', stale }),
   );
   drawer.classList.toggle('open', state.drawer);
   scrim.classList.toggle('open', state.drawer);

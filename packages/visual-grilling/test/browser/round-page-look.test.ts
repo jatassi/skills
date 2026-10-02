@@ -364,11 +364,43 @@ describe('design tree', () => {
     await tree.getByRole('link', { name: 'Q2' }).click();
     await pageExpect(page.getByRole('heading', { level: 1 })).toHaveText('Round 1 · Storage choices');
     await pageExpect(region(page, 'Q2')).toBeVisible();
+    // The tree stays the latest round's, though round 1 had none of its own.
+    await pageExpect(tree).toContainText('Anything else');
+    await pageExpect(tree.getByRole('link', { name: 'Q7' })).toHaveAttribute('title', 'Opens round 2');
+    await tree.getByRole('link', { name: 'Q7' }).click();
+    await pageExpect(page.getByRole('heading', { level: 1 })).toHaveText('Round 2');
+    await pageExpect(region(page, 'Q7')).toBeVisible();
 
+    await tree.getByRole('link', { name: 'Q2' }).click();
     await page.getByRole('button', { name: 'Back to round 2' }).click();
     await tree.getByRole('link', { name: 'Q7' }).click();
     await pageExpect(page.getByRole('heading', { level: 1 })).toHaveText('Round 2');
     await pageExpect(region(page, 'Q7')).toBeVisible();
+  });
+
+  it('greys out after submitting, until the next round brings its tree', async () => {
+    sandbox = new Sandbox('look');
+    const page = await open(await present(TREE_ROUND));
+    const tree = page.getByRole('complementary', { name: 'Design tree' });
+    const note = 'Out of date until the next round';
+    await pageExpect(tree).not.toContainText(note);
+
+    const waiting = sandbox.cli(['await', '--timeout', '30']);
+    await submitButton(page).click(); // opens Review
+    await submitButton(page).click();
+    await waiting;
+    await pageExpect(tree).toContainText(note);
+    await pageExpect(tree.locator('.tree')).toHaveClass(/stale/);
+    // Still readable and its links still work.
+    await tree.getByRole('link', { name: 'Q2' }).click();
+    await pageExpect(region(page, 'Q2')).toBeVisible();
+
+    const next = ['```design-tree', '- [x] Retention: until end, per Q3', '```', '', '❓ **Q4** - **More?**: No.', '', '➡️ No.', ''];
+    await present(next.join('\n'), 'round-2.md');
+    await pageExpect(page.getByRole('heading', { level: 1 })).toHaveText('Round 2');
+    await pageExpect(tree).toContainText('until end');
+    await pageExpect(tree).not.toContainText(note);
+    await pageExpect(tree.locator('.tree')).not.toHaveClass(/stale/);
   });
 
   it('is hidden when the round has no tree', async () => {
