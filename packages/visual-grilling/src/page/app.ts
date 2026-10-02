@@ -19,6 +19,7 @@ import type { PageAnswer, PageComment, PageSubmission, PageWarning, Verdict } fr
 import { fill, h, html, icon, kbd, plain, type Child, type IconName } from './dom.ts';
 import { IllustrationFrame, type FrameSubject } from './frame.ts';
 import { keyCommand, type KeyCommand } from './keys.ts';
+import { onSwipe } from './swipe.ts';
 import { currentTheme, initTheme, toggleTheme } from './theme.ts';
 import { designTree } from './tree.ts';
 
@@ -202,12 +203,11 @@ const bar = h('header', { class: 'bar' });
 const notices = h('div', { class: 'notices' });
 const tabs = h('nav', { class: 'steps', role: 'tablist', 'aria-label': 'Questions' });
 const stepHost = h('div', { class: 'step-host' });
-const stepNav = h('div', { class: 'stepnav' });
 const side = h('aside', { class: 'side', 'aria-label': 'Design tree' });
 const shell = h(
   'div',
   { class: 'shell' },
-  h('main', { class: 'main' }, h('div', { class: 'col' }, notices, tabs, stepHost, stepNav)),
+  h('main', { class: 'main' }, h('div', { class: 'col' }, notices, tabs, stepHost)),
   side,
 );
 const scrim = h('div', { class: 'scrim', onclick: () => setDrawer(false) });
@@ -251,7 +251,6 @@ function render(): void {
   });
   mounted!.review.hidden = view.step !== reviewStep;
   fill(mounted!.review, reviewContent(view, readOnly));
-  fill(stepNav, stepNavContent(view));
   renderTree(view);
   renderMenu();
 
@@ -435,26 +434,38 @@ function stepTabs(view: RoundView): HTMLElement[] {
   ];
 }
 
-function stepNavContent(view: RoundView): Child[] {
+/** Previous and Next, in the header of the question on screen. */
+function stepNav(view: RoundView): HTMLElement {
   const last = view.round.questions.length;
-  if (view.step === last) return [];
-  return [
+  return h(
+    'div',
+    { class: 'qp-nav', role: 'group', 'aria-label': 'Question navigation' },
     h(
       'button',
-      { class: 'btn ghost nav', 'data-key': 'previous', disabled: view.step === 0, onclick: () => go(view, view.step - 1) },
+      {
+        class: 'btn ghost sm nav',
+        'data-key': 'previous',
+        'aria-label': 'Previous question',
+        disabled: view.step === 0,
+        onclick: () => go(view, view.step - 1),
+      },
       icon('left'),
-      'Previous',
+      h('span', { class: 'nav-l' }, 'Previous'),
       kbd('K'),
     ),
-    h('span', { class: 'grow' }),
     h(
       'button',
-      { class: 'btn nav', 'data-key': 'next', onclick: () => go(view, view.step + 1) },
-      view.step === last - 1 ? 'Review round' : 'Next',
+      {
+        class: 'btn sm nav',
+        'data-key': 'next',
+        'aria-label': view.step === last - 1 ? 'Review round' : 'Next question',
+        onclick: () => go(view, view.step + 1),
+      },
+      h('span', { class: 'nav-l' }, view.step === last - 1 ? 'Review round' : 'Next'),
       icon('right'),
       kbd('J'),
     ),
-  ];
+  );
 }
 
 // --------------------------------------------------------- question panel
@@ -601,7 +612,8 @@ function questionPanel(view: RoundView, question: PageQuestion): QuestionPanel {
       h('h2', { class: 'qp-title' }, question.title),
       h('span', { class: 'grow' }),
       draft.mode !== 'none' && all.length > 0 && commentCount(all.length),
-      stateChip(questionState(view, n), draft, all.length),
+      questionState(view, n) !== 'none' && stateChip(questionState(view, n), draft, all.length),
+      view.round.questions[view.step] === question && stepNav(view),
     ]);
 
     for (const { frame: each, subject } of frames) {
@@ -1157,6 +1169,10 @@ new MutationObserver(() => {
   for (const frame of mounted?.frames ?? []) frame.retheme();
 }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 document.addEventListener('keydown', onKey);
+onSwipe(stepHost, (direction) => {
+  const view = shownView();
+  if (view && !state.menu) go(view, view.step + (direction === 'next' ? 1 : -1));
+});
 void refreshIndex().then(() => (state.latest > 0 ? showRound(state.latest) : undefined));
 listen();
 watchActivity();
