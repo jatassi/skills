@@ -1,0 +1,6 @@
+{
+  "name": "visual-grilling-mod",
+  "version": "0.1.0",
+  "description": "Spike: a grilling round drawn in a native Claude Code pane instead of a browser page",
+  "types": "./types/index.d.ts"
+}

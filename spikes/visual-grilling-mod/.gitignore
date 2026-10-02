@@ -1,0 +1,4 @@
+# Built by build.mjs from packages/visual-grilling/src/core/round.ts
+hooks/round-parser.mjs
+# Laid by the engine when it loads the mod
+.claude-plugin/types/
