@@ -62,7 +62,7 @@ describe('the draw check for vega-lite blocks', () => {
   it('rejects charts that are not JSON, load URL data, are raw Vega, throw or come out empty', async () => {
     sandbox = new Sandbox('v1');
     const file = sandbox.writeRound('round.md', FAILING_ROUND);
-    const result = await sandbox.cli(['present', file, '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
 
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
@@ -95,7 +95,7 @@ describe('the draw check for vega-lite blocks', () => {
 
 ➡️ Bun.
 `;
-    const result = await sandbox.cli(['present', sandbox.writeRound('round.md', round), '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', round), '--no-open']);
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
   });

@@ -33,7 +33,7 @@ afterEach(async () => {
 });
 
 async function present(box: Sandbox, args: string[] = [], content = STORAGE_ROUND): Promise<string> {
-  const result = await box.cli(['present', box.writeRound(`round-${Date.now()}.md`, content), '--no-open', ...args]);
+  const result = await box.cli(['present', '--agent', 'Claude Code', box.writeRound(`round-${Date.now()}.md`, content), '--no-open', ...args]);
   expect(result).toMatchObject({ code: 0, stderr: '' });
   return result.stdout.trim().split('\n').at(-1)!;
 }
@@ -59,7 +59,7 @@ describe('session id', () => {
     const box = open();
     box.env.CODEX_SESSION_ID = 'codex-1';
     sessions.push('codex-1');
-    const result = await box.cli(['present', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
+    const result = await box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
 
     expect(result.stdout).not.toContain('session:');
     expect(existsSync(box.sessionDir('codex-1'))).toBe(true);

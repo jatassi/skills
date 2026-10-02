@@ -64,7 +64,7 @@ async function comment(page: Page, figure: Locator, check: AnchorCheck, text: st
 describe('mermaid anchor corpus', () => {
   it('reads every listed click back in the source\'s own terms', async () => {
     sandbox = new Sandbox('anchors');
-    const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', round()), '--no-open']);
+    const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', round()), '--no-open']);
     expect(presented.stderr).toBe('');
     const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
     page.setDefaultTimeout(5_000);

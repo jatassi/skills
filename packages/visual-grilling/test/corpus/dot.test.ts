@@ -26,6 +26,8 @@ beforeAll(async () => {
   sandbox = new Sandbox('dotc');
   const presented = await sandbox.cli([
     'present',
+    '--agent',
+    'Claude Code',
     sandbox.writeRound('start.md', '❓ **Q1** - **Start**: Nothing drawn.\n\n➡️ Go.\n'),
     '--no-open',
   ]);
@@ -47,7 +49,7 @@ function fence(id: string, source: string): string {
 
 async function nodeVerdict(source: string): Promise<{ verdict: Verdict; stderr: string }> {
   const round = `❓ **Q1** - **Fixture**: One block.\n\n${fence('fixture', source)}\n\n➡️ Draw it.\n`;
-  const result = await sandbox.cli(['present', sandbox.writeRound('fixture.md', round), '--no-open']);
+  const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('fixture.md', round), '--no-open']);
   if (result.code === 0) return { verdict: 'draws', stderr: '' };
   expect(result.stderr).toContain('illustration "fixture" (dot)');
   return { verdict: /came out empty/.test(result.stderr) ? 'empty' : 'throws', stderr: result.stderr };
@@ -81,7 +83,7 @@ describe('dot block corpus', () => {
     const drawn = DOT_FIXTURES.filter((fixture) => fixture.anchors);
     const fences = drawn.map((fixture, i) => fence(`f${i + 1}`, fixture.source));
     const round = `# Corpus\n\n❓ **Q1** - **Anchors**: Every part.\n\n${fences.join('\n\n')}\n\n➡️ Yes.\n`;
-    const presented = await sandbox.cli(['present', sandbox.writeRound('anchors.md', round), '--no-open']);
+    const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('anchors.md', round), '--no-open']);
     expect(presented.stderr).toBe('');
 
     const round1 = await browser.newPage({ viewport: { width: 700, height: 900 } });

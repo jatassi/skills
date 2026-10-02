@@ -28,7 +28,7 @@ async function open(blocks: Block[]): Promise<Page> {
   sandbox = new Sandbox('o1');
   const fences = blocks.map(({ kind, title, source }, index) => `\`\`\`${kind} id=b${index + 1} title="${title}"\n${source}\n\`\`\``);
   const round = `# Overrides\n\n❓ **Q1** - **Look**: Which look?\n\n${fences.join('\n\n')}\n\n➡️ This one.\n`;
-  const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', round), '--no-open']);
+  const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', round), '--no-open']);
   expect(presented.stderr).toBe('');
   const page = await browser.newPage({ viewport: { width: 900, height: 1200 } });
   page.setDefaultTimeout(10_000);

@@ -24,7 +24,7 @@ async function open(...fences: string[]): Promise<{ page: Page; url: string }> {
   const round = fences
     .map((fence, index) => `❓ **Q${index + 1}** - **Question ${index + 1}**: Look.\n\n${fence}\n\n➡️ Fine.\n`)
     .join('\n');
-  const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', round), '--no-open']);
+  const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', round), '--no-open']);
   expect(presented.stderr).toBe('');
   const url = presented.stdout.trim();
   const page = await browser.newPage({ viewport: { width: 640, height: 900 } });

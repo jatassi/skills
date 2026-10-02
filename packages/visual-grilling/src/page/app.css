@@ -343,6 +343,40 @@ kbd {
   font-weight: 600;
 }
 
+/* The agent the page is connected to. */
+.agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 220px;
+  height: 26px;
+  padding: 0 9px 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font: 500 12px/1 var(--sans);
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+.agent .w {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-logo {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  object-fit: contain;
+}
+
+.agent.off {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
 @media (max-width: 700px) {
   .subject {
     display: none;
@@ -357,8 +391,13 @@ kbd {
 
 @media (max-width: 440px) {
   .count .w,
-  .comment-count .w {
+  .comment-count .w,
+  .agent .w {
     display: none;
+  }
+
+  .agent {
+    padding: 0 4px;
   }
 }
 

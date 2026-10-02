@@ -59,7 +59,7 @@ describe('present with a malformed round', () => {
   it('prints every error, exits non-zero and shows nothing', async () => {
     sandbox = new Sandbox('r1');
     const file = sandbox.writeRound('round.md', BROKEN_ROUND);
-    const result = await sandbox.cli(['present', file, '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
 
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
@@ -79,7 +79,7 @@ describe('present with a malformed round', () => {
 describe('present with the full grammar', () => {
   it('carries illustrations, mockups and the design tree to the page', async () => {
     sandbox = new Sandbox('r2');
-    const result = await sandbox.cli(['present', sandbox.writeRound('round.md', FULL_ROUND), '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', FULL_ROUND), '--no-open']);
     expect(result).toMatchObject({ code: 0, stderr: '' });
 
     const round = await (await fetch(`${result.stdout.trim()}api/rounds/latest`)).json();
@@ -124,16 +124,16 @@ describe('present with a design tree that names earlier rounds', () => {
   it('accepts any question of the session, rejects one no round has had, and says which round holds each', async () => {
     sandbox = new Sandbox('r3');
     const firstRound = sandbox.writeRound('round-1.md', question(1) + question(2));
-    const first = await sandbox.cli(['present', firstRound, '--no-open']);
+    const first = await sandbox.cli(['present', '--agent', 'Claude Code', firstRound, '--no-open']);
     expect(first).toMatchObject({ code: 0, stderr: '' });
 
     const unknown = sandbox.writeRound('bad.md', tree('- [ ] Q3 and Q4') + question(3));
-    const rejected = await sandbox.cli(['present', unknown, '--no-open']);
+    const rejected = await sandbox.cli(['present', '--agent', 'Claude Code', unknown, '--no-open']);
     expect(rejected.code).toBe(1);
     expect(rejected.stderr).toBe(`${unknown}:2: design tree: Q4 is not in this round or an earlier one\n`);
 
     const second = sandbox.writeRound('round-2.md', tree('- [x] Storage Q1: folder\n- [ ] Runtime Q3') + question(3));
-    expect(await sandbox.cli(['present', second, '--no-open'])).toMatchObject({ code: 0, stderr: '' });
+    expect(await sandbox.cli(['present', '--agent', 'Claude Code', second, '--no-open'])).toMatchObject({ code: 0, stderr: '' });
 
     const round = await (await fetch(`${first.stdout.trim()}api/rounds/latest`)).json();
     expect(round).toMatchObject({
@@ -150,7 +150,7 @@ describe('present with a design tree that names earlier rounds', () => {
   async function twoRoundsThenCrash(id: string): Promise<void> {
     sandbox = new Sandbox(id);
     for (const [n, source] of [[1, question(1)], [2, tree('- [x] Storage Q1: folder') + question(2)]] as const) {
-      const result = await sandbox.cli(['present', sandbox.writeRound(`round-${n}.md`, source), '--no-open']);
+      const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound(`round-${n}.md`, source), '--no-open']);
       expect(result).toMatchObject({ code: 0, stderr: '' });
     }
     await crash(sandbox.serverInfo(id).pid);
@@ -161,7 +161,7 @@ describe('present with a design tree that names earlier rounds', () => {
     await twoRoundsThenCrash('r4');
     writeFileSync(roundFile('r4', 1), 'no longer a round\n');
 
-    const url = (await sandbox.cli(['present', sandbox.writeRound('round-3.md', question(3)), '--no-open'])).stdout.trim();
+    const url = (await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round-3.md', question(3)), '--no-open'])).stdout.trim();
     const round = await (await fetch(`${url}api/rounds/2`)).json();
     expect(round).toMatchObject({
       number: 2,
@@ -173,7 +173,7 @@ describe('present with a design tree that names earlier rounds', () => {
     await twoRoundsThenCrash('r5');
     writeFileSync(roundFile('r5', 2), 'no longer a round\n');
 
-    const result = await sandbox.cli(['present', sandbox.writeRound('round-3.md', question(3)), '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round-3.md', question(3)), '--no-open']);
     expect(result).toMatchObject({ code: 0, stderr: '' });
     const latest = await (await fetch(`${result.stdout.trim()}api/rounds/latest`)).json();
     expect(latest.number).toBe(3);

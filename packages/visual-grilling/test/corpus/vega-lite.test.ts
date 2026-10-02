@@ -34,7 +34,7 @@ beforeAll(async () => {
   // One round page with every chart that draws, for the anchor clicks.
   const charts = DRAWS.map((fixture, i) => fence(`c${i}`, fixture.name, sourceOf(fixture)));
   const round = `❓ **Q1** - **Charts**: Every chart that draws.\n\n${charts.join('\n\n')}\n\n➡️ Go.\n`;
-  const presented = await sandbox.cli(['present', sandbox.writeRound('start.md', round), '--no-open']);
+  const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('start.md', round), '--no-open']);
   expect(presented.stderr).toBe('');
   browser = await chromium.launch();
   page = await browser.newPage({ viewport: { width: 1000, height: 900 } });
@@ -56,7 +56,7 @@ afterAll(async () => {
 
 async function nodeVerdict(source: string): Promise<{ verdict: Verdict; stderr: string }> {
   const round = `❓ **Q1** - **Fixture**: One block.\n\n${fence('fixture', 'Fixture', source)}\n\n➡️ Draw it.\n`;
-  const result = await checker.cli(['present', checker.writeRound('fixture.md', round), '--no-open']);
+  const result = await checker.cli(['present', '--agent', 'Claude Code', checker.writeRound('fixture.md', round), '--no-open']);
   if (result.code === 0) return { verdict: 'draws', stderr: '' };
   expect(result.stderr).toContain('illustration "fixture" (vega-lite)');
   return { verdict: /came out empty/.test(result.stderr) ? 'empty' : 'throws', stderr: result.stderr };

@@ -34,7 +34,7 @@ const TREE = [
 const TREE_ROUND = STORAGE_ROUND.replace('# Storage choices\n\n', `# Storage choices\n\n${TREE}`);
 
 async function present(source: string, name = 'round.md'): Promise<string> {
-  const result = await sandbox.cli(['present', sandbox.writeRound(name, source), '--no-open']);
+  const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound(name, source), '--no-open']);
   expect(result.stderr).toBe('');
   return result.stdout.trim();
 }

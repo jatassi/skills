@@ -11,7 +11,7 @@ The CLI is `node ${CLAUDE_SKILL_DIR}/dist/cli.mjs`, where `${CLAUDE_SKILL_DIR}` 
 
 1. **Write the round file.** The round exactly as grilling would print it, in a scratch file outside the repository. Open it with a `design-tree` fence restating the whole design tree, every round.
 
-2. **Present it.** Run `present <round.md>`. On a rejection, fix every line it printed and run it again. When it prints `session: <id>`, pass `--session <id>` to every later `present`, `await` and `end`. Put the printed link in your reply.
+2. **Present it.** Run `present --agent "<your name>" <round.md>`, naming the agent product you are as you'd introduce yourself (`"Claude Code"`, `"Codex"`, `"Gemini CLI"`, `"Cursor"`…); the round page shows it with its logo. On a rejection, fix every line it printed and run it again. When it prints `session: <id>`, pass `--session <id>` to every later `present`, `await` and `end`. Put the printed link in your reply.
    - When the Claude Code desktop Browser pane's tools are present, pass `--no-open` and open the link in the Browser pane, and again whenever the link changes.
    - Otherwise `present` opens the user's default browser itself.
 

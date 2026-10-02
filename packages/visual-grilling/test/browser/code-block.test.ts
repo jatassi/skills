@@ -57,7 +57,7 @@ const ROUND = [
 
 async function open(): Promise<Page> {
   sandbox = new Sandbox('k1');
-  const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', ROUND), '--no-open']);
+  const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', ROUND), '--no-open']);
   expect(presented.stderr).toBe('');
   const page = await browser.newPage({ viewport: { width: 700, height: 1000 } });
   await page.goto(presented.stdout.trim());

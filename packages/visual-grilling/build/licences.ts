@@ -363,3 +363,38 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.`;
+
+/**
+ * The logo packs src/agents/logos copies marks from (src/agents/logos/SOURCES.md
+ * says which logo came from where). Logos taken from vendors' own sites carry no
+ * licence of their own; they are their owners' trademarks, shown to name the agent.
+ */
+export function agentLogoEntries(): ExplicitEntry[] {
+  const note = 'Agent logos copied into page/agents/ (see src/agents/logos/SOURCES.md).';
+  return [
+    {
+      name: '@lobehub/icons-static-svg',
+      version: '1.95.1',
+      licence: 'MIT',
+      note,
+      source: 'https://github.com/lobehub/lobe-icons',
+      text: `MIT License\n\nCopyright (c) 2023 LobeHub\n\n${STANDARD_TEXTS.MIT}`,
+    },
+    {
+      name: 'simple-icons',
+      version: '16.33.0',
+      licence: 'CC0-1.0',
+      note: `${note} The brands they depict are their owners' trademarks.`,
+      source: 'https://github.com/simple-icons/simple-icons',
+      text: 'CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/',
+    },
+    {
+      name: 'lucide (bot icon)',
+      version: '0.545.0',
+      licence: 'ISC',
+      note: `${note} The generic "other" agent logo.`,
+      source: 'https://github.com/lucide-icons/lucide',
+      text: 'ISC License\n\nCopyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022.\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.',
+    },
+  ];
+}

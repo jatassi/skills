@@ -26,7 +26,7 @@ function round(blocks: { id: string; title: string; source: string }[]): string 
 }
 
 async function open(source: string, setup?: (page: Page) => Promise<unknown>): Promise<Page> {
-  const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', source), '--no-open']);
+  const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', source), '--no-open']);
   expect(presented.stderr).toBe('');
   const page = await browser.newPage({ viewport: { width: 640, height: 900 } });
   await setup?.(page);

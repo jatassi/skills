@@ -20,7 +20,7 @@ afterEach(async () => {
 /** Presents the storage round, opens it, and leaves drafts on Q1 (accepted) and Q3 (own answer). */
 async function openWithDrafts(sessionId: string): Promise<Page> {
   sandbox = new Sandbox(sessionId);
-  const url = (await sandbox.cli(['present', sandbox.writeRound('round.md', STORAGE_ROUND), '--no-open'])).stdout.trim();
+  const url = (await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', STORAGE_ROUND), '--no-open'])).stdout.trim();
   const page = await browser.newPage();
   await page.goto(url);
   await page.getByRole('button', { name: 'Accept' }).click();
@@ -47,7 +47,7 @@ async function expectReadOnlyWithDrafts(page: Page): Promise<void> {
 describe('round page', () => {
   it('submits a round through the UI and shows the next round in the same tab', async () => {
     sandbox = new Sandbox('p1');
-    const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', STORAGE_ROUND), '--no-open']);
+    const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', STORAGE_ROUND), '--no-open']);
     const url = presented.stdout.trim();
 
     const page = await browser.newPage();
@@ -93,6 +93,8 @@ Q6 Retry policy · accepted
 
     const next = await sandbox.cli([
       'present',
+      '--agent',
+      'Claude Code',
       sandbox.writeRound('round-2.md', '# Follow-ups\n\n❓ **Q7** - **Anything else?**: Last one.\n\n➡️ No.\n'),
       '--no-open',
     ]);
@@ -119,7 +121,7 @@ Q6 Retry policy · accepted
       '➡️ **A**',
       '',
     ].join('\n');
-    const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', round), '--no-open']);
+    const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', round), '--no-open']);
 
     const page = await browser.newPage();
     await page.goto(presented.stdout.trim());
@@ -177,7 +179,7 @@ Q6 Retry policy · accepted
       '➡️ Keep it.',
       '',
     ].join('\n');
-    const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', round), '--no-open']);
+    const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', round), '--no-open']);
     const page = await browser.newPage({ viewport: { width: 600, height: 900 } });
     await page.goto(presented.stdout.trim());
 

@@ -45,7 +45,7 @@ function round(charts: { id: string; title: string; source: string }[]): string 
 }
 
 async function open(source: string, setup?: (page: Page) => Promise<unknown>): Promise<{ page: Page; violations: string[] }> {
-  const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', source), '--no-open']);
+  const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', source), '--no-open']);
   expect(presented.stderr).toBe('');
   const page = await browser.newPage({ viewport: { width: 900, height: 900 } });
   const violations: string[] = [];
