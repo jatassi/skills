@@ -1,4 +1,4 @@
-// The round page's flow in Chromium: keys, the Review step, read-only after
+// The round page's flow in Chromium: keys, swipes, the Review step, read-only after
 // submit, the past-round switcher, the design tree and the theme toggle.
 
 import { chromium, expect as pageExpect, type Browser, type Page } from 'playwright/test';
@@ -115,6 +115,50 @@ Q6 Retry policy · no answer
     await page.getByRole('button', { name: /^Next/ }).click();
     await page.keyboard.press('Enter');
     await pageExpect(region(page, 'Q3').getByRole('button', { name: /^Accept/ })).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+describe('round page swipes', () => {
+  /** A one-finger swipe across the question panel, `dx` pixels sideways. */
+  async function touchSwipe(page: Page, dx: number): Promise<void> {
+    await page.locator('.step-host').evaluate((host, dx) => {
+      const box = host.getBoundingClientRect();
+      const at = (x: number) =>
+        new Touch({ identifier: 1, target: host, clientX: x, clientY: box.top + 40 });
+      const x = box.left + box.width / 2;
+      host.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, touches: [at(x)], changedTouches: [at(x)] }));
+      host.dispatchEvent(new TouchEvent('touchend', { bubbles: true, touches: [], changedTouches: [at(x + dx)] }));
+    }, dx);
+  }
+
+  it('moves one question per trackpad or touch swipe, and ignores a steep or short one', async () => {
+    sandbox = new Sandbox('look');
+    const page = await open(await present(STORAGE_ROUND));
+    const header = region(page, 'Q1').locator('header');
+    await pageExpect(header).toBeVisible();
+    // An unanswered question shows its state by its icon alone.
+    await pageExpect(header).not.toContainText('No answer');
+
+    // A trackpad swipe, momentum and all, moves one question.
+    await page.mouse.move(640, 300);
+    for (let i = 0; i < 12; i++) await page.mouse.wheel(30, 0);
+    await pageExpect(region(page, 'Q2')).toBeVisible();
+    await page.waitForTimeout(400);
+    await page.mouse.wheel(-120, 0);
+    await pageExpect(region(page, 'Q1')).toBeVisible();
+
+    // A mostly vertical wheel scrolls rather than swipes.
+    await page.waitForTimeout(400);
+    await page.mouse.wheel(60, 200);
+    await page.waitForTimeout(100);
+    await pageExpect(region(page, 'Q1')).toBeVisible();
+
+    await touchSwipe(page, -120);
+    await pageExpect(region(page, 'Q2')).toBeVisible();
+    await touchSwipe(page, 30);
+    await pageExpect(region(page, 'Q2')).toBeVisible();
+    await touchSwipe(page, 120);
+    await pageExpect(region(page, 'Q1')).toBeVisible();
   });
 });
 
