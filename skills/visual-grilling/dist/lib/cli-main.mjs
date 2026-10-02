@@ -226,6 +226,7 @@ async function run(argv, entryUrl) {
       allowPositionals: true,
       options: {
         session: { type: "string" },
+        agent: { type: "string" },
         "no-open": { type: "boolean" },
         timeout: { type: "string" },
         help: { type: "boolean", short: "h" }
@@ -239,7 +240,15 @@ async function run(argv, entryUrl) {
     switch (command) {
       case "present": {
         if (rest.length !== 1) throw new UsageError("present takes exactly one round file");
-        return await present(rest[0], { session: values.session, open: !values["no-open"], distDir });
+        if (!values.agent?.trim()) {
+          throw new UsageError('present needs --agent <name>: the agent you are, e.g. --agent "Claude Code"');
+        }
+        return await present(rest[0], {
+          session: values.session,
+          agent: values.agent,
+          open: !values["no-open"],
+          distDir
+        });
       }
       case "await":
         return await awaitSubmission({ session: values.session, timeout: values.timeout });
@@ -262,12 +271,16 @@ function usage(distDir) {
   return `Usage: node cli.mjs <command> [flags]
 
 Commands:
-  present <round.md>   Check and show a round; prints the round page's link.
+  present --agent <name> <round.md>
+                       Check and show a round; prints the round page's link.
   await                Wait for the round submission; prints it for the agent.
   end                  Stop the server and delete the grilling session's files.
                        Does nothing when the session has no folder.
 
 Flags:
+  --agent <name>       present (required): the agent you are, as you'd name yourself
+                       ("Claude Code", "Codex", "Gemini CLI", "Cursor"\u2026). The round page
+                       shows it with its logo; a name it doesn't know gets a generic one.
   --session <id>       The grilling session. Defaults to $CLAUDE_CODE_SESSION_ID, then
                        $CODEX_SESSION_ID; without either, the first present prints
                        "session: <id>" to pass here.
@@ -316,11 +329,11 @@ async function present(file, options) {
     let { info: server, started } = await ensureServer(paths, options.distDir);
     let response;
     try {
-      response = await call(server.port, "/control/present", { source });
+      response = await call(server.port, "/control/present", { source, agent: options.agent });
     } catch {
       preparePrivateSessionDir(paths);
       ({ info: server, started } = await ensureServer(paths, options.distDir));
-      response = await call(server.port, "/control/present", { source });
+      response = await call(server.port, "/control/present", { source, agent: options.agent });
     }
     if (response.status === 422) {
       const { errors } = response.body;
