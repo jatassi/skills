@@ -88,6 +88,8 @@
 html,
 body {
   margin: 0;
+  /* Sideways swipes move between questions, not back through history. */
+  overscroll-behavior-x: none;
 }
 
 body {
@@ -449,10 +451,24 @@ kbd {
   }
 }
 
-.stepnav {
+.qp-nav {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   align-items: center;
+  margin-left: 4px;
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
+}
+
+@media (max-width: 600px) {
+  .qp-nav .nav-l,
+  .qp-nav kbd {
+    display: none;
+  }
+
+  .qp-nav .btn.sm {
+    padding: 0 7px;
+  }
 }
 
 /* ------------------------------------------------------ question panel */
