@@ -64,7 +64,7 @@ describe('the draw check for dot blocks', () => {
   it('rejects a DOT source that fails to draw or draws empty, pointing at the line', async () => {
     sandbox = new Sandbox('g1');
     const file = sandbox.writeRound('round.md', FAILING_ROUND);
-    const result = await sandbox.cli(['present', file, '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
 
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
@@ -78,7 +78,7 @@ describe('the draw check for dot blocks', () => {
 
   it('shows a round whose DOT blocks all draw, with any layout the source names', async () => {
     sandbox = new Sandbox('g1');
-    const result = await sandbox.cli(['present', sandbox.writeRound('round.md', GOOD_ROUND), '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', GOOD_ROUND), '--no-open']);
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
   });

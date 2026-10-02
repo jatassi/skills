@@ -86,7 +86,7 @@ describe('the draw check at present', () => {
   it('draws every Mermaid block and rejects the ones that throw or come out empty, explaining known failures', async () => {
     sandbox = new Sandbox('d1');
     const file = sandbox.writeRound('round.md', FAILING_ROUND);
-    const result = await sandbox.cli(['present', file, '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
 
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
@@ -121,7 +121,7 @@ describe('the draw check at present', () => {
 
   it('shows a round whose blocks all draw', async () => {
     sandbox = new Sandbox('d1');
-    const result = await sandbox.cli(['present', sandbox.writeRound('round.md', GOOD_ROUND), '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', GOOD_ROUND), '--no-open']);
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
     expect(existsSync(join(sandbox.sessionDir('d1'), 'rounds', 'round-1.md'))).toBe(true);
@@ -131,7 +131,7 @@ describe('the draw check at present', () => {
 describe('blocks that fail only on the page', () => {
   it('ride the submission as warnings, one per block, without waking await', async () => {
     sandbox = new Sandbox('d1');
-    const url = (await sandbox.cli(['present', sandbox.writeRound('round.md', GOOD_ROUND), '--no-open'])).stdout.trim();
+    const url = (await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', GOOD_ROUND), '--no-open'])).stdout.trim();
     const warn = (body: unknown) => postJson(`${url}api/rounds/1/warnings`, body);
 
     expect((await warn({ question: 2, illustration: 'states', kind: 'draw', message: 'Could not\nlay out' })).status).toBe(200);
@@ -166,7 +166,7 @@ Q2 States · no answer · 1 warning
 
   it('refuses a warning that names no block of the round, or comes after the submission', async () => {
     sandbox = new Sandbox('d1');
-    const url = (await sandbox.cli(['present', sandbox.writeRound('round.md', GOOD_ROUND), '--no-open'])).stdout.trim();
+    const url = (await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', GOOD_ROUND), '--no-open'])).stdout.trim();
     const warn = (round: number, body: unknown) => postJson(`${url}api/rounds/${round}/warnings`, body);
 
     const unknownBlock = await warn(1, { question: 1, illustration: 'states', kind: 'draw', message: 'x' });

@@ -10,8 +10,32 @@ export interface OutputSize {
   bytes: number;
 }
 
+/** Folders of many small files, listed as one line each: `page/agents/ (61 files)`. */
+const GROUPED = ['page/agents/'];
+
 export function outputSizes(out: string): OutputSize[] {
-  return [...walk(out)].map((file) => ({ path: relative(out, file).split(sep).join('/'), bytes: statSync(file).size }));
+  const sizes: OutputSize[] = [];
+  const groups = new Map<string, { entry: OutputSize; files: number }>();
+  for (const file of walk(out)) {
+    const path = relative(out, file).split(sep).join('/');
+    const bytes = statSync(file).size;
+    const folder = GROUPED.find((prefix) => path.startsWith(prefix));
+    if (!folder) {
+      sizes.push({ path, bytes });
+      continue;
+    }
+    const group = groups.get(folder);
+    if (group) {
+      group.files += 1;
+      group.entry.bytes += bytes;
+      group.entry.path = `${folder} (${group.files} files)`;
+    } else {
+      const entry = { path: `${folder} (1 files)`, bytes };
+      groups.set(folder, { entry, files: 1 });
+      sizes.push(entry);
+    }
+  }
+  return sizes;
 }
 
 export function kib(bytes: number): string {

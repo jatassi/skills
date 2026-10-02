@@ -45,7 +45,7 @@ const ROUND = `# Layout
 
 async function open(): Promise<Page> {
   sandbox = new Sandbox('m1');
-  const presented = await sandbox.cli(['present', sandbox.writeRound('round.md', ROUND), '--no-open']);
+  const presented = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', ROUND), '--no-open']);
   expect(presented.stderr).toBe('');
   const page = await browser.newPage({ viewport: { width: 640, height: 900 } });
   page.setDefaultTimeout(8_000);

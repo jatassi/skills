@@ -9,6 +9,7 @@
 //   <out>/page/graphviz.js   the Graphviz (@viz-js/viz) chunk, shared the same way
 //   <out>/page/vega-lite.js  the Vega + Vega-Lite chunk, used the same way
 //   <out>/page/code.js       the Shiki + @pierre/diffs chunk, loaded the same way
+//   <out>/page/agents/      one logo per agent the page can show (src/core/agents.ts)
 //   <out>/frame/             sandboxed agent-HTML frames: inject.js (the frame
 //                            script) and tailwind.js (@tailwindcss/browser)
 //   <out>/THIRD_PARTY_LICENSES.md
@@ -18,13 +19,13 @@
 // Dead weight is trimmed by the plugins in build/trim.ts. The build prints
 // each output's size; there is no size ceiling.
 
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import * as esbuild from 'esbuild';
-import { packageRoots, thirdPartyLicences, vizWasmEntries } from './build/licences.ts';
+import { agentLogoEntries, packageRoots, thirdPartyLicences, vizWasmEntries } from './build/licences.ts';
 import { kib, outputSizes } from './build/sizes.ts';
 import { jsdomTrim, shikiCore } from './build/trim.ts';
 
@@ -107,6 +108,7 @@ mkdirSync(join(out, 'page'), { recursive: true });
 for (const file of ['index.html', 'app.css']) {
   copyFileSync(join(here, 'src/page', file), join(out, 'page', file));
 }
+cpSync(join(here, 'src/agents/logos'), join(out, 'page/agents'), { recursive: true, filter: (src) => !src.endsWith('.md') });
 
 // Every npm package with code in an output, plus the C libraries compiled
 // into @viz-js/viz's WebAssembly. Fails the build on a missing or disallowed
@@ -116,7 +118,7 @@ const [vizDir] = packageRoots([require.resolve('@viz-js/viz')]);
 writeFileSync(
   join(out, 'THIRD_PARTY_LICENSES.md'),
   thirdPartyLicences(packageRoots([...bundled, tailwind]), {
-    explicit: vizWasmEntries(readFileSync(join(vizDir, 'lib/provenance.json'), 'utf8')),
+    explicit: [...vizWasmEntries(readFileSync(join(vizDir, 'lib/provenance.json'), 'utf8')), ...agentLogoEntries()],
     // Its licence file is the MIT licence; its package.json has no `license`.
     undeclared: { 'khroma@2.1.0': 'MIT' },
   }),

@@ -10,10 +10,12 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import type { AddressInfo } from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { identifyAgent, type AgentIdentity } from '../core/agents.ts';
 import type {
   AwaitRequest,
   AwaitResponse,
   PageEvents,
+  PageAgent,
   PingResponse,
   PresentRequest,
   PresentResponse,
@@ -61,6 +63,8 @@ const records = new Map<number, SubmissionRecord>();
 /** Page-only failures reported for rounds not yet submitted; they ride the submission. */
 const pageWarnings = new Map<number, PageWarning[]>();
 let latest = 0;
+/** Who presented the latest round. Not kept on disk: a restarted server learns it on the next present. */
+let agent: AgentIdentity | undefined;
 
 interface Waiter {
   round: number;
@@ -191,6 +195,7 @@ async function present(res: ServerResponse, body: PresentRequest): Promise<void>
   writePrivateFile(paths.round(n), body.source);
   rounds.set(n, parsed.round);
   latest = n;
+  agent = identifyAgent(String(body.agent ?? ''));
   broadcast('round', { round: n });
   const response: PresentResponse = { round: n, url: `http://127.0.0.1:${port}/`, notes: parsed.notes };
   sendJson(res, 200, response);
@@ -351,8 +356,21 @@ function questionRounds(n: number, round: Round): Record<number, number> {
   return found;
 }
 
+function pageAgent(): PageAgent | undefined {
+  if (!agent) return undefined;
+  let logo: string;
+  try {
+    logo = readFileSync(join(pageDir, 'agents', `${agent.id}.svg`), 'utf8');
+  } catch {
+    logo = readFileSync(join(pageDir, 'agents', 'other.svg'), 'utf8');
+  }
+  return { ...agent, logo };
+}
+
 function roundIndex(): RoundIndex {
+  const shown = pageAgent();
   return {
+    ...(shown ? { agent: shown } : {}),
     rounds: [...rounds.keys()]
       .sort((a, b) => a - b)
       .map((n) => {

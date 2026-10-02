@@ -23,7 +23,7 @@ afterEach(async () => {
 async function presented(id: string): Promise<{ box: Sandbox; port: number; url: string }> {
   sandbox = new Sandbox(id);
   sessions.push(id);
-  const result = await sandbox.cli(['present', sandbox.writeRound('round.md', STORAGE_ROUND), '--no-open']);
+  const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', STORAGE_ROUND), '--no-open']);
   expect(result).toMatchObject({ code: 0, stderr: '' });
   const url = result.stdout.trim();
   return { box: sandbox, port: Number(new URL(url).port), url };
@@ -260,7 +260,7 @@ describe.skipIf(!posix)('session folder checks', () => {
   }
 
   async function presentIn(box: Sandbox) {
-    return box.cli(['present', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
+    return box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
   }
 
   function expectRefused(result: { code: number; stdout: string; stderr: string }, path: string, reason: RegExp) {

@@ -10,7 +10,7 @@
 //   GET  /                                 the round page
 //   GET  /assets/<file>                    page scripts and styles
 //   GET  /events                           server-sent events: `round`, `terminal`, `finished`
-//   GET  /api/rounds                       → RoundIndex (every round of the session, oldest first)
+//   GET  /api/rounds                       → RoundIndex (every round of the session, oldest first, and the agent)
 //   GET  /api/rounds/latest | /api/rounds/<n>   → PageRound (404 before the first round)
 //   POST /api/rounds/<n>/submission  PageSubmission → {}  (409: submitted or answered in the terminal)
 //   POST /api/rounds/<n>/warnings    PageWarning → {}  a page-only draw failure or a frame script error
@@ -19,6 +19,7 @@
 //   GET  /frame/r<n>/q<m>/<option>         an option's mockup, framed the same way
 //   GET  /frame/assets/<file>              the frame's scripts (inject.js, tailwind.js)
 
+import type { AgentId } from './agents.ts';
 import type { DesignTreeNode, Illustration, RoundError, RoundNote } from './round.ts';
 import type { CommentRecord, Verdict } from './submission.ts';
 
@@ -30,6 +31,8 @@ export interface PingResponse {
 
 export interface PresentRequest {
   source: string;
+  /** The name the agent gave for itself (`--agent`), matched by identifyAgent. */
+  agent: string;
 }
 
 export interface PresentResponse {
@@ -118,6 +121,16 @@ export interface RoundSummary {
 
 export interface RoundIndex {
   rounds: RoundSummary[];
+  /** The agent that presented the latest round; absent before the first. */
+  agent?: PageAgent;
+}
+
+/** The agent the page shows it is connected to. */
+export interface PageAgent {
+  id: AgentId;
+  name: string;
+  /** Its logo's SVG markup, from page/agents/<id>.svg. */
+  logo: string;
 }
 
 /** Server-sent event payloads, keyed by event name. */

@@ -67,7 +67,7 @@ let url: string;
 
 beforeEach(async () => {
   sandbox = new Sandbox('f1');
-  const result = await sandbox.cli(['present', sandbox.writeRound('round.md', ROUND), '--no-open']);
+  const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', ROUND), '--no-open']);
   expect(result).toMatchObject({ code: 0, stderr: '' });
   url = result.stdout.trim();
   port = Number(new URL(url).port);

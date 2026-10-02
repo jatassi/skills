@@ -9,6 +9,7 @@
 // holds its pinned comments.
 
 import type {
+  PageAgent,
   PageEvents,
   PageQuestion,
   PageRound,
@@ -42,6 +43,8 @@ interface State {
   shown?: number;
   views: Map<number, RoundView>;
   index: RoundSummary[];
+  /** The agent that presented the latest round, shown in the bar. */
+  agent?: PageAgent;
   submitting: boolean;
   error?: string;
   /**
@@ -85,7 +88,9 @@ const SUBMIT_KEY = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘↵' : 'Ctrl
 async function refreshIndex(): Promise<void> {
   const response = await fetch('/api/rounds');
   if (!response.ok) return;
-  state.index = ((await response.json()) as RoundIndex).rounds;
+  const index = (await response.json()) as RoundIndex;
+  state.index = index.rounds;
+  state.agent = index.agent ?? state.agent;
   state.latest = Math.max(state.latest, ...state.index.map((round) => round.number));
 }
 
@@ -304,6 +309,7 @@ function barContent(view: RoundView, readOnly: boolean): Child[] {
       round.title && h('span', { class: 'subject' }, ` · ${round.title}`),
     ),
     h('span', { class: 'grow' }),
+    agentChip(),
     h(
       'span',
       { class: 'count' },
@@ -347,6 +353,27 @@ function barContent(view: RoundView, readOnly: boolean): Child[] {
           : [icon('up'), 'Submit round', !readOnly && kbd(SUBMIT_KEY)]),
       ),
   ];
+}
+
+/** Which agent the page is connected to: its logo and name, dimmed once the server is gone. */
+function agentChip(): HTMLElement | undefined {
+  const agent = state.agent;
+  if (!agent) return undefined;
+  const connected = state.connection === 'open';
+  // An <img> keeps the logo's ids and styles to itself; a single-colour logo
+  // draws in currentColor, which an image can't inherit, so it gets the text colour.
+  const fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim() || '#888';
+  const svg = agent.logo.replaceAll('currentColor', fg);
+  return h(
+    'span',
+    {
+      class: connected ? 'agent' : 'agent off',
+      'data-agent': agent.id,
+      title: connected ? `Connected to ${agent.name}` : `${agent.name} · disconnected`,
+    },
+    h('img', { class: 'agent-logo', alt: '', src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` }),
+    h('span', { class: 'w' }, agent.name),
+  );
 }
 
 function serverNotice(): HTMLElement | undefined {

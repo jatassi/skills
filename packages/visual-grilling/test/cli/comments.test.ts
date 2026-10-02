@@ -50,7 +50,7 @@ function comment(fields: Record<string, unknown>) {
 
 async function present(): Promise<string> {
   sandbox = new Sandbox('c1');
-  return (await sandbox.cli(['present', sandbox.writeRound('round.md', ROUND), '--no-open'])).stdout.trim();
+  return (await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('round.md', ROUND), '--no-open'])).stdout.trim();
 }
 
 describe('anchored comments', () => {

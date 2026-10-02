@@ -33,7 +33,7 @@ const EVERY_MODE = {
 describe('present', () => {
   it('saves the round, starts a server on 127.0.0.1 and prints its link', async () => {
     const box = open('s1');
-    const result = await box.cli(['present', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
+    const result = await box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
 
     expect(result).toMatchObject({ code: 0, stderr: '' });
     const lines = result.stdout.trim().split('\n');
@@ -55,9 +55,9 @@ describe('present', () => {
   it('reuses the server for later rounds and numbers them on', async () => {
     const box = open('s2');
     const file = box.writeRound('round.md', STORAGE_ROUND);
-    const first = await box.cli(['present', file, '--no-open']);
+    const first = await box.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
     const { pid } = box.serverInfo('s2');
-    const second = await box.cli(['present', file, '--no-open']);
+    const second = await box.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
 
     expect(second.stdout).toBe(first.stdout);
     expect(box.serverInfo('s2').pid).toBe(pid);
@@ -66,9 +66,28 @@ describe('present', () => {
     expect(latest.number).toBe(2);
   });
 
+  it('needs --agent, and the page shows the agent it names', async () => {
+    const box = open('s-agent');
+    const file = box.writeRound('round.md', STORAGE_ROUND);
+    const missing = await box.cli(['present', file, '--no-open']);
+    expect(missing.code).toBe(2);
+    expect(missing.stderr).toContain('present needs --agent <name>');
+    expect(existsSync(box.sessionDir('s-agent'))).toBe(false);
+
+    const first = await box.cli(['present', '--agent', 'OpenAI Codex CLI', file, '--no-open']);
+    const index = await (await fetch(`${first.stdout.trim()}api/rounds`)).json();
+    expect(index.agent).toMatchObject({ id: 'codex', name: 'Codex' });
+    expect(index.agent.logo).toBe(readFileSync(join(DIST, 'page/agents/codex.svg'), 'utf8'));
+
+    // Each present says again who it is; one the catalogue lacks keeps its own name.
+    await box.cli(['present', '--agent', 'Brand New Agent', file, '--no-open']);
+    const next = await (await fetch(`${first.stdout.trim()}api/rounds`)).json();
+    expect(next.agent).toMatchObject({ id: 'other', name: 'Brand New Agent' });
+  });
+
   it('generates a session id when the environment has none and prints it', async () => {
     const box = open();
-    const result = await box.cli(['present', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
+    const result = await box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
 
     expect(result.code).toBe(0);
     const [sessionLine, urlLine] = result.stdout.trim().split('\n');
@@ -88,7 +107,7 @@ describe('present', () => {
       'round.md',
       '❓ **Q1** - **Where?**: Somewhere.\n\n❓ **Q2** - **When?**: Soon.\n\n➡️ Now.\n',
     );
-    const result = await box.cli(['present', file, '--no-open']);
+    const result = await box.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
 
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
@@ -101,7 +120,7 @@ describe('present', () => {
 describe('await', () => {
   it('prints pending when the timeout runs out', async () => {
     const box = open('a1');
-    await box.cli(['present', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
+    await box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
     const started = Date.now();
     const result = await box.cli(['await', '--timeout', '1']);
 
@@ -111,7 +130,7 @@ describe('await', () => {
 
   it('prints the round submission in every answer mode and saves the record', async () => {
     const box = open('a2');
-    const url = (await box.cli(['present', box.writeRound('round.md', STORAGE_ROUND), '--no-open'])).stdout.trim();
+    const url = (await box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND), '--no-open'])).stdout.trim();
 
     const waiting = box.cli(['await', '--timeout', '30']);
     await new Promise((done) => setTimeout(done, 300));
@@ -168,7 +187,7 @@ Q6 Retry policy · accepted
 
   it('refuses a second submission of the same round', async () => {
     const box = open('a3');
-    const url = (await box.cli(['present', box.writeRound('round.md', STORAGE_ROUND), '--no-open'])).stdout.trim();
+    const url = (await box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND), '--no-open'])).stdout.trim();
     expect((await postJson(`${url}api/rounds/1/submission`, EVERY_MODE)).status).toBe(200);
     expect((await postJson(`${url}api/rounds/1/submission`, EVERY_MODE)).status).toBe(409);
   });
@@ -184,7 +203,7 @@ Q6 Retry policy · accepted
 describe('end', () => {
   it('stops the server and deletes the session folder', async () => {
     const box = open('e1');
-    await box.cli(['present', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
+    await box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
     const { pid } = box.serverInfo('e1');
 
     const result = await box.cli(['end']);
@@ -202,7 +221,7 @@ describe('end', () => {
 describe('session folder', () => {
   it.skipIf(process.platform === 'win32')('is private to the user', async () => {
     const box = open('f1');
-    await box.cli(['present', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
+    await box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND), '--no-open']);
     const dir = box.sessionDir('f1');
     expect(statSync(dir).mode & 0o777).toBe(0o700);
     expect(statSync(join(dir, 'server.json')).mode & 0o777).toBe(0o600);
@@ -212,7 +231,7 @@ describe('session folder', () => {
 
 describe('--help', () => {
   it("ends with the absolute path of the round-file guide, beside the bundle's folder", async () => {
-    const result = await open().cli(['present', '--help']);
+    const result = await open().cli(['present', '--agent', 'Claude Code', '--help']);
     expect(result.code).toBe(0);
     expect(result.stdout.trimEnd().split('\n').at(-1)).toBe(`Round-file guide: ${join(DIST, '..', 'round-file.md')}`);
   });
@@ -222,7 +241,7 @@ describe('Node version check', () => {
   it('refuses an unsupported Node before doing anything else', async () => {
     const box = open('n1');
     const fake = `data:text/javascript,Object.defineProperty(process.versions,'node',{value:'22.22.1'})`;
-    const result = await box.cli(['present', box.writeRound('round.md', STORAGE_ROUND)], ['--import', fake]);
+    const result = await box.cli(['present', '--agent', 'Claude Code', box.writeRound('round.md', STORAGE_ROUND)], ['--import', fake]);
 
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');

@@ -16,6 +16,8 @@ beforeAll(async () => {
   sandbox = new Sandbox('corpus');
   const presented = await sandbox.cli([
     'present',
+    '--agent',
+    'Claude Code',
     sandbox.writeRound('start.md', '❓ **Q1** - **Start**: Nothing drawn.\n\n➡️ Go.\n'),
     '--no-open',
   ]);
@@ -33,7 +35,7 @@ afterAll(async () => {
 
 async function nodeVerdict(source: string): Promise<{ verdict: Verdict; stderr: string }> {
   const round = `❓ **Q1** - **Fixture**: One block.\n\n\`\`\`\`mermaid id=fixture\n${source}\n\`\`\`\`\n\n➡️ Draw it.\n`;
-  const result = await sandbox.cli(['present', sandbox.writeRound('fixture.md', round), '--no-open']);
+  const result = await sandbox.cli(['present', '--agent', 'Claude Code', sandbox.writeRound('fixture.md', round), '--no-open']);
   if (result.code === 0) return { verdict: 'draws', stderr: '' };
   expect(result.stderr).toContain('illustration "fixture" (mermaid)');
   return { verdict: /came out empty/.test(result.stderr) ? 'empty' : 'throws', stderr: result.stderr };

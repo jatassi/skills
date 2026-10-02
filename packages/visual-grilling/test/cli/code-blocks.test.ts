@@ -37,7 +37,7 @@ describe('code blocks at present', () => {
         ].join('\n'),
       ),
     );
-    const result = await sandbox.cli(['present', file, '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
     expect(result.code).toBe(0);
     expect(result.stdout).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/\n$/);
     expect(result.stderr).toBe(`${file}:5 · Q1 · illustration "main" (zig): note: "zig" is not a highlighted language, so it shows as plain text\n`);
@@ -65,7 +65,7 @@ describe('code blocks at present', () => {
         ].join('\n'),
       ),
     );
-    const result = await sandbox.cli(['present', file, '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
     expect(result.stderr).toBe(
@@ -101,7 +101,7 @@ describe('code blocks at present', () => {
         ].join('\n'),
       ),
     );
-    const result = await sandbox.cli(['present', file, '--no-open']);
+    const result = await sandbox.cli(['present', '--agent', 'Claude Code', file, '--no-open']);
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
   });
