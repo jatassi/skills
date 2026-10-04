@@ -4,11 +4,13 @@
 // untracked), so an agent touching one skill doesn't pay for the whole
 // visual-grilling suite. `npm run test:all` (and CI) runs every workspace.
 //
-// A workspace at packages/<name> owns packages/<name>/** and skills/<name>/**.
-// A change to shared tooling runs every workspace.
+// A workspace at packages/<name> owns packages/<name>/** and skills/<name>/**,
+// plus any path prefixes listed in its package.json "testPaths" (for a
+// workspace whose tests cover files outside those two folders). A change to
+// shared tooling runs every workspace.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { basename } from 'node:path';
+import { basename, join } from 'node:path';
 
 const SHARED = ['package.json', 'package-lock.json', 'scripts/test.mjs'];
 const BASES = ['origin/dev', 'dev'];
@@ -45,7 +47,8 @@ function selectWorkspaces() {
   if (!changed) return { picked: workspaces, why: `no merge-base with ${BASES.join(' or ')}` };
   if (SHARED.some((f) => changed.has(f))) return { picked: workspaces, why: 'shared tooling changed' };
   const picked = workspaces.filter((ws) => {
-    const owned = [`${ws}/`, `skills/${basename(ws)}/`];
+    const extra = JSON.parse(readFileSync(join(ws, 'package.json'), 'utf8')).testPaths ?? [];
+    const owned = [`${ws}/`, `skills/${basename(ws)}/`, ...extra];
     return [...changed].some((f) => owned.some((p) => f.startsWith(p)));
   });
   return { picked, why: 'changed since merge-base with dev' };
