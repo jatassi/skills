@@ -148,6 +148,9 @@ const prs = [
   opened(304, { created: ago(19), title: 'fix: tidy', body: 'Fixes #303' }),
   merged(305, { at: ago(20), files: ['lib/w.js'] }),
   opened(306, { created: ago(19), title: 'Revert "something"', body: 'Reverts #300 by accident', state: 'CLOSED' }),
+  // A revert whose quoted title and context mention #303: only #308 is reverted.
+  merged(308, { at: ago(20), files: ['lib/v.js'], title: 'feat: follow-up to #303' }),
+  opened(309, { created: ago(19), title: 'Revert "feat: follow-up to #303"', body: `Reverts ${REPO}#308\n\nContext: #303.` }),
 
   // docs: an unclean merge from before the area was gated.
   merged(400, { at: ago(50), files: ['docs/guide.md'] }),
@@ -216,6 +219,11 @@ describe('scoring a kitchen', () => {
   test('a garden issue makes a merge unclean, by number or by merge commit', () => {
     assert.deepEqual(unclean(500).links.map((l) => [l.kind, l.number]), [['garden', 902]]);
     assert.deepEqual(unclean(501).links.map((l) => [l.kind, l.number]), [['garden', 903]]);
+  });
+
+  test('a revert links only to the merge it names as reverted', () => {
+    assert.deepEqual(unclean(308).links.map((l) => [l.kind, l.number]), [['revert', 309]]);
+    assert.equal(unclean(303), undefined);
   });
 
   test('a revert found by merge commit SHA counts', () => {
@@ -331,13 +339,33 @@ describe('thresholds come from the document', () => {
 });
 
 describe('a gated area without git history', () => {
-  const dir = kitchen([], { working: autonomy([['all', ['**'], 'gated']]) });
-  const fixture = fixtureOf(
-    [merged(1, { at: ago(60) }), opened(2, { created: ago(59), title: 'Revert "x"', body: 'Reverts #1' })],
-  );
-  test('counts every unclean merge in the lookback towards demotion', () => {
-    const out = JSON.parse(run(['score', '--repo', dir, '--now', NOW], { fixture }).stdout);
-    assert.deepEqual(out.demotions, [{ area: 'all', prs: [1] }]);
+  const doc = autonomy([['old', ['old/**'], 'gated'], ['new', ['new/**'], 'gated']], { streak: 3 });
+  const dir = kitchen([], { working: doc });
+  const revert = (pr, at) => opened(pr + 1, { created: at, title: 'Revert "x"', body: `Reverts #${pr}` });
+  const fixture = fixtureOf([
+    // old: unclean, then three clean merges that could have earned the rung.
+    merged(1, { at: ago(60), files: ['old/a'] }), revert(1, ago(59)),
+    ...[50, 49, 48].map((d, i) => merged(10 + i, { at: ago(d), files: ['old/b'] })),
+    // new: unclean with no earning run after it.
+    merged(20, { at: ago(30), files: ['new/a'] }), merged(22, { at: ago(20), files: ['new/b'] }), revert(22, ago(19)),
+  ]);
+  const out = JSON.parse(run(['score', '--repo', dir, '--now', NOW], { fixture }).stdout);
+
+  test('demotes for unclean merges after the latest run of promotion-streak clean merges', () => {
+    assert.deepEqual(out.demotions, [{ area: 'new', prs: [22] }]);
+  });
+
+  test('reports gatedSince as unknown', () => {
+    assert.deepEqual(out.areas.map((a) => a.gatedSince), [null, null]);
+  });
+});
+
+describe('a shallow clone', () => {
+  const dir = join(scratch, `shallow-${n++}`);
+  spawnSync('git', ['clone', '-q', '--no-local', '--depth', '1', DIR, dir]);
+  test('cannot tell when an area was gated', () => {
+    const out = JSON.parse(run(['score', '--repo', dir, '--now', NOW], { fixture: FIXTURE }).stdout);
+    assert.equal(area(out, 'docs').gatedSince, null);
   });
 });
 

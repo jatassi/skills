@@ -87,6 +87,8 @@ function parseAutonomy(text) {
   };
 }
 
+const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Globs match whole repo-relative paths: `**` spans directories (a leading
 // `**/` also matches none), `*` and `?` stay within one path segment.
 function globRegExp(glob) {
@@ -100,7 +102,7 @@ function globRegExp(glob) {
       else { re += '[^/]*'; i += 1; }
     } else if (c === '*') re += '[^/]*';
     else if (c === '?') re += '[^/]';
-    else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+    else re += escape(c);
   }
   return new RegExp(`^${re}$`);
 }
@@ -108,14 +110,15 @@ function globRegExp(glob) {
 const areaOf = (areas, path) => areas.find((a) => a.matchers.some((m) => m.test(path)));
 
 // When each currently gated area became gated: the commit date of the oldest
-// commit in the unbroken run of commits, newest first, where the document
-// gives the area rung `gated`. Uncommitted: `now`. No git history: null.
+// commit in the unbroken run of first-parent commits, newest first, where the
+// document gives the area rung `gated`. Uncommitted: `now`. Unknown (no git
+// history, or a shallow clone whose history ends inside the run): null.
 function gatedSince(repo, docPath, areas, now) {
   const out = new Map(areas.map((a) => [a.area, null]));
   const rel = relative(repo, docPath);
   if (rel.startsWith('..') || isAbsolute(rel)) return out;
   const spec = `./${rel.split(sep).join('/')}`;
-  const log = spawnSync('git', ['-C', repo, 'log', '--format=%H %cI', '--', spec], { encoding: 'utf8' });
+  const log = spawnSync('git', ['-C', repo, 'log', '--first-parent', '--format=%H %cI', '--', spec], { encoding: 'utf8' });
   if (log.error || log.status !== 0) return out;
   const commits = log.stdout.split('\n').filter(Boolean).map((l) => {
     const [hash, date] = l.split(' ');
@@ -127,14 +130,20 @@ function gatedSince(repo, docPath, areas, now) {
     return { date: new Date(date).toISOString(), rungs };
   });
   if (!commits.length) return out;
+  const shallow =
+    spawnSync('git', ['-C', repo, 'rev-parse', '--is-shallow-repository'], { encoding: 'utf8' }).stdout?.trim() === 'true';
   for (const a of areas) {
     if (a.rung !== 'gated') continue;
     let since = now;
+    let runEnded = false;
     for (const c of commits) {
-      if (c.rungs.get(a.area) !== 'gated') break;
+      if (c.rungs.get(a.area) !== 'gated') {
+        runEnded = true;
+        break;
+      }
       since = c.date;
     }
-    out.set(a.area, since);
+    out.set(a.area, runEnded || !shallow ? since : null);
   }
   return out;
 }
@@ -170,8 +179,6 @@ function fetchHistory(repo, { base, from, limit }) {
 
 // ---------------------------------------------------------------- links
 
-const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
 // Does `text` reference the merge: #N or owner/repo#N for this repo, its pull
 // request URL, or a 7+ character prefix of its merge commit SHA?
 function refersTo(text, merge, repoName) {
@@ -187,10 +194,18 @@ function refersTo(text, merge, repoName) {
 
 const FIX_FORWARD = /\bfix(?:es|ed)?[- ]?forward/i;
 
+// A revert names what it reverts on a line that says so ("Reverts #N", "This
+// reverts commit <sha>"), or in its title outside the quoted original title,
+// so a reference the reverted PR's own title carried doesn't count.
 function linkKind(pr, merge, repoName) {
-  const text = `${pr.title ?? ''}\n${pr.body ?? ''}`;
-  if (/^\s*revert\b/i.test(pr.title ?? '') && refersTo(text, merge, repoName)) return 'revert';
-  if (text.split(/\r?\n/).some((line) => FIX_FORWARD.test(line) && refersTo(line, merge, repoName))) return 'fix-forward';
+  const title = pr.title ?? '';
+  const body = (pr.body ?? '').split(/\r?\n/);
+  const refers = (text) => refersTo(text, merge, repoName);
+  if (/^\s*revert\b/i.test(title)) {
+    const bare = title.replace(/"[^"]*"/g, '');
+    if (refers(bare) || body.some((line) => /\breverts?\b/i.test(line) && refers(line))) return 'revert';
+  }
+  if ([title, ...body].some((line) => FIX_FORWARD.test(line) && refers(line))) return 'fix-forward';
   return null;
 }
 
@@ -241,31 +256,14 @@ function score(doc, history, { now, since, from, gated }) {
     })
     .sort(byMerge);
 
-  const areas = doc.areas.map((a) => {
-    const own = merges.filter((m) => m.areas.includes(a.area));
-    const lastUnclean = own.findLastIndex((m) => m.status === 'unclean');
-    const tail = own.slice(lastUnclean + 1);
-    const since = gated.get(a.area);
-    return {
-      area: a.area,
-      rung: a.rung,
-      gatedSince: since,
-      merges: own.length,
-      streak: tail.filter((m) => m.status === 'clean').length,
-      pending: tail.filter((m) => m.status === 'pending').length,
-      unclean: own.filter((m) => m.status === 'unclean').map((m) => m.number),
-      _streakPrs: tail.filter((m) => m.status === 'clean').map((m) => m.number),
-      _sinceGated: since ? own.filter((m) => m.mergedAt >= since) : own,
-    };
-  });
+  const ladder = doc.areas.map((a) => climb(a, merges, gated.get(a.area), doc.promotionStreak));
 
-  const promotions = areas
-    .filter((a) => a.rung === 'chef' && a.streak >= doc.promotionStreak)
-    .map((a) => ({ area: a.area, streak: a.streak, prs: a._streakPrs }));
-  const demotions = areas
-    .filter((a) => a.rung === 'gated')
-    .map((a) => ({ area: a.area, prs: a._sinceGated.filter((m) => m.status === 'unclean').map((m) => m.number) }))
-    .filter((d) => d.prs.length);
+  const promotions = ladder
+    .filter((a) => a.rung === 'chef' && a.streak.length >= doc.promotionStreak)
+    .map((a) => ({ area: a.area, streak: a.streak.length, prs: a.streak.map((m) => m.number) }));
+  const demotions = ladder
+    .filter((a) => a.rung === 'gated' && a.demoting.length)
+    .map((a) => ({ area: a.area, prs: a.demoting.map((m) => m.number) }));
 
   const unclean = merges
     .filter((m) => m.status === 'unclean')
@@ -274,12 +272,20 @@ function score(doc, history, { now, since, from, gated }) {
 
   const digest = merges
     .filter((m) => m.mergedAt >= since && Date.parse(m.mergedAt) < nowMs)
-    .map((m) => risk(m, doc, areas))
+    .map((m) => risk(m, doc, ladder))
     .sort((a, b) => b.score - a.score || b.mergedAt.localeCompare(a.mergedAt) || a.pr - b.pr)
     .map((m, i) => ({ rank: i + 1, ...m }));
 
   return {
-    areas: areas.map(({ _streakPrs, _sinceGated, ...a }) => a),
+    areas: ladder.map((a) => ({
+      area: a.area,
+      rung: a.rung,
+      gatedSince: a.gatedSince,
+      merges: a.merges.length,
+      streak: a.streak.length,
+      pending: a.pending.length,
+      unclean: a.merges.filter((m) => m.status === 'unclean').map((m) => m.number),
+    })),
     unclean,
     promotions,
     demotions,
@@ -288,20 +294,53 @@ function score(doc, history, { now, since, from, gated }) {
   };
 }
 
-function risk(m, doc, areas) {
+// One area's place on the ladder, from its merges in merge order.
+//   streak    clean merges since the latest unclean one (pending ones skipped)
+//   pending   merges since the latest unclean one whose window is still open
+//   demoting  unclean merges merged since the area was gated; with gatedSince
+//             unknown, those after the latest run of promotion-streak clean
+//             merges (the run that could have earned the rung)
+//   newly     the first promotion-streak merges since the area was gated
+function climb(area, merges, gatedSince, promotionStreak) {
+  const own = merges.filter((m) => m.areas.includes(area.area));
+  const tail = own.slice(own.findLastIndex((m) => m.status === 'unclean') + 1);
+  let demoting = [];
+  let newly = [];
+  if (area.rung === 'gated' && gatedSince !== null) {
+    const sinceGated = own.filter((m) => m.mergedAt >= gatedSince);
+    demoting = sinceGated.filter((m) => m.status === 'unclean');
+    newly = sinceGated.slice(0, promotionStreak);
+  } else if (area.rung === 'gated') {
+    let run = 0;
+    let earnedAt = -1;
+    own.forEach((m, i) => {
+      if (m.status === 'unclean') run = 0;
+      else if (m.status === 'clean' && ++run >= promotionStreak) earnedAt = i;
+    });
+    demoting = own.slice(earnedAt + 1).filter((m) => m.status === 'unclean');
+  }
+  return {
+    area: area.area,
+    rung: area.rung,
+    gatedSince,
+    merges: own,
+    streak: tail.filter((m) => m.status === 'clean'),
+    pending: tail.filter((m) => m.status === 'pending'),
+    demoting,
+    newly,
+  };
+}
+
+function risk(m, doc, ladder) {
   const labels = (m.labels ?? []).map((l) => l.name.toLowerCase());
   const doorPaths = m.paths.filter((p) => doc.doors.some((d) => d.test(p))).sort();
   const door = { oneWay: labels.includes(DOOR_LABEL) || doorPaths.length > 0, label: labels.includes(DOOR_LABEL), paths: doorPaths };
   const verifier = VERIFIER_TIERS.find((t) => labels.includes(t)) ?? null;
   const blastRadius = (m.body ?? '').match(/blast radius\W{0,5}\b(high|medium|low)\b/i)?.[1].toLowerCase() ?? null;
   const lines = (m.additions ?? 0) + (m.deletions ?? 0);
-  const rungs = areas.filter((a) => m.areas.includes(a.area));
-  const rung = rungs.length ? RUNGS.find((r) => rungs.some((a) => a.rung === r)) : null;
-  // Newly gated: among the first promotion-streak merges since the area's gating.
-  const newlyGated = rungs.some((a) => {
-    const i = a._sinceGated.findIndex((x) => x.number === m.number);
-    return a.rung === 'gated' && a.gatedSince !== null && i >= 0 && i < doc.promotionStreak;
-  });
+  const mine = ladder.filter((a) => m.areas.includes(a.area));
+  const rung = mine.length ? RUNGS.find((r) => mine.some((a) => a.rung === r)) : null;
+  const newlyGated = mine.some((a) => a.newly.includes(m));
   const factors = {
     door: door.oneWay ? WEIGHTS.door : 0,
     verifier: WEIGHTS.verifier[verifier ?? 'none'],

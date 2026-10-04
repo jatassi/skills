@@ -21,7 +21,7 @@ trust-ladder score [--repo <dir>] [--autonomy <file>] [--now <iso>] [--since <is
 | `--repo` | current directory | The repo root. `gh` runs here; git history of the document is read here. |
 | `--autonomy` | `<repo>/docs/agents/autonomy.md` | The autonomy document. |
 | `--now` | the current time | The moment to score at. |
-| `--since` | 24 hours before `--now` | Start of the digest window, which ends at `--now`. |
+| `--since` | 24 hours before `--now` | Start of the digest window, which ends at `--now`. For a calendar day, pass its midnight with `--now` at the next midnight. |
 | `--lookback-days` | 90 | How far back merges are scored for streaks. |
 | `--base` | the repo's default branch | The branch merges land on. |
 | `--limit` | 1000 | Most results per `gh` query. |
@@ -32,15 +32,15 @@ Exit status: `0` scored, `1` failed with the reason on stderr (no autonomy docum
 
 - **Area**: each changed file belongs to the first area, top to bottom, with a glob matching its repo-relative path. A merge belongs to every area its files land in. Globs: `**` spans directories (a leading `**/` also matches none), `*` and `?` stay within one path segment. Files no area matches are listed under `unassigned`.
 - **Link**: something created within `clean-window-days` after the merge (inclusive), that references it. A reference is `#N`, `<this owner/repo>#N`, the pull request's URL, or a 7+ character prefix of its merge commit SHA. `other/repo#N` is not a reference. Three kinds:
-  - `revert`: a pull request, open or merged, whose title starts with `Revert` and whose title or body references the merge.
+  - `revert`: a pull request, open or merged, whose title starts with `Revert` and that references the merge either on a body line saying `revert` (GitHub's `Reverts owner/repo#N`, git's `This reverts commit <sha>`) or in its title outside the quoted original title.
   - `fix-forward`: a pull request, open or merged, with a line in its title or body that says `fix-forward` (or `fix forward`, `fixes forward`) and references the merge on that same line. Write it as `Fix-forward: #N`. A bare `Fixes #N` is a closing keyword, not a link.
   - `garden`: an issue labelled `garden`, in any state, whose title or body references the merge.
   Pull requests closed without merging never link.
 - **Status**: `unclean` once any link exists; `clean` when the window has passed with none; `pending` while the window is still open.
 - **Streak**: the clean merges in the area since its latest unclean merge. Pending merges neither extend nor break it until they settle.
 - **Promotion due**: a `chef` area whose streak reaches `promotion-streak`.
-- **Gated since**: for a `gated` area, the commit date at which the document's git history last turned the area `gated` (the current time if that change isn't committed; `null` without git history).
-- **Demotion due**: a `gated` area with an unclean merge merged since it was gated. With no `gatedSince`, every unclean merge in the lookback counts.
+- **Gated since**: for a `gated` area, the date of the first-parent commit at which the document's history last turned the area `gated` (the current time if that change isn't committed). `null` when unknown: no git history, or a shallow clone whose history ends while the area is still gated. Run on a full clone (`git fetch --unshallow`) so it is known.
+- **Demotion due**: a `gated` area with an unclean merge merged since it was gated. With `gatedSince` unknown, the unclean merges after the area's latest run of `promotion-streak` clean merges count instead, or every unclean merge in the lookback when no such run is in it.
 
 ## Digest risk
 
