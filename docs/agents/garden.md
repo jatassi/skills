@@ -31,8 +31,8 @@ Why: a path that only works against the real service can't be verified live in a
 | Loop | When | What it does |
 | ---- | ---- | ------------ |
 | reflect | the last step of every thread | Files a `garden` issue for anything the thread had to work around. |
-| sweep | nightly | Checks the day's merges against the banned patterns and files a `garden` issue per finding not already open. |
-| cluster | weekly, Monday | Groups open `garden` issues by root cause and runs `correct` on each cluster. |
+| sweep | nightly, by the garden-sweep routine | Checks the day's merges against the banned patterns and files a `garden` issue per finding not already open. |
+| cluster | weekly on Monday, by the garden-cluster routine | Groups open `garden` issues by root cause and runs `correct` on each cluster. |
 
 ## Correcting
 
