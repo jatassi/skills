@@ -149,7 +149,7 @@
   },
   "skills/wait-what/SKILL.md": {
     "kind": "port-feature",
-    "why": "Domain lookup: upstream reached the domain docs through the '## Agent skills' block in AGENTS.md (docs/agents/domain.md); kitchens list the domain document in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, so the skill finds where GLOSSARY.md and the ADRs live through that index, falling back to the repo root and docs/adr/."
+    "why": "Domain lookup: upstream reached the domain docs through the '## Agent skills' block in AGENTS.md (docs/agents/domain.md); kitchens list the domain document in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, so the skill finds GLOSSARY.md through that index, falling back to the repo root."
   },
   "skills/wayfinder/agents/openai.yaml": {
     "kind": "policy",
