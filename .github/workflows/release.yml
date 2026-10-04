@@ -85,7 +85,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       # Browser tests (round page and block corpus) run on Ubuntu only. The
       # POSIX-only checks skip themselves on Windows.
-      - run: npm test
+      - run: npm run test:all
         env:
           VG_SKIP_BROWSER_TESTS: ${{ runner.os == 'Linux' && '0' || '1' }}
       - name: Name the tested bundle after the tested tree

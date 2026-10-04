@@ -57,7 +57,8 @@ skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a 
 ```
 npm install
 npx playwright install chromium   # once, for the round page tests
-npm test                          # type-check, build into packages/visual-grilling/.test-dist, run every test against it
+npm test                          # test only the workspaces changed since the merge-base with dev
+npm run test:all                  # every workspace; for visual-grilling: type-check, build into .test-dist, run every test against it
 npm run try                       # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
 ```
 
