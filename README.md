@@ -71,7 +71,7 @@ npm run test:all                  # every workspace: visual-grilling type-checks
 npm run try                       # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
 ```
 
-`npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Shared tooling changes run everything.
+`npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing root `package.json` or the lockfile runs everything, unless the change only adds a workspace, which then runs alone. `--dry-run` prints the pick without running it.
 
 Work on `dev`, not `main`. Never commit the `npm run try` output: `dist/` is gitignored, and only a release commits it. After the first release `dist/` is tracked, so a try build shows up as changes to it; discard them with `git restore skills/visual-grilling/dist`. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.
 
