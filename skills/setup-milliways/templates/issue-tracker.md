@@ -51,3 +51,4 @@ Besides the triage labels (see `triage-labels.md`) and the `wayfinder:*` labels 
 - **`garden`**: a workaround, banned pattern or repeated mistake to correct (see `garden.md`).
 - **`door:one-way`**: a pull request that can't be walked back cheaply. It always waits for the chef (see `autonomy.md`).
 - **`prototype`**: a throwaway prototype pull request, a draft titled `prototype:`, closed unmerged once the chef picks a variant.
+- **`live-ui-verified`**, **`unit-test-verified`**, **`type-check-only`**, **`verifier-blocked`**, **`verifier-failed`**: the verifier's ledger tier at the pull request's head SHA, one at a time (see `verification.md`).
