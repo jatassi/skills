@@ -2,7 +2,8 @@
   "name": "milliways-dev",
   "private": true,
   "workspaces": [
-    "packages/visual-grilling"
+    "packages/visual-grilling",
+    "packages/setup-milliways"
   ],
   "scripts": {
     "test": "node scripts/test.mjs",
