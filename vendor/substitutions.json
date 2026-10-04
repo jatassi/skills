@@ -1,6 +1,424 @@
 {
   "substitutions": [
     {
+      "pattern": "we renamed `gpt-4` to `gpt-4o` in `encodingForModel`",
+      "replacement": "we renamed `TOKEN_LIMIT` to `MAX_TOKENS` in `encodingForModel`",
+      "files": "^skills/reflect/references/synthesizer\\.md$",
+      "why": "An example of a drifting detail whose GPT slugs trip the model-slug denylist; a slug-free rename teaches the same point."
+    },
+    {
+      "pattern": "\"Bugbot flagged regex backtracking on May 2\"",
+      "replacement": "\"the PR-review bot flagged regex backtracking on May 2\"",
+      "files": "^skills/reflect/references/synthesizer\\.md$",
+      "why": "Bugbot -> automated PR-review bot, in a quoted example that starts lowercase. Runs before the global Bugbot rules so they cannot capitalise it wrongly."
+    },
+    {
+      "pattern": "On GitHub, use the watcher's Bugbot pass count.",
+      "replacement": "On GitHub, use the watcher's pass count for Cursor's PR-review bot only; the watcher recognises no other bot's threads and reports 0 passes for them. For any other review bot, derive the pass count from the PR's review history (`gh api \"repos/<owner>/<repo>/pulls/<pr>/reviews\"`, filtered to the bot's login), as on Origin.",
+      "files": "^skills/poteto-mode/playbooks/babysit\\.md$",
+      "why": "watch-pr ships verbatim and counts passes only for Cursor's review bot (isBugbot and passKey in scripts/watch-pr/github.ts), so under any other bot the lean-dismiss rule would read a count that is always 0. Runs before the global Bugbot rules."
+    },
+    {
+      "pattern": "# Bugbot triage",
+      "replacement": "# Automated PR-review bot triage",
+      "why": "Bugbot -> automated PR-review bot. Heading form."
+    },
+    {
+      "pattern": "**Bugbot is triaged skeptically, always.**",
+      "replacement": "**The automated PR-review bot is triaged skeptically, always.**",
+      "why": "Bugbot -> automated PR-review bot, at a sentence start."
+    },
+    {
+      "pattern": "- Bugbot or the agentic security review commented",
+      "replacement": "- The automated PR-review bot or the agentic security review commented",
+      "why": "Bugbot -> automated PR-review bot, at a sentence start."
+    },
+    {
+      "pattern": "- [ ] Bugbot triage done.",
+      "replacement": "- [ ] Automated PR-review bot triage done.",
+      "why": "Bugbot -> automated PR-review bot, at a sentence start."
+    },
+    {
+      "pattern": "Skip when: Bugbot",
+      "replacement": "Skip when: The automated PR-review bot",
+      "why": "Bugbot -> automated PR-review bot, at a sentence start (matches the other Skip when: lines)."
+    },
+    {
+      "pattern": "handles Bugbot or review-automation comments",
+      "replacement": "handles automated PR-review bot or other review-automation comments",
+      "why": "Bugbot -> automated PR-review bot."
+    },
+    {
+      "regex": "\\bBugbot (triage|thread|comment|reply|passes|pass count|and security-reviewer)\\b",
+      "replacement": "review-bot $1",
+      "why": "Bugbot -> automated PR-review bot, used as a modifier (skeptical review-bot triage, each review-bot thread, the watcher's review-bot pass count)."
+    },
+    {
+      "regex": "\\bbugbot comments\\b",
+      "replacement": "review-bot comments",
+      "why": "Bugbot -> automated PR-review bot, in the quoted trigger phrase \"address the bugbot comments\"."
+    },
+    {
+      "pattern": "Bugbot's",
+      "replacement": "the automated PR-review bot's",
+      "why": "Bugbot -> automated PR-review bot, possessive."
+    },
+    {
+      "pattern": "Bugbot",
+      "replacement": "the automated PR-review bot",
+      "why": "Bugbot -> automated PR-review bot. Catch-all after the sentence-start and modifier rules above; stays last of the Bugbot rules."
+    },
+    {
+      "pattern": "Transcripts live at `~/.cursor/projects/<slug>/agent-transcripts/<uuid>/<uuid>.jsonl`, where `<slug>` is the workspace path with the leading slash dropped and each \"/\" turned into \"-\" (so `/Users/you/proj` becomes `Users-you-proj`). Every line is one chat message.",
+      "replacement": "Transcripts live at `~/.claude/projects/<project>/<session-id>.jsonl`, where `<project>` is the working directory's absolute path with every character other than a letter or digit turned into \"-\" (so `/Users/you/proj` becomes `-Users-you-proj`). Every line is one JSON event: a user or assistant message, a tool result, or session metadata. A subagent's transcript sits under `<project>/<session-id>/subagents/`. A cloud thread holds only its own transcript, so mining earlier chats works only in a local session.",
+      "files": "^skills/recall/SKILL\\.md$",
+      "why": "Cursor transcript path -> Claude Code transcript path (~/.claude/projects/<project>/<session>.jsonl). The slug keeps the leading dash, and the JSONL lines are events rather than chat messages."
+    },
+    {
+      "regex": "The system prompt names (?:the active|the) workspace's `agent-transcripts/` directory\\.",
+      "replacement": "This project's transcripts are in `~/.claude/projects/<project>/`, where `<project>` is the working directory's absolute path with every character other than a letter or digit turned into `-`.",
+      "why": "Cursor transcript path -> Claude Code transcript path. Claude Code's system prompt does not name the transcript directory, so the rule says how to derive it (automate-me, reflect)."
+    },
+    {
+      "regex": "the active workspace's `agent-transcripts/` directory \\(the system prompt names (?:the|this) path([.)])",
+      "replacement": "`~/.claude/projects/<project>/` (`<project>` is the working directory's absolute path with every character other than a letter or digit turned into `-`$1",
+      "why": "Cursor transcript path -> Claude Code transcript path, parenthetical form (show-me-your-work, poteto-mode eval and session-pickup). $1 keeps whichever of '.' or ')' closed the original."
+    },
+    {
+      "pattern": "`~/.cursor/projects/*/`",
+      "replacement": "`~/.claude/projects/*/`",
+      "why": "Cursor transcript root -> Claude Code transcript root, in the don't-glob-across-projects warnings."
+    },
+    {
+      "pattern": "local transcripts under `agent-transcripts/`",
+      "replacement": "local transcripts under `~/.claude/projects/`",
+      "why": "Claude Code's transcripts live under ~/.claude/projects/ (orchestrate Worker / verifier)."
+    },
+    {
+      "pattern": "`.cursor/worktrees/myrepo/x`",
+      "replacement": "`.claude/worktrees/x`",
+      "why": "Claude Code puts its worktrees under <repo>/.claude/worktrees/ (worktree-cleanup step 1)."
+    },
+    {
+      "pattern": "The transcript scan is slow, so background it.",
+      "replacement": "The transcript scan is slow, so background it. The script's chat scan reads Cursor's transcript folder, so under Claude Code its `LAST_CHAT` column stays `-` and no row is marked `verify-recent-chat`. Treat every non-`hold` row as needing step 3, against `~/.claude/projects/`, where a session that ran in a worktree has its own folder named for the worktree's path.",
+      "files": "^skills/poteto-mode/playbooks/worktree-cleanup\\.md$",
+      "why": "worktree-audit.sh ships verbatim and still scans Cursor's transcript folder, so its in-use bucket never fires; this keeps the playbook's in-use gate honest under Claude Code."
+    },
+    {
+      "pattern": ".cursor/plugins/",
+      "replacement": ".claude/plugins/",
+      "why": "Claude Code installs plugin skills under ~/.claude/plugins/ (the reflect reviewer prompts)."
+    },
+    {
+      "regex": "Cursor's built-in `create-skill`(?: skill)?",
+      "replacement": "the `writing-for-agents` skill",
+      "why": "Cursor's built-in create-skill does not exist in Claude Code; writing-for-agents is the kitchen's skill-authoring reference (automate-me, reflect)."
+    },
+    {
+      "regex": "\\*\\*create-skill\\*\\* skill \\(Cursor's built-in for authoring SKILL\\.md files\\)",
+      "replacement": "**writing-for-agents** skill (the reference for writing skills and other agent-facing documents)",
+      "why": "Same port, bold form (poteto-mode SKILL.md, playbooks/authoring-a-skill.md); the playbook skill-reference check needs a shipped skill."
+    },
+    {
+      "regex": "\\bcreate-skill\\b",
+      "replacement": "writing-for-agents",
+      "why": "The remaining bare create-skill mentions. Runs after the two rules above; does not match create-verification-skill or maintain-verification-skill."
+    },
+    {
+      "pattern": "list the available MCPs from the Cursor environment. Use the available-tools map when present. Otherwise inspect the `mcps/` directory Cursor exposes for enabled MCP servers.",
+      "replacement": "list the MCP servers available in this session. Their tools are named `mcp__<server>__<tool>`, and each server's instructions describe it. Tools that are deferred still count: search for them by server name before you decide a category has no MCP.",
+      "files": "^skills/why/SKILL\\.md$",
+      "why": "Cursor MCP discovery (an available-tools map and an mcps/ directory) -> how Claude Code exposes MCP tools."
+    },
+    {
+      "regex": "- `readonly`: `false` \\(agent mode\\)\\.",
+      "replacement": "- tools: leave them all, so it keeps MCP access. Don't swap in a read-only agent type.",
+      "files": "^skills/why/SKILL\\.md$",
+      "why": "The Agent tool has no readonly parameter; what survives the port is keeping MCP tools available."
+    },
+    {
+      "pattern": " **Do not use readonly/Ask mode.** It strips MCP access, which disables MCP-backed investigators entirely.",
+      "replacement": " Without MCP access, an MCP-backed investigator can't search at all.",
+      "files": "^skills/why/SKILL\\.md$",
+      "why": "Cursor Ask mode has no Claude Code equivalent; keeps the reason."
+    },
+    {
+      "pattern": " Readonly/Ask mode strips MCPs and defeats that.",
+      "replacement": "",
+      "files": "^skills/why/SKILL\\.md$",
+      "why": "A Cursor-mode rationale, already covered by the rewritten tools line."
+    },
+    {
+      "pattern": ", agent mode (`readonly: false`)",
+      "replacement": "",
+      "files": "^skills/reflect/SKILL\\.md$",
+      "why": "The Agent tool has no readonly parameter."
+    },
+    {
+      "pattern": " Readonly strips MCPs.",
+      "replacement": " `general-purpose` keeps every MCP tool, so don't swap in a read-only agent type.",
+      "files": "^skills/reflect/SKILL\\.md$",
+      "why": "A Cursor-mode rationale, restated for Claude Code agent types."
+    },
+    {
+      "regex": "(subagent_type[\"'`]?:\\s*[\"'`])Comment Sicko([\"'`])",
+      "replacement": "$1milliways:comment-sicko$2",
+      "why": "Bare agent name -> milliways:-namespaced agent type. The upstream display name has a space and capitals, so the general namespacing rule misses it (no-comments)."
+    },
+    {
+      "pattern": "name: Comment Sicko",
+      "replacement": "name: comment-sicko",
+      "files": "^agents/comment-sicko\\.md$",
+      "why": "Claude Code skips an agent whose name is not letters, digits, hyphens and underscores; the name must equal the file stem so it registers as milliways:comment-sicko."
+    },
+    {
+      "pattern": "is_background: true",
+      "replacement": "background: true",
+      "files": "^agents/",
+      "why": "Cursor's is_background agent frontmatter is background in Claude Code."
+    },
+    {
+      "pattern": "Spawn a fresh `poteto-agent`",
+      "replacement": "Spawn a fresh `milliways:poteto-agent`",
+      "files": "^agents/poteto-agent\\.md$",
+      "why": "Plugin agents register under the plugin namespace; a bare name fails to dispatch."
+    },
+    {
+      "pattern": "Creating before/after evidence for `verify-this`.",
+      "replacement": "Creating before/after evidence for a verification pass.",
+      "files": "^skills/control-ui/SKILL\\.md$",
+      "why": "verify-this is a cursor-team-kit skill milliways doesn't ship."
+    },
+    {
+      "pattern": "`cursor-team-kit` publishes `control-cli`",
+      "replacement": "milliways ships `control-cli`",
+      "files": "^skills/poteto-mode/",
+      "why": "deslop, control-ui and control-cli ship in the milliways plugin, not a separate cursor-team-kit install."
+    },
+    {
+      "regex": " \\(from `cursor-team-kit`\\)| from (?:the )?`cursor-team-kit`(?: plugin)?",
+      "replacement": "",
+      "files": "^skills/poteto-mode/",
+      "why": "deslop, control-ui and control-cli ship in the milliways plugin."
+    },
+    {
+      "regex": "Always `environment: \"cloud\"` unless the task needs this machine:",
+      "replacement": "Always a background agent with worktree isolation (`run_in_background: true`, `isolation: \"worktree\"`) unless the task needs the coordinator's checkout or this machine's own state:",
+      "files": "^skills/poteto-mode/",
+      "why": "Cloud Task calls -> background agents with worktree isolation (orchestrate Worker / verifier). Runs before the general environment rule."
+    },
+    {
+      "pattern": "Use `environment: \"local\"` only when the worker needs access to something on the user's computer.",
+      "replacement": "Leave out `isolation` only when the worker must see the parent's uncommitted working tree, and then it must not write.",
+      "files": "^skills/swarm/SKILL\\.md$",
+      "why": "Every Claude Code agent runs on this machine; the only reason left to skip a worktree is needing the parent's uncommitted state."
+    },
+    {
+      "pattern": "`environment: \"cloud\"`",
+      "replacement": "`isolation: \"worktree\"`",
+      "why": "Cloud Task call -> background agent with worktree isolation (run_in_background is already present at each call site)."
+    },
+    {
+      "pattern": "When a worker must start from a non-default pushed branch, pass `cloud_base_branch`.",
+      "replacement": "When a worker must start from another pushed branch, name the branch in its brief, and have the worker check it out in its worktree before anything else.",
+      "files": "^skills/swarm/SKILL\\.md$",
+      "why": "cloud_base_branch is a Cursor cloud Task parameter; a worktree agent starts from the parent's HEAD."
+    },
+    {
+      "pattern": "Fan out N parallel cloud workers.",
+      "replacement": "Fan out N parallel background workers, each in its own worktree.",
+      "files": "^skills/swarm/SKILL\\.md$",
+      "why": "Cloud workers -> background agents with worktree isolation."
+    },
+    {
+      "pattern": "not the cloud concurrency limit",
+      "replacement": "not the concurrency limit",
+      "files": "^skills/swarm/SKILL\\.md$",
+      "why": "There is no Cursor cloud concurrency cap in Claude Code."
+    },
+    {
+      "pattern": "a nested spawn has the full Task schema including `environment`",
+      "replacement": "a nested spawn has the full `Agent` schema including `run_in_background` and `isolation`",
+      "why": "The Agent tool has no environment parameter; backgrounding and worktree isolation replace it (orchestrate Sub-coordinator)."
+    },
+    {
+      "pattern": "Cursor cloud agent",
+      "replacement": "background agent with worktree isolation (`run_in_background: true`, `isolation: \"worktree\"`)",
+      "files": "^skills/poteto-mode/",
+      "why": "Cursor cloud agents -> background agents with worktree isolation (autopilot-full, autopilot-stack, shipping)."
+    },
+    {
+      "pattern": "Each live lane runs on its own cloud VM at the PR head.",
+      "replacement": "Each live lane runs in its own background agent with worktree isolation (`run_in_background: true`, `isolation: \"worktree\"`) at the PR head.",
+      "files": "^skills/poteto-mode/",
+      "why": "Cursor cloud VMs -> background agents with worktree isolation (multi-phase-plan boot recipe)."
+    },
+    {
+      "pattern": "on a lane VM",
+      "replacement": "in a lane's worktree",
+      "files": "^skills/poteto-mode/",
+      "why": "Cursor cloud VMs -> background agents with worktree isolation (multi-phase-plan review gate)."
+    },
+    {
+      "pattern": "its spawn budget with the cloud default and the local exception list",
+      "replacement": "its spawn budget with the worktree-isolation default and its exception list",
+      "files": "^skills/poteto-mode/",
+      "why": "Cloud Task calls -> background agents with worktree isolation."
+    },
+    {
+      "pattern": "Cloud agents cannot read the local store, so their briefs inline",
+      "replacement": "Worktree agents must not depend on the coordinator's store, so their briefs inline",
+      "files": "^skills/poteto-mode/",
+      "why": "Cloud Task calls -> background agents with worktree isolation."
+    },
+    {
+      "pattern": "Work that exists only on one VM when that VM dies was never done.",
+      "replacement": "Work that exists only in one worktree when its agent dies was never done.",
+      "files": "^skills/poteto-mode/",
+      "why": "Cursor cloud VMs -> background agents with worktree isolation."
+    },
+    {
+      "pattern": "cloud-agent URL",
+      "replacement": "cloud session link",
+      "files": "^skills/poteto-mode/",
+      "why": "A Cursor cloud-agent URL -> a Claude Code cloud session link."
+    },
+    {
+      "pattern": "Cursor's `/loop` command (a built-in, not a pstack skill)",
+      "replacement": "Claude Code's `/loop` command (bundled with Claude Code, not a milliways skill)",
+      "why": "Claude Code ships /loop (autonomous-run step 2). Runs before the shorter /loop rule."
+    },
+    {
+      "pattern": "Cursor's `/loop` command",
+      "replacement": "Claude Code's `/loop` command",
+      "why": "Claude Code ships /loop (bug-fix step 2)."
+    },
+    {
+      "pattern": ", and not Cursor's built-in babysit skill, whose description matches the same words",
+      "replacement": "",
+      "why": "Claude Code has no built-in babysit skill to steer away from."
+    },
+    {
+      "pattern": " This playbook replaces Cursor's built-in babysit skill for these requests, so do not route there even though its description matches the same words.",
+      "replacement": "",
+      "why": "Claude Code has no built-in babysit skill to steer away from."
+    },
+    {
+      "pattern": "After a Cursor restart: local agents are dead, cloud work is not.",
+      "replacement": "After a Claude Code restart: its subagents are dead, but their pushed branches, PRs and worktrees are not.",
+      "why": "Restart semantics under Claude Code background agents (orchestrate Liveness). Runs before the generic restart rule."
+    },
+    {
+      "pattern": "reattach cloud work by PR and branch rather than agent id",
+      "replacement": "reattach work by PR and branch rather than agent id",
+      "why": "Cloud Task calls -> background agents with worktree isolation."
+    },
+    {
+      "pattern": "a Cursor restart",
+      "replacement": "a Claude Code restart",
+      "why": "The harness is Claude Code."
+    },
+    {
+      "pattern": "the cloud agent's status in the Cursor dashboard",
+      "replacement": "the agent's status in the Projects Overview pane",
+      "why": "Cursor dashboard liveness -> the Projects Overview pane."
+    },
+    {
+      "pattern": "under the agent store's `docs/`",
+      "replacement": "under `~/.claude/projects/<project>/docs/`",
+      "files": "^skills/poteto-mode/",
+      "why": "Claude Code has no agent store named in the system prompt; the project's Claude Code folder is the local equivalent (multi-phase-plan step 4)."
+    },
+    {
+      "pattern": "re-read this playbook from trunk with `git show origin/main:pstack/",
+      "replacement": "re-read this playbook at `<milliways>/",
+      "files": "^skills/poteto-mode/",
+      "why": "The playbooks ship in the milliways plugin, not in a kitchen repo's trunk (autopilot-full, autopilot-stack). Runs before the git-show rule."
+    },
+    {
+      "pattern": "Read these from trunk at program start.",
+      "replacement": "Read these at program start, and repo paths from trunk.",
+      "files": "^skills/poteto-mode/",
+      "why": "Plugin skills are not in a kitchen repo's trunk; the control-skill line stays a git show from trunk (multi-phase-plan skeleton)."
+    },
+    {
+      "pattern": "Re-read the execution playbook from trunk.",
+      "replacement": "Re-read the execution playbook.",
+      "files": "^skills/poteto-mode/",
+      "why": "The playbooks ship in the plugin, not in trunk."
+    },
+    {
+      "regex": "`git show origin/main:pstack/(skills/[^`]+)`",
+      "replacement": "`<milliways>/$1`",
+      "files": "^skills/poteto-mode/",
+      "why": "pstack skills ship at <milliways>/skills/. Only rewrites pstack paths, so the skeleton's `git show origin/main:<control skill path>` line survives for check-plan.mjs."
+    },
+    {
+      "regex": "`pstack/(skills/[^`]+)`",
+      "replacement": "`<milliways>/$1`",
+      "files": "^skills/poteto-mode/",
+      "why": "pstack skills ship at <milliways>/skills/."
+    },
+    {
+      "pattern": "node pstack/skills/",
+      "replacement": "node <milliways>/skills/",
+      "files": "^skills/poteto-mode/",
+      "why": "check-plan.mjs ships at <milliways>/skills/poteto-mode/scripts/."
+    },
+    {
+      "pattern": "name: Poteto Mode",
+      "replacement": "name: poteto-mode",
+      "files": "^skills/poteto-mode/SKILL\\.md$",
+      "why": "A skill name is lowercase letters, digits and hyphens, so it resolves as /poteto-mode and milliways:poteto-mode."
+    },
+    {
+      "pattern": "on a fast, cheap model",
+      "replacement": "on the models document's `explorer` model (`docs/agents/models.md`)",
+      "files": "^skills/recall/SKILL\\.md$",
+      "why": "Roles resolve from docs/agents/models.md; mining transcripts is read-only search, the explorer role."
+    },
+    {
+      "pattern": "name: tdd\n",
+      "replacement": "name: tdd-bug-fix\n",
+      "files": "^skills/tdd-bug-fix/SKILL\\.md$",
+      "why": "Declared rename: pstack tdd -> tdd-bug-fix, because Matt's tdd keeps the name."
+    },
+    {
+      "pattern": "**tdd** skill",
+      "replacement": "**tdd-bug-fix** skill",
+      "files": "^skills/(?:poteto-mode|make-it-so)/",
+      "why": "References to the renamed skill follow it (poteto-mode bug-fix step 5). Scoped to pstack's router so Matt's own tdd references are never rewritten."
+    },
+    {
+      "pattern": "name: teach\n",
+      "replacement": "name: explain\n",
+      "files": "^skills/explain/SKILL\\.md$",
+      "why": "Declared rename: pstack teach -> explain, because Matt's teach keeps the name."
+    },
+    {
+      "pattern": "# Teach\n",
+      "replacement": "# Explain\n",
+      "files": "^skills/explain/SKILL\\.md$",
+      "why": "The heading follows the declared rename teach -> explain."
+    },
+    {
+      "pattern": "Teach sits on top",
+      "replacement": "Explain sits on top",
+      "files": "^skills/explain/SKILL\\.md$",
+      "why": "The skill's self-reference follows the declared rename teach -> explain."
+    },
+    {
+      "pattern": "`auto` or `inherit-parent`",
+      "replacement": "`inherit`",
+      "why": "The models document's alias for 'run on the parent's model' is `inherit`; the Agent tool has no `auto` model."
+    },
+    {
+      "pattern": "`inherit-parent` or `auto`",
+      "replacement": "`inherit`",
+      "why": "The same alias in reverse order."
+    },
+    {
       "pattern": "`~/.cursor/rules/pstack-models.mdc`",
       "replacement": "`docs/agents/models.md`",
       "why": "Model roles live in the kitchen's models document, not a Cursor rules file."
@@ -11,9 +429,9 @@
       "why": "Model roles live in the kitchen's models document, not a Cursor rules file."
     },
     {
-      "regex": "if the rule or (the|that) line is missing",
-      "replacement": "if the document or $1 line is missing",
-      "why": "Follows the rules file -> models document rewrite."
+      "regex": "([Ii])f the rule or (the|that) line is missing",
+      "replacement": "$1f the document or $2 line is missing",
+      "why": "Follows the rules file -> models document rewrite. Matches the sentence-initial form too."
     },
     {
       "pattern": "- `readonly`: `true`",
@@ -93,6 +511,49 @@
       "pattern": "`/setup-matt-pocock-skills`",
       "replacement": "`/setup-milliways`",
       "why": "setup-matt-pocock-skills is excluded; setup-milliways writes the kitchen config the skills read. Unscoped: only Matt's skills name it, and a new mention upstream gets rewritten too."
+    },
+    {
+      "pattern": "If the Agent tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message.",
+      "replacement": "If the Agent tool rejects the value, use the default and say so. If that model isn't available in this thread, follow the models document's Fallback section: run on the parent's model and report its `fallback:` line.",
+      "why": "Cursor slug-family fallback -> the models document's Fallback rule. Runs after the Task tool -> Agent tool rule."
+    },
+    {
+      "regex": "`opus`, `gpt-[^`]+`, `grok-[^`]+`",
+      "replacement": "`opus`, `opus`, `opus`",
+      "why": "Grok/GPT panel defaults -> Claude tiers; the review panel is opus x3 per models.md. Runs after the claude-tier rule."
+    },
+    {
+      "regex": "(\\| Reviewer [BC] \\| )`(?:gpt|grok)-[^`]+`",
+      "replacement": "$1`opus`",
+      "why": "interrogate default-table seats B and C -> opus, per the models.md interrogate default."
+    },
+    {
+      "regex": "(\\| `reflect tooling` \\| )`gpt-[^`]+`",
+      "replacement": "$1`sonnet`",
+      "why": "The reflect tooling lens is covered by the models.md code role (sonnet)."
+    },
+    {
+      "regex": "use `grok-[^`]+`",
+      "replacement": "use `sonnet`",
+      "why": "swarm workers are covered by the models.md code role (sonnet); the default-grok rule misses swarm's 'use' phrasing."
+    },
+    {
+      "pattern": "`~/Library/Application Support/Cursor` (`state.vscdb.backup`, and `snapshots/roots/<root>` where a `<root>` named for a folder you opened as a workspace balloons)",
+      "replacement": "session folders under `~/.claude/projects/` named for worktrees you already removed",
+      "files": "^skills/poteto-mode/playbooks/worktree-cleanup\\.md$",
+      "why": "Cursor's app-support state belongs to the Cursor IDE; under Claude Code the per-worktree residue is the session folders under ~/.claude/projects/."
+    },
+    {
+      "pattern": "  - [ ] `git show origin/main:<control skill path>`\n",
+      "replacement": "  - [ ] `<milliways>/skills/<control skill>/SKILL.md`, or `git show origin/main:<its path>` for a repo-local simulator skill\n  - [ ] `git show origin/main:<each repo doc the program reads, such as AGENTS.md and docs/agents/>`\n",
+      "files": "^skills/poteto-mode/playbooks/multi-phase-plan\\.md$",
+      "why": "control-ui and control-cli ship in the milliways plugin, not in trunk, so the control-skill read points at the plugin; a separate box keeps a trunk read that resolves and carries the `git show origin/main:` marker that check-plan.mjs requires."
+    },
+    {
+      "pattern": "The root is the only topology writer.",
+      "replacement": "The root is the only topology writer. Git checks a branch out in only one worktree, and each owner's worktree holds its branch, so the root rebases on a detached HEAD (`git switch --detach <branch>`, rebase, then push `HEAD:<branch>`) and never checks out an owner's branch.",
+      "files": "^skills/poteto-mode/playbooks/autopilot-stack\\.md$",
+      "why": "Owners are worktree agents on this machine rather than separate cloud clones, so the root's rebases (steps 6 and 7) would hit git's one-worktree-per-branch rule."
     }
   ]
 }

@@ -1,7 +1,39 @@
 {
+  "agents/poteto-agent.md": {
+    "kind": "port-feature",
+    "why": "The agent reads poteto-mode before any work, but a Claude Code plugin subagent cannot find the plugin's install path; it preloads the skill through the skills frontmatter field instead."
+  },
+  "skills/architect/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (bug-fix, refactoring, prototype), figure-it-out and no-comments."
+  },
+  "skills/arena/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (eval, feature, orchestrate), and architect. Model fallback: runner and judge fallbacks follow the models document's Model values and Fallback section instead of Cursor slug families; candidates get worktrees through isolation: \"worktree\"; a judge from the same family is recorded as such."
+  },
+  "skills/automate-me/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Claude Code registers skills only directly under skills/, so Cursor category directories go; AskUserQuestion takes 1-4 questions of 2-4 options with multiSelect, not allow_multiple; writing-for-agents keeps its frontmatter rules in SKILL-MECHANICS.md and has no test/iterate loop; a cloud thread holds only its own transcript."
+  },
+  "skills/benchmark-checklist/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (hillclimb, perf-issue)."
+  },
   "skills/code-review/SKILL.md": {
     "kind": "port-feature",
     "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
+  },
+  "skills/create-verification-skill/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and setup-milliways offers it and invokes it on yes, and docs/agents/verification.md points threads at it."
+  },
+  "skills/explain/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Step 5 relied on Cursor's image-generation tool, which Claude Code lacks; spatial ideas get a drawn SVG or HTML sketch, keeping the build-up rule."
+  },
+  "skills/figure-it-out/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router (no playbook fits) and playbooks/refactoring.md."
   },
   "skills/grill-with-docs/agents/openai.yaml": {
     "kind": "policy",
@@ -10,6 +42,10 @@
   "skills/grill-with-docs/SKILL.md": {
     "kind": "policy",
     "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user."
+  },
+  "skills/how/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode playbooks (investigation, multi-phase-plan, hillclimb, refactoring, bug-fix), poteto-mode's router, milliways:comment-sicko, and architect, explain, blast-radius and no-comments."
   },
   "skills/implement-spec/SKILL.md": {
     "kind": "port-feature",
@@ -22,6 +58,42 @@
   "skills/implement/SKILL.md": {
     "kind": "policy",
     "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user."
+  },
+  "skills/interrogate/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (bug-fix, multi-phase-plan, opening-a-pr), and architect. Model fallback: reviewers follow the models document's Model values and Fallback section, where a second family arrives as a <cli>:<tier> seat, instead of Cursor slug families and a self-editing default table."
+  },
+  "skills/no-comments/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router (before review) and playbooks (opening-a-pr, multi-phase-plan, autopilot-full, autopilot-stack)."
+  },
+  "skills/poteto-mode/playbooks/orchestrate.md": {
+    "kind": "policy",
+    "why": "The orch CLI is excluded and the verification ledger lives in GitHub: every orch command becomes a direct store-file edit or a ledger comment on the PR, the store moves to ~/.claude/projects/<project>/, and restacks and cloud-only spawns become background agents with worktree isolation. The orch frontier command's empty-gt guard becomes an instruction. Worktree agents share one repository, so workers release their branches and the stacker frees held branches before a restack. Every agent runs on this machine, so the isolation exception covers only the coordinator's own working tree and worktree agents may read the store. The different-family verifier resolves to the models document's verifier and verifier-diff-audit roles, with a fallback line when there is no second family."
+  },
+  "skills/poteto-mode/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and milliways:poteto-agent preloads it, and Claude Code cannot preload a skill with model invocation off. Roles: the Subagents defaults resolve from docs/agents/models.md (written by setup-milliways) instead of setup-pstack and Cursor model slugs. Leaf skills: says where principle leaves and this skill's own files live (<milliways>), since Claude Code does not list skills with model invocation off."
+  },
+  "skills/reflect/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Step 1 hard-codes Cursor's three transcript layouts and its JSONL record shape; Claude Code has a session and a subagent layout, and its first user event carries the prompt. Step 5 handed work to Cursor create-skill's draft/test/iterate and description-optimization loops, which writing-for-agents (a reference, not a loop) does not have."
+  },
+  "skills/show-me-your-work/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (autonomous-run, hillclimb, autopilot-full, autopilot-stack, orchestrate, multi-phase-plan), and figure-it-out. Cross-model review: the trail review runs on the models document's verifier-diff-audit seat when there is one, otherwise on a fresh verifier subagent with the review marked same-family, since a Claude-only cloud thread has no second family."
+  },
+  "skills/swarm/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router (parallel fan-out) and playbooks (multi-phase-plan, autopilot-full)."
+  },
+  "skills/tdd-bug-fix/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode playbooks/bug-fix.md step 5."
+  },
+  "skills/technical-writing/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (opening-a-pr, multi-phase-plan)."
   },
   "skills/to-spec/agents/openai.yaml": {
     "kind": "policy",
@@ -43,6 +115,10 @@
     "kind": "port-feature",
     "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
   },
+  "skills/unslop/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router (any prose surface), playbooks (investigation, opening-a-pr, multi-phase-plan), and explain, recall, blast-radius, automate-me, technical-writing and show-me-your-work."
+  },
   "skills/wayfinder/agents/openai.yaml": {
     "kind": "policy",
     "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin. make-it-so routes work bigger than one context here."
@@ -50,5 +126,9 @@
   "skills/wayfinder/SKILL.md": {
     "kind": "policy",
     "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. make-it-so routes work bigger than one context here. Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
+  },
+  "skills/why/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode playbooks (bug-fix, investigation), milliways:comment-sicko, and architect, explain, recall and blast-radius."
   }
 }

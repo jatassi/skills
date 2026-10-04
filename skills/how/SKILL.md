@@ -1,14 +1,13 @@
 ---
 name: how
 description: "Use for \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Use why for motivation."
-disable-model-invocation: true
 ---
 
 # How
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
-Each spawn below names a role line in the kitchen's models document (`docs/agents/models.md`) and a default. Set `model` to that line's value, or to the default if the document or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If the Agent tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message.
+Each spawn below names a role line in the kitchen's models document (`docs/agents/models.md`) and a default. Set `model` to that line's value, or to the default if the document or the line is missing. Leave `model` unset when the value is `inherit`. If the Agent tool rejects the value, use the default and say so. If that model isn't available in this thread, follow the models document's Fallback section: run on the parent's model and report its `fallback:` line.
 
 ## Step 1. Assess Complexity
 
