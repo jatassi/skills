@@ -34,7 +34,7 @@
 
 **Area**: a part of a codebase, declared as path globs in the kitchen's autonomy document. Trust is earned and lost per area.
 
-**Rung**: an area's place on the trust ladder. At the bottom rung the chef merges every pull request in the area; an area that is gated lets a thread merge its own. Ten clean merges in a row make a promotion due, proposed as a pull request the chef merges; one unclean merge demotes the area.
+**Rung**: an area's place on the trust ladder. At the bottom rung the chef merges every pull request in the area; an area that is gated lets a thread merge its own. Ten clean merges in a row make a promotion due, proposed as a pull request the chef merges; any unclean merge in a gated area demotes it back to the chef.
 
 **Gate**: the conditions under which a thread in a gated area merges its own pull request: CI is green, a fresh verifier's verdict passes at the head SHA with live evidence, and the door is two-way. It is enforced by playbook steps, not by branch protection.
 
