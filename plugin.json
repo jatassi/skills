@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "jatassi-skills",
+  "name": "milliways",
   "version": "1.0.5",
-  "description": "Skills for grilling plans with an agent stand-in or through a visual browser channel, turning them into specs and tickets, and orchestrating implementation loops.",
+  "description": "The kitchen: skills for grilling plans with an agent stand-in or through a visual browser channel, and turning them into specs and tickets.",
   "author": {
     "name": "Jackson Atassi",
     "url": "https://github.com/jatassi"

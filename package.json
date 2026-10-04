@@ -1,5 +1,5 @@
 {
-  "name": "jatassi-skills-dev",
+  "name": "milliways-dev",
   "private": true,
   "workspaces": [
     "packages/visual-grilling"
