@@ -18,7 +18,7 @@ fable has no default role. To promote it for this kitchen, put `fable` in a role
 ## Model values
 
 - **A tier**: `haiku`, `sonnet`, `opus` or `fable`, run as a subagent of this harness. Name tiers only, never versions, so the kitchen always runs the latest model of each tier.
-- **Another family, through its CLI**: `<cli>:<tier>`, for example `codex:sol` (OpenAI tiers: `luna`, `sol`, `astra`) or `gemini:pro`. The subagent drives that CLI non-interactively with the role's brief and returns its output.
+- **Another family, through its CLI**: `<cli>:<tier>`, for example `codex:sol` (OpenAI tiers: `luna`, `sol`, `astra`), `gemini:pro`, or `claude:opus` from a harness of another family. The subagent drives that CLI non-interactively with the role's brief and returns its output.
 - **`inherit`**: the role runs on its parent's model.
 - **A list**, comma-separated, for a panel: one subagent per entry, so the list's length is the panel's size.
 

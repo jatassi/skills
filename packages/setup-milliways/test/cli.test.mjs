@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'skills', 'setup-milliways', 'scripts', 'setup-milliways.mjs');
 const WIN = process.platform === 'win32';
 const scratch = mkdtempSync(join(tmpdir(), 'setup-milliways-'));
-after(() => rmSync(scratch, { recursive: true, force: true }));
+after(() => rmSync(scratch, { recursive: true, force: true, maxRetries: 5 }));
 
 const DOCS = ['issue-tracker', 'triage-labels', 'domain', 'models', 'verification', 'autonomy', 'garden'];
 const ROOT_LINE = 'Start every non-trivial task with the `make-it-so` skill. Kitchen config: `docs/agents/AGENTS.md`.';
@@ -187,6 +187,27 @@ describe('the models document', () => {
     assert.deepEqual(detect(dir).harness.name, 'unknown');
   });
 
+  test('under a Codex harness, the second family is one other than openai', () => {
+    const dir = repo();
+    const codexOnly = detect(dir, { path: bin({ codex: 'exit 0' }), env: { CODEX_SANDBOX: 'seatbelt' } });
+    assert.equal(codexOnly.secondFamily, null);
+    const withClaude = detect(dir, { path: bin({ codex: 'exit 0', claude: 'exit 0' }), env: { CODEX_SANDBOX: 'seatbelt' } });
+    assert.equal(withClaude.secondFamily, 'anthropic');
+    run(['write', '--repo', dir], { path: bin({ codex: 'exit 0' }), env: { CODEX_SANDBOX: 'seatbelt' } });
+    const r = roles(dir);
+    assert.equal(r['verifier-diff-audit'], undefined);
+    assert.equal(r.interrogate.model, 'opus, opus, opus');
+  });
+
+  test('rejects an option given without its value', () => {
+    for (const args of [['detect', '--repo'], ['write', '--families'], ['write', '--repo', '--dry-run']]) {
+      const r = run(args);
+      assert.equal(r.status, 1, args.join(' '));
+      assert.match(r.stderr, new RegExp(`${args[1]} needs a value`));
+      assert.equal(r.stdout, '');
+    }
+  });
+
   test('rejects an unknown family', () => {
     const r = run(['write', '--repo', repo(), '--families', 'anthropic,acme']);
     assert.equal(r.status, 1);
@@ -265,6 +286,45 @@ describe('a second run', () => {
     assert.equal(read(dir, 'GLOSSARY.md'), 'new\n');
   });
 
+  test('rewrites map links only to glossaries that were renamed', () => {
+    const dir = repo({
+      'CONTEXT-MAP.md': '- [a](src/a/CONTEXT.md)\n- [b](./src/b/CONTEXT.md)\n',
+      'src/a/CONTEXT.md': 'a\n',
+      'src/b/CONTEXT.md': 'b\n',
+      'src/b/GLOSSARY.md': 'b already\n',
+    });
+    const r = run(['write', '--repo', dir, '--families', 'anthropic']);
+    assert.ok(r.lines.includes('conflict src/b/CONTEXT.md: src/b/GLOSSARY.md already exists'));
+    assert.equal(read(dir, 'GLOSSARY-MAP.md'), '- [a](src/a/GLOSSARY.md)\n- [b](./src/b/CONTEXT.md)\n');
+  });
+
+  test('keeps CRLF line endings in the files it edits', () => {
+    const dir = repo({ 'AGENTS.md': '# Widgets\r\n\r\nUse pnpm.\r\n' });
+    run(['write', '--repo', dir, '--families', 'anthropic']);
+    assert.equal(read(dir, 'AGENTS.md'), `${ROOT_LINE}\r\n\r\n# Widgets\r\n\r\nUse pnpm.\r\n`);
+    const index = join(dir, 'docs/agents/AGENTS.md');
+    writeFileSync(index, readFileSync(index, 'utf8').split('\n').filter((l) => !l.includes('(garden.md)')).join('\r\n'));
+    rmSync(join(dir, 'docs/agents/garden.md'));
+    run(['write', '--repo', dir, '--families', 'anthropic']);
+    const text = read(dir, 'docs/agents/AGENTS.md');
+    assert.match(text, /\(garden\.md\)/);
+    assert.doesNotMatch(text, /[^\r]\n/);
+  });
+
+  test('adds a missing row to the index table, not to a later table', () => {
+    const dir = repo();
+    run(['write', '--repo', dir, '--families', 'anthropic']);
+    const index = join(dir, 'docs/agents/AGENTS.md');
+    const without = readFileSync(index, 'utf8').split('\n').filter((l) => !l.includes('(garden.md)')).join('\n');
+    writeFileSync(index, without + '\n## Owners\n\n| Area | Owner |\n| ---- | ----- |\n| api | me |\n');
+    rmSync(join(dir, 'docs/agents/garden.md'));
+    run(['write', '--repo', dir, '--families', 'anthropic']);
+    const lines = readFileSync(index, 'utf8').split('\n');
+    const garden = lines.findIndex((l) => l.includes('(garden.md)'));
+    assert.ok(lines[garden - 1].includes('(autonomy.md)'), lines.join('\n'));
+    assert.ok(garden < lines.indexOf('## Owners'));
+  });
+
   test('renames a CONTEXT-MAP.md and the glossaries it points to', () => {
     const dir = repo({ 'CONTEXT-MAP.md': '- [ordering](src/ordering/CONTEXT.md)\n', 'src/ordering/CONTEXT.md': 'o\n' });
     const r = run(['write', '--repo', dir, '--families', 'anthropic']);
@@ -311,12 +371,23 @@ describe('labels', { skip: WIN && 'the fake gh is a POSIX shell script' }, () =>
     const dir = repo();
     run(['write', '--repo', dir, '--families', 'anthropic']);
     const p = join(dir, 'docs/agents/triage-labels.md');
-    writeFileSync(p, readFileSync(p, 'utf8').replace('| `needs-triage`             | `needs-triage`       |', '| `needs-triage` | `bug:triage` |'));
+    writeFileSync(p, readFileSync(p, 'utf8').replace(/^\|\s*`needs-triage`\s*\|\s*`needs-triage`\s*\|/m, '| `needs-triage` | `bug:triage` |'));
     const gh = fakeGh([]);
     run(['labels', '--repo', dir], { path: gh.path });
     const created = gh.calls().filter((c) => c.startsWith('label create')).map((c) => c.split(' ')[2]);
     assert.ok(created.includes('bug:triage'));
     assert.ok(!created.includes('needs-triage'));
+  });
+
+  test('treats an existing label in another case as the same label', () => {
+    const gh = fakeGh(['Garden', 'DOOR:ONE-WAY']);
+    const r = run(['labels', '--repo', repo()], { path: gh.path });
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(r.lines.includes('kept label Garden'));
+    assert.ok(r.lines.includes('kept label DOOR:ONE-WAY'));
+    const created = gh.calls().filter((c) => c.startsWith('label create')).map((c) => c.split(' ')[2]);
+    assert.ok(!created.includes('garden') && !created.includes('door:one-way'));
+    assert.ok(created.includes('prototype'));
   });
 
   test('a dry run creates nothing', () => {

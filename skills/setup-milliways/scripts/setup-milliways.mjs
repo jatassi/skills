@@ -10,7 +10,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, renameSync, mkdirSync, writeFileSync, statSync } from 'node:fs';
-import { delimiter, dirname, join, relative, resolve, sep } from 'node:path';
+import { delimiter, dirname, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const TEMPLATES = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates');
@@ -38,7 +38,7 @@ const HARNESSES = [
 
 // Family → the CLI that reaches it, and the tier a second-family seat runs at.
 const FAMILIES = [
-  { family: 'anthropic', cli: 'claude' },
+  { family: 'anthropic', cli: 'claude', seat: 'claude:opus' },
   { family: 'openai', cli: 'codex', seat: 'codex:sol' },
   { family: 'google', cli: 'gemini', seat: 'gemini:pro' },
 ];
@@ -184,7 +184,7 @@ function detect(repo, env = process.env) {
     harness,
     families,
     clis,
-    secondFamily: families.find((f) => f !== 'anthropic') ?? null,
+    secondFamily: secondFamily(families, harness),
     agentsMd: {
       exists: agentsText !== null,
       rootLine: agentsText !== null && hasRootLine(agentsText),
@@ -200,6 +200,12 @@ function detect(repo, env = process.env) {
     verifySkills: [...new Set(verifySkills)].sort(),
   };
 }
+
+// The first detected family that isn't the harness's own (anthropic when the
+// harness is unknown): it gets one diff-audit lane and one interrogate seat.
+const secondFamily = (families, harness) => families.find((f) => f !== (harness.family ?? 'anthropic')) ?? null;
+
+const eolOf = (text) => (text.includes('\r\n') ? '\r\n' : '\n');
 
 // The directive line, or the chef's rewording of it: any one line that names
 // both the router and the config index.
@@ -236,7 +242,7 @@ function familiesLine(d) {
   return d.families.length ? d.families.join(', ') : 'none';
 }
 
-function render(key, d, triage) {
+function render(key, d) {
   switch (key) {
     case 'index':
       return fill('index.md', { rows: DOCS.map(indexRow).join('\n') });
@@ -276,26 +282,40 @@ function write(repo, d, { dryRun = false } = {}) {
     const text = readFileSync(agentsPath, 'utf8');
     if (hasRootLine(text)) out.push('kept root line in AGENTS.md');
     else {
-      put(agentsPath, ROOT_LINE + '\n' + (text.trim() ? '\n' + text : ''));
+      const eol = eolOf(text);
+      put(agentsPath, ROOT_LINE + eol + (text.trim() ? eol + text : ''));
       out.push(`${verb('added')} root line to AGENTS.md`);
     }
   }
 
   // CONTEXT.md → GLOSSARY.md, CONTEXT-MAP.md → GLOSSARY-MAP.md.
+  const renamed = [];
   for (const c of d.context) {
     if (c.conflict) {
       out.push(`conflict ${c.from}: ${c.to} already exists`);
       continue;
     }
     if (!dryRun) renameSync(join(repo, c.from), join(repo, c.to));
+    renamed.push(c);
     out.push(`${verb('renamed')} ${c.from} -> ${c.to}`);
-    if (c.to.endsWith('GLOSSARY-MAP.md')) {
-      const mapPath = join(repo, dryRun ? c.from : c.to);
-      const text = readFileSync(mapPath, 'utf8');
-      if (text.includes('CONTEXT.md')) {
-        put(mapPath, text.replaceAll('CONTEXT.md', 'GLOSSARY.md'));
-        out.push(`${verb('updated')} links in ${c.to}`);
-      }
+  }
+  // Point each map, wherever it now is, at the glossaries that were renamed.
+  for (const map of d.context.filter((c) => c.from.endsWith('CONTEXT-MAP.md'))) {
+    const at = renamed.includes(map) && !dryRun ? map.to : map.from;
+    const mapPath = join(repo, at);
+    const mapDir = posix.dirname(at);
+    let text = readFileSync(mapPath, 'utf8');
+    const before = text;
+    for (const c of renamed.filter((c) => c.from.endsWith('CONTEXT.md') && !c.from.endsWith('CONTEXT-MAP.md'))) {
+      // The whole path only: a renamed root CONTEXT.md leaves a link to an
+      // unrenamed src/x/CONTEXT.md alone.
+      const from = posix.relative(mapDir, c.from).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const to = posix.relative(mapDir, c.to);
+      text = text.replace(new RegExp(`(?<![\\w./-])(\\./)?${from}(?![\\w/-]|\\.\\w)`, 'g'), (_, dot = '') => dot + to);
+    }
+    if (text !== before) {
+      put(mapPath, text);
+      out.push(`${verb('updated')} links in ${renamed.includes(map) ? map.to : map.from}`);
     }
   }
 
@@ -326,13 +346,19 @@ function write(repo, d, { dryRun = false } = {}) {
     put(indexPath, render('index', d));
     out.push(`${verb('created')} docs/agents/AGENTS.md`);
   } else {
-    const lines = readFileSync(indexPath, 'utf8').split('\n');
+    const text = readFileSync(indexPath, 'utf8');
+    const eol = eolOf(text);
+    const lines = text.split(/\r?\n/);
     const add = DOCS.filter(([key]) => created.includes(key) && !lines.some((l) => l.includes(`${key}.md`)));
     if (add.length) {
-      let at = lines.findLastIndex((l) => l.trimStart().startsWith('|'));
-      if (at === -1) at = lines.length - 1;
+      // After the last row of the index table, found by its header; at the
+      // end of the file when the chef has removed the table.
+      const header = lines.findIndex((l) => /^\s*\|\s*Topic\s*\|\s*Document\s*\|/.test(l));
+      let at = header;
+      if (header === -1) at = lines.at(-1) === '' ? lines.length - 2 : lines.length - 1;
+      else while (at + 1 < lines.length && lines[at + 1].trimStart().startsWith('|')) at++;
       lines.splice(at + 1, 0, ...add.map(indexRow));
-      put(indexPath, lines.join('\n'));
+      put(indexPath, lines.join(eol));
       for (const [key] of add) out.push(`${verb('indexed')} docs/agents/${key}.md`);
     } else out.push('kept docs/agents/AGENTS.md');
   }
@@ -369,10 +395,13 @@ function gh(repo, args) {
 }
 
 function labels(repo, { dryRun = false } = {}) {
-  const existing = new Set(JSON.parse(gh(repo, ['label', 'list', '--limit', '1000', '--json', 'name'])).map((l) => l.name));
+  // GitHub label names are case-insensitive: `Garden` already is `garden`.
+  const existing = new Map(
+    JSON.parse(gh(repo, ['label', 'list', '--limit', '1000', '--json', 'name'])).map((l) => [l.name.toLowerCase(), l.name]),
+  );
   const out = [];
   for (const [name, color, description] of kitchenLabels(repo)) {
-    if (existing.has(name)) out.push(`kept label ${name}`);
+    if (existing.has(name.toLowerCase())) out.push(`kept label ${existing.get(name.toLowerCase())}`);
     else {
       if (!dryRun) gh(repo, ['label', 'create', name, '--color', color, '--description', description]);
       out.push(`${dryRun ? 'would create' : 'created'} label ${name}`);
@@ -407,14 +436,17 @@ function main(argv) {
   const opts = { repo: process.cwd(), dryRun: false, families: null };
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
-    if (a === '--repo') opts.repo = rest[++i];
-    else if (a === '--families') opts.families = rest[++i];
+    if (a === '--repo' || a === '--families') {
+      const value = rest[++i];
+      if (value === undefined || value.startsWith('--')) return fail(`${a} needs a value\n\n${HELP}`);
+      opts[a.slice(2)] = value;
+    }
     else if (a === '--dry-run') opts.dryRun = true;
     else if (a === '--help' || a === '-h') return void process.stdout.write(HELP);
     else return fail(`unknown option ${a}`);
   }
   if (!cmd || cmd === '--help' || cmd === '-h') return void process.stdout.write(HELP);
-  const repo = resolve(opts.repo ?? '');
+  const repo = resolve(opts.repo);
   if (!existsSync(repo)) return fail(`no such directory: ${repo}`);
 
   try {
@@ -427,7 +459,7 @@ function main(argv) {
         const bad = wanted.filter((f) => !known.includes(f));
         if (bad.length) return fail(`unknown family: ${bad.join(', ')} (known: ${known.join(', ')})`);
         d.families = known.filter((f) => wanted.includes(f));
-        d.secondFamily = d.families.find((f) => f !== 'anthropic') ?? null;
+        d.secondFamily = secondFamily(d.families, d.harness);
       }
       return void process.stdout.write(write(repo, d, opts).join('\n') + '\n');
     }
