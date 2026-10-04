@@ -11,7 +11,41 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 | [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Take a build-graph parent: spec it in a comment on the parent, then cut it into linked, blocked sub-issues. |
 | [`setup-milliways`](skills/setup-milliways/SKILL.md) | Make a repo a kitchen: the `docs/agents` config and its index, the one root `AGENTS.md` line, the GitHub labels and a model-role table detected from your harness. Safe to re-run. |
 | [`trust-ladder`](skills/trust-ladder/SKILL.md) | Score each area of a kitchen on the trust ladder from its merged pull requests: clean streaks, unclean merges, promotions and demotions due, and yesterday's merges ranked by risk, as JSON. |
-| [`how`](skills/how/SKILL.md) | Explain how a part of the codebase works, with explorer and explainer subagents. Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack). |
+
+### From pstack
+
+Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack), with the four [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) skills it depends on, ported from Cursor to Claude Code. Model roles come from the `docs/agents/models.md` that `setup-milliways` writes. Its two agents, `poteto-agent` and `comment-sicko`, are in [`agents/`](agents) and dispatch as `milliways:<name>`. Left out: `bro` (Matt's `wait-what` covers it), `setup-pstack` (replaced by `setup-milliways`), `make-bot-ui` and the Benny automations (Cursor-only), and the `orch` CLI (the orchestrate ledger lives in GitHub). The skills `poteto-mode`'s playbooks call are model-invocable here, unlike upstream.
+
+| Skill | What it does |
+| --- | --- |
+| [`poteto-mode`](skills/poteto-mode/SKILL.md) | pstack's working style and router: principles, subagent defaults, and the playbooks (bug fix, feature, refactoring, babysit, opening a PR, shipping, orchestrate, multi-phase plans and more). |
+| [`architect`](skills/architect/SKILL.md) | Sketch types, signatures and module structure before code, then stay in the loop while it is filled in. |
+| [`arena`](skills/arena/SKILL.md) | Run N candidates at the same task, pick a base and graft the best parts of the rest into it. |
+| [`automate-me`](skills/automate-me/SKILL.md) | Draft or revise your personal `-mode` skill from how you work. |
+| [`benchmark-checklist`](skills/benchmark-checklist/SKILL.md) | Vet a performance measurement before you report or act on it. |
+| [`blast-radius`](skills/blast-radius/SKILL.md) | Find what a change could break beyond the diff, and prove the fact it is safe because of. |
+| [`correct`](skills/correct/SKILL.md) | Find the mistakes agents keep repeating in a repo and make each one impossible. |
+| [`create-verification-skill`](skills/create-verification-skill/SKILL.md) | Generate a project-local skill that drives your app the way a user does. |
+| [`explain`](skills/explain/SKILL.md) | Explain a body of work plainly, built on `how` and `why`. pstack calls it `teach`. |
+| [`figure-it-out`](skills/figure-it-out/SKILL.md) | Design an auditable playbook when no narrower one fits. |
+| [`how`](skills/how/SKILL.md) | Explain how a part of the codebase works, with explorer and explainer subagents. |
+| [`interrogate`](skills/interrogate/SKILL.md) | Adversarial review of a change by several reviewers from independent angles. |
+| [`maintain-verification-skill`](skills/maintain-verification-skill/SKILL.md) | Keep a project's verification skill and feature map honest. |
+| [`no-comments`](skills/no-comments/SKILL.md) | Run the `comment-sicko` agent over a diff, fix accepted findings and encode claimed constraints. |
+| [`recall`](skills/recall/SKILL.md) | Reconstruct your recent working context from your chat history and the shared record. |
+| [`reflect`](skills/reflect/SKILL.md) | Review the session transcript with three subagents and route each learning to a skill edit. |
+| [`show-me-your-work`](skills/show-me-your-work/SKILL.md) | Keep a reviewable decision trail for long-running or unattended work. |
+| [`swarm`](skills/swarm/SKILL.md) | Fan out N parallel workers in their own worktrees, drain them and return one report. |
+| [`tdd-bug-fix`](skills/tdd-bug-fix/SKILL.md) | Fix a bug test-first when there is a cheap local test target. pstack calls it `tdd`. |
+| [`technical-writing`](skills/technical-writing/SKILL.md) | A layered technical-writing standard for docs, RFCs, readmes and PR descriptions. |
+| [`typescript-best-practices`](skills/typescript-best-practices/SKILL.md) | TypeScript best practices. |
+| [`unslop`](skills/unslop/SKILL.md) | Cut AI tells from any writing. |
+| [`why`](skills/why/SKILL.md) | Find out why something is the way it is, from every evidence source the session can reach. |
+| `principle-*` | pstack's 24 engineering principles, one leaf skill each, indexed from `poteto-mode`. |
+| [`deslop`](skills/deslop/SKILL.md) | Remove AI-generated code slop. From cursor-team-kit. |
+| [`control-ui`](skills/control-ui/SKILL.md) | Build or adapt a local browser harness to drive and inspect a UI. From cursor-team-kit. |
+| [`control-cli`](skills/control-cli/SKILL.md) | Build or adapt a local harness to drive and profile a CLI or TUI. From cursor-team-kit. |
+| [`make-pr-easy-to-review`](skills/make-pr-easy-to-review/SKILL.md) | Prepare a PR for review without changing its behaviour. From cursor-team-kit. |
 
 ### From Matt Pocock's skills
 
@@ -85,6 +119,7 @@ skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a 
 ├── .github/workflows/           # release.yml, the only workflow: tests pull requests, releases merges to main
 ├── skills/                      # Shared by both formats; vendored skills sit beside our own
 │   └── <skill>/SKILL.md
+├── agents/                      # Claude Code subagents (vendored from pstack), dispatched as milliways:<name>
 ├── vendor/                      # upstream.json, substitutions.json, forks.json, checks.json
 ├── LICENSES/                    # upstream licences, vendored verbatim
 ├── NOTICE                       # upstream attributions
