@@ -201,7 +201,10 @@ function detect(repo, env = process.env) {
   };
 }
 
-const hasRootLine = (text) => text.split(/\r?\n/).some((l) => l.includes('make-it-so'));
+// The directive line, or the chef's rewording of it: any one line that names
+// both the router and the config index.
+const hasRootLine = (text) =>
+  text.split(/\r?\n/).some((l) => l.includes('make-it-so') && l.includes('docs/agents/AGENTS.md'));
 
 // ---------------------------------------------------------------- rendering
 

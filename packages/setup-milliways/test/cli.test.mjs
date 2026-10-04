@@ -238,6 +238,15 @@ describe('a second run', () => {
     assert.equal(read(dir, 'docs/agents/models.md'), before);
   });
 
+  test('keeps a reworded directive line, and adds the line when AGENTS.md only mentions make-it-so', () => {
+    const reworded = repo({ 'AGENTS.md': 'Begin with make-it-so; config is in docs/agents/AGENTS.md.\n' });
+    assert.ok(run(['write', '--repo', reworded, '--families', 'anthropic']).lines.includes('kept root line in AGENTS.md'));
+    assert.equal(read(reworded, 'AGENTS.md'), 'Begin with make-it-so; config is in docs/agents/AGENTS.md.\n');
+    const mention = repo({ 'AGENTS.md': 'We tried make-it-so once.\n' });
+    run(['write', '--repo', mention, '--families', 'anthropic']);
+    assert.equal(read(mention, 'AGENTS.md'), `${ROOT_LINE}\n\nWe tried make-it-so once.\n`);
+  });
+
   test('a dry run changes nothing', () => {
     const dir = repo({ 'CONTEXT.md': 'x\n' });
     const r = run(['write', '--repo', dir, '--dry-run', '--families', 'anthropic']);
