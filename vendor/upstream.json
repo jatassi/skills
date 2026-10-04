@@ -34,33 +34,33 @@
         "skills/maintain-verification-skill": "pstack/skills/maintain-verification-skill",
         "skills/make-pr-easy-to-review": "cursor-team-kit/skills/make-pr-easy-to-review",
         "skills/no-comments": "pstack/skills/no-comments",
-        "skills/poteto-mode/playbooks": "pstack/skills/poteto-mode/playbooks",
-        "skills/poteto-mode/references": "pstack/skills/poteto-mode/references",
-        "skills/poteto-mode/scripts/bootstrap.ts": {
+        "skills/make-it-so/playbooks": "pstack/skills/poteto-mode/playbooks",
+        "skills/make-it-so/references": "pstack/skills/poteto-mode/references",
+        "skills/make-it-so/scripts/bootstrap.ts": {
           "path": "pstack/skills/poteto-mode/scripts/bootstrap.ts",
           "verbatim": true
         },
-        "skills/poteto-mode/scripts/bun.lock": {
+        "skills/make-it-so/scripts/bun.lock": {
           "path": "pstack/skills/poteto-mode/scripts/bun.lock",
           "verbatim": true
         },
-        "skills/poteto-mode/scripts/check-plan.mjs": {
+        "skills/make-it-so/scripts/check-plan.mjs": {
           "path": "pstack/skills/poteto-mode/scripts/check-plan.mjs",
           "verbatim": true
         },
-        "skills/poteto-mode/scripts/package.json": {
+        "skills/make-it-so/scripts/package.json": {
           "path": "pstack/skills/poteto-mode/scripts/package.json",
           "verbatim": true
         },
-        "skills/poteto-mode/scripts/watch-pr": {
+        "skills/make-it-so/scripts/watch-pr": {
           "path": "pstack/skills/poteto-mode/scripts/watch-pr",
           "verbatim": true
         },
-        "skills/poteto-mode/scripts/worktree-audit.sh": {
+        "skills/make-it-so/scripts/worktree-audit.sh": {
           "path": "pstack/skills/poteto-mode/scripts/worktree-audit.sh",
           "verbatim": true
         },
-        "skills/poteto-mode/SKILL.md": "pstack/skills/poteto-mode/SKILL.md",
+        "skills/make-it-so/SKILL.md": "pstack/skills/poteto-mode/SKILL.md",
         "skills/principle-attack-the-premise": "pstack/skills/principle-attack-the-premise",
         "skills/principle-boundary-discipline": "pstack/skills/principle-boundary-discipline",
         "skills/principle-build-the-lever": "pstack/skills/principle-build-the-lever",

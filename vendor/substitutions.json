@@ -15,7 +15,7 @@
     {
       "pattern": "On GitHub, use the watcher's Bugbot pass count.",
       "replacement": "On GitHub, use the watcher's pass count for Cursor's PR-review bot only; the watcher recognises no other bot's threads and reports 0 passes for them. For any other review bot, derive the pass count from the PR's review history (`gh api \"repos/<owner>/<repo>/pulls/<pr>/reviews\"`, filtered to the bot's login), as on Origin.",
-      "files": "^skills/poteto-mode/playbooks/babysit\\.md$",
+      "files": "^skills/make-it-so/playbooks/babysit\\.md$",
       "why": "watch-pr ships verbatim and counts passes only for Cursor's review bot (isBugbot and passKey in scripts/watch-pr/github.ts), so under any other bot the lean-dismiss rule would read a count that is always 0. Runs before the global Bugbot rules."
     },
     {
@@ -82,7 +82,7 @@
     {
       "regex": "the active workspace's `agent-transcripts/` directory \\(the system prompt names (?:the|this) path([.)])",
       "replacement": "`~/.claude/projects/<project>/` (`<project>` is the working directory's absolute path with every character other than a letter or digit turned into `-`$1",
-      "why": "Cursor transcript path -> Claude Code transcript path, parenthetical form (show-me-your-work, poteto-mode eval and session-pickup). $1 keeps whichever of '.' or ')' closed the original."
+      "why": "Cursor transcript path -> Claude Code transcript path, parenthetical form (show-me-your-work, make-it-so eval and session-pickup). $1 keeps whichever of '.' or ')' closed the original."
     },
     {
       "pattern": "`~/.cursor/projects/*/`",
@@ -102,7 +102,7 @@
     {
       "pattern": "The transcript scan is slow, so background it.",
       "replacement": "The transcript scan is slow, so background it. The script's chat scan reads Cursor's transcript folder, so under Claude Code its `LAST_CHAT` column stays `-` and no row is marked `verify-recent-chat`. Treat every non-`hold` row as needing step 3, against `~/.claude/projects/`, where a session that ran in a worktree has its own folder named for the worktree's path.",
-      "files": "^skills/poteto-mode/playbooks/worktree-cleanup\\.md$",
+      "files": "^skills/make-it-so/playbooks/worktree-cleanup\\.md$",
       "why": "worktree-audit.sh ships verbatim and still scans Cursor's transcript folder, so its in-use bucket never fires; this keeps the playbook's in-use gate honest under Claude Code."
     },
     {
@@ -118,7 +118,7 @@
     {
       "regex": "\\*\\*create-skill\\*\\* skill \\(Cursor's built-in for authoring SKILL\\.md files\\)",
       "replacement": "**writing-for-agents** skill (the reference for writing skills and other agent-facing documents)",
-      "why": "Same port, bold form (poteto-mode SKILL.md, playbooks/authoring-a-skill.md); the playbook skill-reference check needs a shipped skill."
+      "why": "Same port, bold form (make-it-so SKILL.md, playbooks/authoring-a-skill.md); the playbook skill-reference check needs a shipped skill."
     },
     {
       "regex": "\\bcreate-skill\\b",
@@ -193,19 +193,19 @@
     {
       "pattern": "`cursor-team-kit` publishes `control-cli`",
       "replacement": "milliways ships `control-cli`",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "deslop, control-ui and control-cli ship in the milliways plugin, not a separate cursor-team-kit install."
     },
     {
       "regex": " \\(from `cursor-team-kit`\\)| from (?:the )?`cursor-team-kit`(?: plugin)?",
       "replacement": "",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "deslop, control-ui and control-cli ship in the milliways plugin."
     },
     {
       "regex": "Always `environment: \"cloud\"` unless the task needs this machine:",
       "replacement": "Always a background agent with worktree isolation (`run_in_background: true`, `isolation: \"worktree\"`) unless the task needs the coordinator's checkout or this machine's own state:",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "Cloud Task calls -> background agents with worktree isolation (orchestrate Worker / verifier). Runs before the general environment rule."
     },
     {
@@ -245,43 +245,43 @@
     {
       "pattern": "Cursor cloud agent",
       "replacement": "background agent with worktree isolation (`run_in_background: true`, `isolation: \"worktree\"`)",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "Cursor cloud agents -> background agents with worktree isolation (autopilot-full, autopilot-stack, shipping)."
     },
     {
       "pattern": "Each live lane runs on its own cloud VM at the PR head.",
       "replacement": "Each live lane runs in its own background agent with worktree isolation (`run_in_background: true`, `isolation: \"worktree\"`) at the PR head.",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "Cursor cloud VMs -> background agents with worktree isolation (multi-phase-plan boot recipe)."
     },
     {
       "pattern": "on a lane VM",
       "replacement": "in a lane's worktree",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "Cursor cloud VMs -> background agents with worktree isolation (multi-phase-plan review gate)."
     },
     {
       "pattern": "its spawn budget with the cloud default and the local exception list",
       "replacement": "its spawn budget with the worktree-isolation default and its exception list",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "Cloud Task calls -> background agents with worktree isolation."
     },
     {
       "pattern": "Cloud agents cannot read the local store, so their briefs inline",
       "replacement": "Worktree agents must not depend on the coordinator's store, so their briefs inline",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "Cloud Task calls -> background agents with worktree isolation."
     },
     {
       "pattern": "Work that exists only on one VM when that VM dies was never done.",
       "replacement": "Work that exists only in one worktree when its agent dies was never done.",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "Cursor cloud VMs -> background agents with worktree isolation."
     },
     {
       "pattern": "cloud-agent URL",
       "replacement": "cloud session link",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "A Cursor cloud-agent URL -> a Claude Code cloud session link."
     },
     {
@@ -327,50 +327,50 @@
     {
       "pattern": "under the agent store's `docs/`",
       "replacement": "under `~/.claude/projects/<project>/docs/`",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "Claude Code has no agent store named in the system prompt; the project's Claude Code folder is the local equivalent (multi-phase-plan step 4)."
     },
     {
       "pattern": "re-read this playbook from trunk with `git show origin/main:pstack/",
       "replacement": "re-read this playbook at `<milliways>/",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "The playbooks ship in the milliways plugin, not in a kitchen repo's trunk (autopilot-full, autopilot-stack). Runs before the git-show rule."
     },
     {
       "pattern": "Read these from trunk at program start.",
       "replacement": "Read these at program start, and repo paths from trunk.",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "Plugin skills are not in a kitchen repo's trunk; the control-skill line stays a git show from trunk (multi-phase-plan skeleton)."
     },
     {
       "pattern": "Re-read the execution playbook from trunk.",
       "replacement": "Re-read the execution playbook.",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "The playbooks ship in the plugin, not in trunk."
     },
     {
       "regex": "`git show origin/main:pstack/(skills/[^`]+)`",
       "replacement": "`<milliways>/$1`",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "pstack skills ship at <milliways>/skills/. Only rewrites pstack paths, so the skeleton's `git show origin/main:<control skill path>` line survives for check-plan.mjs."
     },
     {
       "regex": "`pstack/(skills/[^`]+)`",
       "replacement": "`<milliways>/$1`",
-      "files": "^skills/poteto-mode/",
+      "files": "^skills/make-it-so/",
       "why": "pstack skills ship at <milliways>/skills/."
     },
     {
       "pattern": "node pstack/skills/",
       "replacement": "node <milliways>/skills/",
-      "files": "^skills/poteto-mode/",
-      "why": "check-plan.mjs ships at <milliways>/skills/poteto-mode/scripts/."
+      "files": "^skills/make-it-so/",
+      "why": "check-plan.mjs ships at <milliways>/skills/make-it-so/scripts/."
     },
     {
       "pattern": "name: Poteto Mode",
-      "replacement": "name: poteto-mode",
-      "files": "^skills/poteto-mode/SKILL\\.md$",
-      "why": "A skill name is lowercase letters, digits and hyphens, so it resolves as /poteto-mode and milliways:poteto-mode."
+      "replacement": "name: make-it-so",
+      "files": "^skills/make-it-so/SKILL\\.md$",
+      "why": "Declared rename: poteto-mode -> make-it-so, the kitchen router. A skill name is lowercase letters, digits and hyphens, so it resolves as /make-it-so and milliways:make-it-so."
     },
     {
       "pattern": "on a fast, cheap model",
@@ -387,8 +387,8 @@
     {
       "pattern": "**tdd** skill",
       "replacement": "**tdd-bug-fix** skill",
-      "files": "^skills/(?:poteto-mode|make-it-so)/",
-      "why": "References to the renamed skill follow it (poteto-mode bug-fix step 5). Scoped to pstack's router so Matt's own tdd references are never rewritten."
+      "files": "^skills/make-it-so/",
+      "why": "References to the renamed skill follow it (make-it-so bug-fix step 5). Scoped to pstack's router so Matt's own tdd references are never rewritten."
     },
     {
       "pattern": "name: teach\n",
@@ -540,20 +540,31 @@
     {
       "pattern": "`~/Library/Application Support/Cursor` (`state.vscdb.backup`, and `snapshots/roots/<root>` where a `<root>` named for a folder you opened as a workspace balloons)",
       "replacement": "session folders under `~/.claude/projects/` named for worktrees you already removed",
-      "files": "^skills/poteto-mode/playbooks/worktree-cleanup\\.md$",
+      "files": "^skills/make-it-so/playbooks/worktree-cleanup\\.md$",
       "why": "Cursor's app-support state belongs to the Cursor IDE; under Claude Code the per-worktree residue is the session folders under ~/.claude/projects/."
     },
     {
       "pattern": "  - [ ] `git show origin/main:<control skill path>`\n",
       "replacement": "  - [ ] `<milliways>/skills/<control skill>/SKILL.md`, or `git show origin/main:<its path>` for a repo-local simulator skill\n  - [ ] `git show origin/main:<each repo doc the program reads, such as AGENTS.md and docs/agents/>`\n",
-      "files": "^skills/poteto-mode/playbooks/multi-phase-plan\\.md$",
+      "files": "^skills/make-it-so/playbooks/multi-phase-plan\\.md$",
       "why": "control-ui and control-cli ship in the milliways plugin, not in trunk, so the control-skill read points at the plugin; a separate box keeps a trunk read that resolves and carries the `git show origin/main:` marker that check-plan.mjs requires."
     },
     {
       "pattern": "The root is the only topology writer.",
       "replacement": "The root is the only topology writer. Git checks a branch out in only one worktree, and each owner's worktree holds its branch, so the root rebases on a detached HEAD (`git switch --detach <branch>`, rebase, then push `HEAD:<branch>`) and never checks out an owner's branch.",
-      "files": "^skills/poteto-mode/playbooks/autopilot-stack\\.md$",
+      "files": "^skills/make-it-so/playbooks/autopilot-stack\\.md$",
       "why": "Owners are worktree agents on this machine rather than separate cloud clones, so the root's rebases (steps 6 and 7) would hit git's one-worktree-per-branch rule."
+    },
+    {
+      "regex": "\\n$",
+      "replacement": "\n\n**Reflect, the last step.** Keep this as the last item in the todo list, and do it before you send the reply. List what this thread had to work around: a broken or missing tool, a flaky check, a skill or doc that misled you, a lint you suppressed, a pattern you copied knowing it was wrong. File one `garden` issue for each, per `docs/agents/garden.md`, unless an open one already covers it, and name what you filed in the reply. In a repo without that document, list them in the reply instead. Run the full **reflect** skill as well when the thread was long or the chef asks for it. A playbook run inside another one, such as Opening a PR at the end of Feature, leaves this step to the outer playbook.\n",
+      "files": "^skills/make-it-so/playbooks/[^/]+\\.md$",
+      "why": "Every playbook ends with a reflect step that files `garden` issues for what the thread worked around (spec #66, make-it-so). The same paragraph is appended to every playbook file, upstream's and any new one a sync brings, so it is a mechanical rewrite, not a per-file fork."
+    },
+    {
+      "regex": "\\bpoteto-mode\\b",
+      "replacement": "make-it-so",
+      "why": "Declared rename: pstack's poteto-mode router ships as make-it-so (local folder skills/make-it-so), so every reference to it follows (/poteto-mode, its playbook paths, figure-it-out and automate-me). Verbatim scripts keep upstream's name. Runs last, after every rule that matches upstream's wording."
     }
   ]
 }

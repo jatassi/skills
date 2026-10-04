@@ -25,3 +25,5 @@ Babysitting starts when the user asks for it, which is normally once a phase or 
 `drive` ends at merge-ready. Landing the stack is `playbooks/shipping.md`.
 
 **Reply:** the mode, the frontier and its active-forge state, the watcher's four-column table on GitHub, what you fixed versus dismissed with reasons, what is still pending, and what needs the human.
+
+**Reflect, the last step.** Keep this as the last item in the todo list, and do it before you send the reply. List what this thread had to work around: a broken or missing tool, a flaky check, a skill or doc that misled you, a lint you suppressed, a pattern you copied knowing it was wrong. File one `garden` issue for each, per `docs/agents/garden.md`, unless an open one already covers it, and name what you filed in the reply. In a repo without that document, list them in the reply instead. Run the full **reflect** skill as well when the thread was long or the chef asks for it. A playbook run inside another one, such as Opening a PR at the end of Feature, leaves this step to the outer playbook.
