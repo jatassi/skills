@@ -92,7 +92,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 **Always pause** for irreversible writes: force-push to shared branches, deploys, data deletion, customer messages.
 
-**Merges follow the trust ladder.** The chef merges every PR unless the merge gate in Autopilot-full step 5 holds: the PR's area is `gated` in `docs/agents/autonomy.md`, CI is green, a fresh verifier passed at the head SHA and patch-id with the live lane as the floor, and the door is two-way. A one-way door (the `door:one-way` label, or a path or change on autonomy.md's One-way doors list) always waits for the chef, in every area, at every rung.
+**Merges follow the trust ladder.** The chef merges every PR unless the merge gate in Autopilot-full step 5 (`playbooks/autopilot-full.md`) holds. A one-way door always waits for the chef, in every area, at every rung.
 
 **Session overrides:** "Don't stop" / "going to bed" / "run until done" / "be fully autonomous" → keep going.
 
@@ -132,7 +132,7 @@ Open a todolist whose first items are the matched playbook's steps, copied in ve
 
 Every playbook's last step is Reflect, which files a `garden` issue for each thing the thread worked around. Keep it last in the todo list.
 
-The Routing rule comes first. Work bigger than one context goes to the **wayfinder** skill, and each spec its map hands off runs Spec and tickets. A large or cross-cutting effort that fits one context (a migration across many call sites, an ambitious multi-part change), or work the user steps away from to trust later, routes to the **figure-it-out** skill even when a narrower playbook like Feature fits. Use **figure-it-out** whenever no bundled playbook fits. It designs a bespoke, rigorous playbook for the task. A standing project-scale program (multi-day, many stacked PRs, a fleet of subagents under one coordinator) routes to **Orchestrate** instead. figure-it-out designs one bespoke run, orchestrate runs the program.
+The Routing rule comes first. Work bigger than one context goes to the **wayfinder** skill, and each spec its map hands off runs Spec and tickets. A large or cross-cutting effort that fits one context (a migration across many call sites, an ambitious multi-part change), or work the user steps away from to trust later, routes to the **figure-it-out** skill even when a narrower playbook like Feature fits. Use **figure-it-out** whenever no bundled playbook fits. It designs a bespoke, rigorous playbook for the task. A standing project-scale program (multi-day, many PRs, a fleet of subagents under one coordinator) routes to **Orchestrate** instead. figure-it-out designs one bespoke run, orchestrate runs the program.
 
 - **Investigation.** Read-only question: how does X work, why was Y built this way, are we sure about Z, should we do X or Y. `playbooks/investigation.md`.
 - **Bug fix.** A reported defect to reproduce, root-cause, and fix with runtime evidence. `playbooks/bug-fix.md`.
@@ -150,11 +150,10 @@ The Routing rule comes first. Work bigger than one context goes to the **wayfind
 - **Babysit.** Driving a PR or a stack to merge-ready: conflicts, review threads, CI. `playbooks/babysit.md`.
 - **Shipping.** The half after Babysit. Independently verifying a green stack, then landing the contiguous verified run bottom-up through `gh` by default or Origin when its CLI is available. `playbooks/shipping.md`.
 - **Autonomous run.** A long task to drive to completion without stopping ("run until done", "/loop until X"). `playbooks/autonomous-run.md`.
-- **Orchestrate.** A standing project handed to one coordinator chat: multi-day, many stacked PRs, dozens to hundreds of subagents, minimal human turns ("run this whole project", "own this migration until it lands"). Distinct from Autonomous run, which drives one task to a predicate. Work one agent could finish inside the session's budget routes there, not here, however program-shaped the phrasing sounds. `playbooks/orchestrate.md`.
-- **Autopilot-full.** A queue of independent PRs run to merged with full autonomy. One owner per PR carries build through merge, and the root swarm-verifies each PR before its owner merges through the merge gate ("autopilot this queue", "full autopilot", one-owner-per-PR programs). `playbooks/autopilot-full.md`.
-- **Autopilot-stack.** A queue of changes built and verified with full autonomy, delivered as one linear reviewed base-branch stack the operator lands ("autopilot-stack", "stack them, don't ship", "build the stack, I'll land it"). `playbooks/autopilot-stack.md`.
+- **Orchestrate.** A standing project handed to one coordinator chat: multi-day, many PRs, dozens to hundreds of subagents, minimal human turns ("run this whole project", "own this migration until it lands"). Distinct from Autonomous run, which drives one task to a predicate. Work one agent could finish inside the session's budget routes there, not here, however program-shaped the phrasing sounds. `playbooks/orchestrate.md`.
+- **Autopilot-full.** A queue of independent PRs run to merged with full autonomy. One owner per PR carries build through merge, and the root swarm-verifies each PR before its owner merges through the merge gate ("autopilot this queue", "full autopilot", one-owner-per-PR programs). When the chef wants to review before landing, or withholds merge authority, owners stop at merge-ready and the chef merges. The kitchen does not stack PRs, so pstack's Autopilot-stack is not shipped. `playbooks/autopilot-full.md`.
 - **Session pickup.** Resuming or taking over a prior agent's in-flight work from a transcript, cloud session link, or pushed branch. `playbooks/session-pickup.md`.
 - **Pause safely.** Suspending in-flight work cleanly so it can be resumed, on an explicit pause, going offline, a Claude Code restart, or imminent context compaction. The complement to Session pickup. Full steps: `playbooks/pause-safely.md`.
-- **Multi-phase or multi-PR plan.** Work that spans phases or stacked PRs. `playbooks/multi-phase-plan.md`.
+- **Multi-phase or multi-PR plan.** Work that spans phases or several PRs. `playbooks/multi-phase-plan.md`.
 - **Worktree and simulator cleanup.** Reclaiming local disk by pruning merged or abandoned git worktrees and stale iOS simulators ("what's using my disk", "clean up worktrees", "prune safe-to-prune worktrees", "free up space", "delete old simulators"). `playbooks/worktree-cleanup.md`.
 - **Opening a PR.** Invoked at the end of every other playbook. `playbooks/opening-a-pr.md`.
