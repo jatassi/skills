@@ -32,9 +32,36 @@
           "path": "LICENSE",
           "verbatim": true
         },
-        "skills/grilling": "skills/productivity/grilling"
+        "skills/code-review": "skills/engineering/code-review",
+        "skills/codebase-design": "skills/engineering/codebase-design",
+        "skills/diagnosing-bugs": "skills/engineering/diagnosing-bugs",
+        "skills/domain-modeling": "skills/engineering/domain-modeling",
+        "skills/grill-me": "skills/productivity/grill-me",
+        "skills/grill-with-docs": "skills/engineering/grill-with-docs",
+        "skills/grilling": "skills/productivity/grilling",
+        "skills/handoff": "skills/productivity/handoff",
+        "skills/implement": "skills/engineering/implement",
+        "skills/implement-spec": "skills/engineering/implement-spec",
+        "skills/improve-codebase-architecture": "skills/engineering/improve-codebase-architecture",
+        "skills/pr": "skills/engineering/pr",
+        "skills/prototype": "skills/engineering/prototype",
+        "skills/research": "skills/engineering/research",
+        "skills/retro": "skills/engineering/retro",
+        "skills/tdd": "skills/engineering/tdd",
+        "skills/teach": "skills/productivity/teach",
+        "skills/to-questionnaire": "skills/productivity/to-questionnaire",
+        "skills/to-spec": "skills/engineering/to-spec",
+        "skills/to-tickets": "skills/engineering/to-tickets",
+        "skills/triage": "skills/engineering/triage",
+        "skills/wait-what": "skills/productivity/wait-what",
+        "skills/wayfinder": "skills/engineering/wayfinder",
+        "skills/wizard": "skills/engineering/wizard",
+        "skills/writing-for-agents": "skills/productivity/writing-for-agents"
       },
-      "exclude": {}
+      "exclude": {
+        "skills/engineering/ask-matt": "Superseded by make-it-so, the kitchen router.",
+        "skills/engineering/setup-matt-pocock-skills": "Superseded by setup-milliways, which writes the docs/agents config the forked lookups read."
+      }
     }
   }
 }

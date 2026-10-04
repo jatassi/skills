@@ -64,6 +64,35 @@
       "regex": "default `(?:grok|gpt|composer|gemini)-[^`]+`",
       "replacement": "default `sonnet`",
       "why": "Defaults are Claude-only so a cloud thread is fully covered; explorers and code delegates are sonnet. A more specific rule above this one can pick another tier for a role."
+    },
+    {
+      "pattern": "`CLAUDE.md`/`AGENTS.md`",
+      "replacement": "`AGENTS.md`",
+      "files": "^skills/retro/",
+      "why": "Kitchens are AGENTS.md-only; Claude Code reads AGENTS.md natively when no CLAUDE.md exists, so the kitchen never names CLAUDE.md."
+    },
+    {
+      "pattern": "an `AGENTS.md` / `CLAUDE.md`",
+      "replacement": "an `AGENTS.md`",
+      "files": "^skills/writing-for-agents/",
+      "why": "Kitchens are AGENTS.md-only; Claude Code reads AGENTS.md natively when no CLAUDE.md exists, so the kitchen never names CLAUDE.md."
+    },
+    {
+      "pattern": "modifying AGENTS.md or CLAUDE.md.",
+      "replacement": "modifying AGENTS.md.",
+      "files": "^skills/writing-for-agents/",
+      "why": "Kitchens are AGENTS.md-only; Claude Code reads AGENTS.md natively when no CLAUDE.md exists, so the kitchen never names CLAUDE.md."
+    },
+    {
+      "pattern": "the tracker `/setup-matt-pocock-skills` configured",
+      "replacement": "the tracker the kitchen config index points to",
+      "files": "^skills/to-tickets/",
+      "why": "Kitchens configure the tracker through setup-milliways, which lists it in the docs/agents/AGENTS.md index; setup-matt-pocock-skills is excluded."
+    },
+    {
+      "pattern": "`/setup-matt-pocock-skills`",
+      "replacement": "`/setup-milliways`",
+      "why": "setup-matt-pocock-skills is excluded; setup-milliways writes the kitchen config the skills read. Unscoped: only Matt's skills name it, and a new mention upstream gets rewritten too."
     }
   ]
 }

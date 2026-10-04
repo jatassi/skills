@@ -26,6 +26,8 @@
 
 **Kitchen**: a repo set up to run milliways: its root AGENTS.md carries the one line that sends non-trivial work to the router, and its `docs/agents` folder holds the kitchen's config. milliways is the plugin that brings the whole kitchen from codebase to codebase.
 
+**Kitchen config index**: `docs/agents/AGENTS.md`, the table of the kitchen's config documents (issue tracker, triage labels, domain, models and the rest), each with what it holds. Skills find their config by opening the index and following its row for the topic, never by assuming a block in the root AGENTS.md.
+
 **Chef**: the human who owns a kitchen. The chef makes the decisions only a human can (one-way doors, taste, intent, domain words), merges what the gate doesn't, and samples merged work afterwards.
 
 **Router**: `make-it-so`, the entry point every non-trivial task starts with. It classifies the task, retrieves the playbook for that situation, and binds the thread to that playbook's steps.
