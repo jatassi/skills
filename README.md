@@ -10,8 +10,39 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 | [`visual-grilling`](skills/visual-grilling/SKILL.md) | Grilling with each round shown as a page in the browser, answered and commented on there. Needs Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`. |
 | [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Take a build-graph parent: spec it in a comment on the parent, then cut it into linked, blocked sub-issues. |
 | [`setup-milliways`](skills/setup-milliways/SKILL.md) | Make a repo a kitchen: the `docs/agents` config and its index, the one root `AGENTS.md` line, the GitHub labels and a model-role table detected from your harness. Safe to re-run. |
-| [`grilling`](skills/grilling/SKILL.md) | Grill you about a plan, a round of numbered questions at a time. Vendored from [Matt Pocock's skills](https://github.com/mattpocock/skills). |
 | [`how`](skills/how/SKILL.md) | Explain how a part of the codebase works, with explorer and explainer subagents. Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack). |
+
+### From Matt Pocock's skills
+
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills), its Engineering and Productivity buckets. `ask-matt` and `setup-matt-pocock-skills` are left out: `make-it-so` and `setup-milliways` replace them. Skills marked * are model-invocable here, unlike upstream, so `make-it-so`'s playbooks can call them. Skills that read the issue tracker or triage labels find them through the `docs/agents/AGENTS.md` index that `setup-milliways` writes.
+
+| Skill | What it does |
+| --- | --- |
+| [`code-review`](skills/code-review/SKILL.md) | Review a diff on two axes, the repo's standards and the originating spec, in parallel subagents. |
+| [`codebase-design`](skills/codebase-design/SKILL.md) | Shared vocabulary for designing deep modules, seams and testable interfaces. |
+| [`diagnosing-bugs`](skills/diagnosing-bugs/SKILL.md) | A diagnosis loop for hard bugs and performance regressions. |
+| [`domain-modeling`](skills/domain-modeling/SKILL.md) | Build and sharpen the domain model: `GLOSSARY.md` terms and ADRs. |
+| [`grill-me`](skills/grill-me/SKILL.md) | A relentless interview to sharpen a plan or design. |
+| [`grill-with-docs`](skills/grill-with-docs/SKILL.md) * | A relentless interview that also writes ADRs and glossary entries as it goes. |
+| [`grilling`](skills/grilling/SKILL.md) | Grill you about a plan, a round of numbered questions at a time. |
+| [`handoff`](skills/handoff/SKILL.md) | Compact the conversation into a handoff document for another agent. |
+| [`implement`](skills/implement/SKILL.md) * | Implement a piece of work from a spec or tickets, test-first, then review it. |
+| [`implement-spec`](skills/implement-spec/SKILL.md) | Implement a whole spec and its tickets on one integration branch, with subagents per ticket. |
+| [`improve-codebase-architecture`](skills/improve-codebase-architecture/SKILL.md) | Find deepening opportunities, report them as an HTML page, then grill through the one you pick. |
+| [`pr`](skills/pr/SKILL.md) | Write a pull request body. |
+| [`prototype`](skills/prototype/SKILL.md) | Build a throwaway prototype to answer a design question. |
+| [`research`](skills/research/SKILL.md) | Investigate a question against primary sources and save the findings in the repo. |
+| [`retro`](skills/retro/SKILL.md) | Run a retrospective on a coding session. |
+| [`tdd`](skills/tdd/SKILL.md) | Test-driven development, red-green-refactor. |
+| [`teach`](skills/teach/SKILL.md) | Teach you a skill or concept across sessions, within this workspace. |
+| [`to-questionnaire`](skills/to-questionnaire/SKILL.md) | Turn a decision you can't answer alone into a questionnaire for someone else. |
+| [`to-spec`](skills/to-spec/SKILL.md) * | Turn the conversation into a spec on the issue tracker. |
+| [`to-tickets`](skills/to-tickets/SKILL.md) * | Break a plan or spec into tracer-bullet tickets with blocking edges. |
+| [`triage`](skills/triage/SKILL.md) | Move issues and external pull requests through the triage labels, and write agent-ready briefs. |
+| [`wait-what`](skills/wait-what/SKILL.md) | Re-pitch a message that didn't land. |
+| [`wayfinder`](skills/wayfinder/SKILL.md) * | Plan work bigger than one session as a map of decision tickets, and resolve them one at a time. |
+| [`wizard`](skills/wizard/SKILL.md) | Generate an interactive bash wizard for steps only a human can do. |
+| [`writing-for-agents`](skills/writing-for-agents/SKILL.md) | How to write skills, `AGENTS.md` and any document an agent reads. |
 
 Vendored skills are pinned to an upstream commit and changed only by the rewrites in [`vendor/substitutions.json`](vendor/substitutions.json) and the forks declared in [`vendor/forks.json`](vendor/forks.json) ([ADR 0004](docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md)). Upstream licences are in [`LICENSES/`](LICENSES) and attributions in [`NOTICE`](NOTICE).
 

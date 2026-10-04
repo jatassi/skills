@@ -1,1 +1,54 @@
-{}
+{
+  "skills/code-review/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+  },
+  "skills/grill-with-docs/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin."
+  },
+  "skills/grill-with-docs/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user."
+  },
+  "skills/implement-spec/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+  },
+  "skills/implement/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin."
+  },
+  "skills/implement/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user."
+  },
+  "skills/to-spec/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin."
+  },
+  "skills/to-spec/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+  },
+  "skills/to-tickets/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin."
+  },
+  "skills/to-tickets/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+  },
+  "skills/triage/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+  },
+  "skills/wayfinder/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin. make-it-so routes work bigger than one context here."
+  },
+  "skills/wayfinder/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. make-it-so routes work bigger than one context here. Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+  }
+}
