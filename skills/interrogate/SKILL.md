@@ -1,7 +1,6 @@
 ---
 name: interrogate
 description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles."
-disable-model-invocation: true
 ---
 
 # Interrogate
@@ -46,7 +45,7 @@ For each reviewer:
 - `model`: the configured `interrogate reviewers` entry, or the table default with no configured line. For an `inherit` entry, omit `model` so that reviewer runs on the parent model.
 - read-only: say so in its prompt (the `Agent` tool has no read-only flag)
 
-If the Agent tool rejects a configured entry, run that reviewer on the table default of its family and say so. Families go by prefix: `claude-*`, `gpt-*`, and `grok-*`. With no family match, use Reviewer A's default. If it rejects a table default, check the valid slugs in the Agent tool's error message, pick the closest equivalent (prefer the highest-reasoning tier of the same family), spawn with it, and open a separate PR to update the default table. Do not block the review on the slug issue. Never treat an alias entry as a rejected slug or apply either fallback to it.
+Each entry is a tier or `<cli>:<tier>`, per the models document's Model values. A `<cli>:<tier>` reviewer is a subagent that drives that CLI non-interactively with the filled template and returns its output verbatim. When an entry isn't available in this thread, follow the document's Fallback section: run that reviewer on the parent's model, and put its `fallback:` line in the Reviewers list. Do not block the review on it.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent

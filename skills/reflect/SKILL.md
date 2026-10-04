@@ -19,12 +19,12 @@ Invoke when the user says "reflect" or "/reflect". Skip when the conversation is
 The parent finds its own transcript file before fanning out. This project's transcripts are in `~/.claude/projects/<project>/`, where `<project>` is the working directory's absolute path with every character other than a letter or digit turned into `-`. Use that path. Do not glob across `~/.claude/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects.
 
 ```bash
-ls -t <agent-transcripts>/*.jsonl <agent-transcripts>/*/*.jsonl <agent-transcripts>/*/subagents/*.jsonl 2>/dev/null | head -10
+ls -t ~/.claude/projects/<project>/*.jsonl ~/.claude/projects/<project>/*/subagents/*.jsonl 2>/dev/null | head -10
 ```
 
-Three transcript layouts: legacy flat (`<id>.jsonl`), current nested (`<id>/<id>.jsonl`), and subagent (`<parent>/subagents/<child>.jsonl`).
+Two transcript layouts: a session (`<session-id>.jsonl`) and a subagent (`<session-id>/subagents/agent-<id>.jsonl`).
 
-For each candidate, read the first JSONL line and check that `message.content[0].text` contains the conversation's opening user prompt. Take the matching path. If no path resolves, write a tight digest of the session and pass that instead.
+For each candidate, find the first line whose `type` is `user` and check that its `message.content` (a string, or the `text` of its first block) contains the conversation's opening user prompt. Take the matching path. If no path resolves (a cloud thread may not expose its transcript), write a tight digest of the session and pass that instead.
 
 ### 2. Spawn three reviewers in parallel
 
@@ -57,9 +57,9 @@ Backlog items file to whatever devex / backlog tracker your team uses automatica
 For each approved Accepted item, follow the Routing field exactly:
 
 - Trivial existing-skill edit (a one-line bullet, a tightened sentence, a stale fact corrected): parent does directly.
-- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): hand to the `writing-for-agents` skill and run its draft / test / iterate loop.
-- `tune description: <skill path>` (the skill exists but didn't trigger when it should have): hand to `writing-for-agents` and run its description-optimization loop.
-- `new skill via writing-for-agents: <kebab-name>`: hand creation to `writing-for-agents`. Do not invent the shape ad hoc.
+- Substantive existing-skill edit (a new section, a new pattern table, more than ~10 lines): draft it per the `writing-for-agents` skill, show the draft, and iterate on it with the user.
+- `tune description: <skill path>` (the skill exists but didn't trigger when it should have): rewrite the description per `writing-for-agents`' context-pointer rules (front-load the trigger, one trigger per branch).
+- `new skill via writing-for-agents: <kebab-name>`: author it per `writing-for-agents`, including its SKILL-MECHANICS.md for frontmatter. Do not invent the shape ad hoc.
 
 If your environment ships a SKILL.md validator, run it on every touched skill before declaring done. Skip this step if it doesn't.
 
