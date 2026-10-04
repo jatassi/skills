@@ -10,6 +10,7 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 | [`visual-grilling`](skills/visual-grilling/SKILL.md) | Grilling with each round shown as a page in the browser, answered and commented on there. Needs Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`. |
 | [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Take a build-graph parent: spec it in a comment on the parent, then cut it into linked, blocked sub-issues. |
 | [`setup-milliways`](skills/setup-milliways/SKILL.md) | Make a repo a kitchen: the `docs/agents` config and its index, the one root `AGENTS.md` line, the GitHub labels and a model-role table detected from your harness. Safe to re-run. |
+| [`trust-ladder`](skills/trust-ladder/SKILL.md) | Score each area of a kitchen on the trust ladder from its merged pull requests: clean streaks, unclean merges, promotions and demotions due, and yesterday's merges ranked by risk, as JSON. |
 | [`how`](skills/how/SKILL.md) | Explain how a part of the codebase works, with explorer and explainer subagents. Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack). |
 
 ### From Matt Pocock's skills
@@ -92,13 +93,13 @@ skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a 
 
 ## Development
 
-`visual-grilling`'s CLI, server and round page are built from the TypeScript workspace in `packages/visual-grilling/`, outside the shipped skill folder. `setup-milliways`'s CLI ships as plain Node in `skills/setup-milliways/scripts/`, and its tests live in `packages/setup-milliways/`.
+`visual-grilling`'s CLI, server and round page are built from the TypeScript workspace in `packages/visual-grilling/`, outside the shipped skill folder. `setup-milliways`'s CLI ships as plain Node in `skills/setup-milliways/scripts/`, and its tests live in `packages/setup-milliways/`; `trust-ladder`'s scorer is the same, in `skills/trust-ladder/scripts/` with tests in `packages/trust-ladder/`.
 
 ```
 npm install
 npx playwright install chromium   # once, for the round page tests
 npm test                          # test only the workspaces changed since the merge-base with dev
-npm run test:all                  # every workspace: visual-grilling type-checks, builds into .test-dist and tests that; setup-milliways tests its CLI
+npm run test:all                  # every workspace: visual-grilling type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
 npm run try                       # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
 ```
 

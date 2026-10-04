@@ -1,0 +1,9 @@
+{
+  "name": "trust-ladder-dev",
+  "private": true,
+  "type": "module",
+  "testPaths": ["skills/setup-milliways/templates/autonomy.md"],
+  "scripts": {
+    "test": "node --test"
+  }
+}

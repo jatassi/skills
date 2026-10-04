@@ -4,7 +4,8 @@
   "workspaces": [
     "packages/visual-grilling",
     "packages/setup-milliways",
-    "packages/vendor"
+    "packages/vendor",
+    "packages/trust-ladder"
   ],
   "scripts": {
     "test": "node scripts/test.mjs",

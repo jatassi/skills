@@ -23,7 +23,7 @@ Who merges what in this kitchen. Trust is earned per area: each area sits on a r
 | promotion-streak | 10 |
 
 - **Clean merge**: a merge that no revert, fix-forward pull request or `garden` issue links back to within `clean-window-days` of the merge.
-- **Promotion**: when a `chef` area's last `promotion-streak` merges are all clean, a promotion is due. It is proposed as a pull request that changes the area's rung to `gated`, and the chef merges it. The ladder never climbs itself.
+- **Promotion**: when a `chef` area's last `promotion-streak` settled merges (those whose clean window has closed) are all clean, a promotion is due. It is proposed as a pull request that changes the area's rung to `gated`, and the chef merges it. The ladder never climbs itself.
 - **Demotion**: any unclean merge in a `gated` area sets its rung back to `chef` at once, and its streak restarts at zero.
 
 ## One-way doors
