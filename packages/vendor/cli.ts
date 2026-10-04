@@ -76,8 +76,13 @@ function main(argv: string[]): number {
       upstream: { type: 'string' },
       to: { type: 'string' },
       overwrite: { type: 'boolean', default: false },
+      help: { type: 'boolean', short: 'h', default: false },
     },
   });
+  if (values.help) {
+    console.log(USAGE);
+    return 0;
+  }
   const [command, ...rest] = positionals;
   if (rest.length || (command !== 'check' && command !== 'sync')) throw new UsageError(USAGE);
   const root = resolve(values.root ?? join(dirname(fileURLToPath(import.meta.url)), '../..'));

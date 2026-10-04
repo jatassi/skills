@@ -267,3 +267,11 @@ describe('check', () => {
     expect(result.out).toContain('forks.json "skills/foo/SKILL.md": "kind" must be "policy" or "port-feature"');
   });
 });
+
+describe('--help', () => {
+  test('prints the usage and exits 0', () => {
+    const result = fx.run('--help');
+    expect(result.status).toBe(0);
+    expect(result.out).toContain('usage: node packages/vendor/cli.ts check');
+  });
+});
