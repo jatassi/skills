@@ -5,7 +5,7 @@
 # Changes land on dev and reach main by pull request. On the pull request,
 # the vendored tree is checked against its pinned upstreams, and every
 # workspace's tests (npm run test:all)
-# runs on Ubuntu, macOS and Windows at the minimum Node, and the
+# run on Ubuntu, macOS and Windows at the minimum Node, and the
 # bundle it ran against is kept under the git tree it tested. The merge then
 # releases without testing again: it requires a tested bundle for exactly the
 # tree it is releasing, builds visual-grilling into skills/visual-grilling/dist/,
