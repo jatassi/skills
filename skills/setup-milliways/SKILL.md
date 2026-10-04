@@ -52,3 +52,11 @@ Also tell the chef, once, that the kitchen's vendored scripts (`watch-pr`, `chec
 ## 6. Report
 
 Tell the chef what changed, what was kept, and anything left for them (conflicts, a stale models document, labels not created). Leave the changes uncommitted for the chef to review. The documents are theirs to edit from here; re-running this skill fills in whatever a later milliways adds.
+
+Then point the chef at the Projects kit in `${CLAUDE_SKILL_DIR}/projects/`, which runs this kitchen from a Claude Project. Give each file's full path, and these setup steps:
+
+1. Create a Claude Project with this repo as its only repository; added repositories' AGENTS.md files don't load in a multi-repo project. Add milliways under **Project settings > Plugins**, so every cloud thread starts with the kitchen.
+2. Paste `coordinator-brief.md` into **Project settings > Memory > Project instructions**, and set its first standing order to the branch pull requests target here.
+3. Create each routine in `routines/` from the project's **Routines** tab, so its runs are project threads with milliways loaded. Each file's table gives the trigger and environment, and everything under its `## Prompt` heading is the prompt. `risk-digest.md`, `garden-sweep.md` and `garden-cluster.md` suit every kitchen. `upstream-sync.md` is for the milliways repo itself.
+
+The coordinator plus these routines replace the hourly `/loop` ticks the autopilot-full and orchestrate playbooks arm in a local session.
