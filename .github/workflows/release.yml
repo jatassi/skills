@@ -95,6 +95,16 @@ jobs:
       - name: Check the vendored tree
         if: runner.os == 'Linux'
         run: npm run vendor -- check
+      # pstack's scripts are vendored verbatim on Bun, with their upstream
+      # tests; a sync that breaks one fails the pull request. The tests use
+      # fakes (no gh, git or network), so Linux is enough: the scripts run in
+      # Linux cloud environments and on the chef's Mac. Found by glob so the
+      # skill folder can be renamed.
+      - uses: oven-sh/setup-bun@v2
+        if: runner.os == 'Linux'
+      - name: Test the vendored Bun scripts
+        if: runner.os == 'Linux'
+        run: npm run test:bun
       # Browser tests (round page and block corpus) run on Ubuntu only. The
       # POSIX-only checks skip themselves on Windows.
       - run: npm run test:all

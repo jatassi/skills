@@ -13,3 +13,7 @@ When the verify skill above is `none`, prove the behaviour live by hand with wha
 ## Verdicts
 
 A verdict is pass or fail, bound to the pull request's head SHA and patch-id, so a rebase can't carry a stale pass. It is recorded in GitHub, as a pull request comment that names the head SHA, the patch-id, the lanes run and the evidence, at one ledger tier: `live-ui-verified`, `unit-test-verified`, `type-check-only`, `verifier-blocked` or `verifier-failed`.
+
+## Cloud environments
+
+The kitchen's vendored scripts (`watch-pr`, `check-plan`, `worktree-audit`) run on Bun. A cloud environment that uses them must install Bun in its setup script, for example `curl -fsSL https://bun.sh/install | bash`, since cloud threads start without it.
