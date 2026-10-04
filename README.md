@@ -1,4 +1,4 @@
-# jatassi-skills
+# milliways
 
 Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/docs/en/plugins) and as an [Agent Plugin](https://agent-plugins.org/specification).
 
@@ -9,7 +9,6 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 | [`auto-grill`](skills/auto-grill/SKILL.md) | A relentless interview where an agent stand-in answers in your place. |
 | [`visual-grilling`](skills/visual-grilling/SKILL.md) | Grilling with each round shown as a page in the browser, answered and commented on there. Needs Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`. |
 | [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Take a build-graph parent: spec it in a comment on the parent, then cut it into linked, blocked sub-issues. |
-| [`implement-loop`](skills/implement-loop/SKILL.md) | Orchestrate the implementation of a large task with several sub-tasks. |
 
 ## Install
 
@@ -17,8 +16,10 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 
 ```
 /plugin marketplace add jatassi/skills
-/plugin install jatassi-skills@jatassi
+/plugin install milliways@jatassi
 ```
+
+Skills are namespaced `milliways:`, so `visual-grilling` runs as `milliways:visual-grilling`. The plugin used to be called `jatassi-skills`; if you have that installed, uninstall it (`/plugin uninstall jatassi-skills@jatassi`) and install `milliways` in its place.
 
 The marketplace pins the plugin to the latest release tag, so Claude Code installs exactly the build that release tested, not whatever is on `main`.
 
