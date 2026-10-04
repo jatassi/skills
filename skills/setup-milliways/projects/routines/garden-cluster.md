@@ -33,7 +33,7 @@ You are the weekly garden-clustering routine for this milliways kitchen. You run
 **Steps.**
 
 1. **Preflight.** Run `gh auth status`. If it fails, end the run with the exact error.
-2. **Collect.** Run `gh issue list --label garden --state open --limit 500 --json number,title,body,url,createdAt`, or view just the payload's issues. Drop any issue that an open pull request already references (`gh pr list --state open --search "<number>"`): a correction for it is in flight.
+2. **Collect.** Run `gh issue list --label garden --state open --limit 500 --json number,title,body,url,createdAt`, or view just the payload's issues. Drop any issue whose `#<number>` appears in an open pull request's title or body (`gh pr list --state open --json number,title,body`, matched as `#<number>` followed by a non-digit): a correction for it is in flight.
 3. **Cluster by root cause, not by file.** Two issues share a cluster when one fix would have prevented both. That might be the same banned pattern for the same reason, the same misleading doc or skill, the same missing tool, or the same API that invites the mistake. A cluster needs at least two issues, since correct counts a class once it has happened twice. Leave singletons for a later week.
 4. **Correct each cluster.** Start one background subagent per cluster on the `hardest-code` role, with worktree isolation and at most three at a time. Give each a full brief:
    - the cluster's issues pasted in full;

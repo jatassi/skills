@@ -53,6 +53,8 @@ The ledger lives in GitHub, never in memory or a transcript. It holds one verdic
 - a comment that starts `ledger: <tier> at <head SHA>` and names the patch-id, the lanes run and the evidence;
 - the tier as the PR's only tier label.
 
+The PR's CI checks are inputs to a verdict, never a verdict on their own.
+
 Read the ledger by these rules:
 - **CI green is an input, never a verdict.** The live lane, which drives the running app on the surface the change touches, is the floor of every pass, per `docs/agents/verification.md`. Behavioural work needs better than `type-check-only`.
 - **Check the head before you trust a verdict.** Compare it with `gh pr view <n> --json headRefOid`. A new head SHA voids the verdict unless its patch-id is unchanged.
