@@ -19,6 +19,10 @@
     "kind": "policy",
     "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (hillclimb, perf-issue)."
   },
+  "skills/blast-radius/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and the pr skill runs it on every PR for the blast radius and the one fact the change is safe because of."
+  },
   "skills/code-review/SKILL.md": {
     "kind": "port-feature",
     "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
@@ -74,6 +78,10 @@
   "skills/poteto-mode/SKILL.md": {
     "kind": "policy",
     "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and milliways:poteto-agent preloads it, and Claude Code cannot preload a skill with model invocation off. Roles: the Subagents defaults resolve from docs/agents/models.md (written by setup-milliways) instead of setup-pstack and Cursor model slugs. Leaf skills: says where principle leaves and this skill's own files live (<milliways>), since Claude Code does not list skills with model invocation off."
+  },
+  "skills/pr/SKILL.md": {
+    "kind": "policy",
+    "why": "PR anatomy: keeps Summary, Evidence and Merge Danger, and adds a conventional-commit title, a calldiff call-tree summary sanity-checked for dynamic dispatch (Mermaid as fallback), a scope line, before/after media attached with gh --attach, the red-then-green test, a Blast radius: high|medium|low line with the one fact it is safe because of, the door:one-way label, commits regrouped in dependency order, the verifier verdict at the head SHA with its tier label, a decision-log link and the Fix-forward: #N line, which the trust-ladder scorer reads. One concern per PR, no stacks. Adds the Prototype PRs variant: a draft titled prototype: with a screencast per variant, closed unmerged with the chef's pick recorded on the PR and the ticket."
   },
   "skills/reflect/SKILL.md": {
     "kind": "port-feature",

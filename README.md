@@ -64,7 +64,7 @@ Vendored from [mattpocock/skills](https://github.com/mattpocock/skills), its Eng
 | [`implement`](skills/implement/SKILL.md) * | Implement a piece of work from a spec or tickets, test-first, then review it. |
 | [`implement-spec`](skills/implement-spec/SKILL.md) | Implement a whole spec and its tickets on one integration branch, with subagents per ticket. |
 | [`improve-codebase-architecture`](skills/improve-codebase-architecture/SKILL.md) | Find deepening opportunities, report them as an HTML page, then grill through the one you pick. |
-| [`pr`](skills/pr/SKILL.md) | Write a pull request body. |
+| [`pr`](skills/pr/SKILL.md) | Open a pull request with the kitchen's PR anatomy, or a draft prototype PR for the chef to pick a variant. |
 | [`prototype`](skills/prototype/SKILL.md) | Build a throwaway prototype to answer a design question. |
 | [`research`](skills/research/SKILL.md) | Investigate a question against primary sources and save the findings in the repo. |
 | [`retro`](skills/retro/SKILL.md) | Run a retrospective on a coding session. |
