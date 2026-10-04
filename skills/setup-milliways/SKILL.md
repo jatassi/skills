@@ -47,6 +47,8 @@ Run `labels`. It reads the triage strings from `docs/agents/triage-labels.md` an
 
 When `detect` found no `verify-*` skill, offer once to create one with `create-verification-skill`, so threads can drive the app the way a user does. On no, move on.
 
+Also tell the chef, once, that the kitchen's vendored scripts (`watch-pr`, `check-plan`, `worktree-audit`) run on Bun, so a cloud environment that uses them needs Bun installed in its setup script. The verification document records this.
+
 ## 6. Report
 
 Tell the chef what changed, what was kept, and anything left for them (conflicts, a stale models document, labels not created). Leave the changes uncommitted for the chef to review. The documents are theirs to edit from here; re-running this skill fills in whatever a later milliways adds.
