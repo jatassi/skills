@@ -3,7 +3,9 @@
 # docs/adr/0003-every-merge-to-main-is-a-release.md.
 #
 # Changes land on dev and reach main by pull request. On the pull request,
-# npm test runs on Ubuntu, macOS and Windows at the minimum Node, and the
+# the vendored tree is checked against its pinned upstreams, and every
+# workspace's tests (npm run test:all)
+# runs on Ubuntu, macOS and Windows at the minimum Node, and the
 # bundle it ran against is kept under the git tree it tested. The merge then
 # releases without testing again: it requires a tested bundle for exactly the
 # tree it is releasing, builds visual-grilling into skills/visual-grilling/dist/,
@@ -83,6 +85,16 @@ jobs:
       - name: Install Chromium
         if: runner.os == 'Linux'
         run: npx playwright install --with-deps chromium
+      # Every vendored file must be its pinned upstream file after the
+      # substitution table, or a fork declared in vendor/forks.json, and none
+      # may carry a Cursor-ism, a pinned model version, a CLAUDE.md reference,
+      # an un-namespaced agent type or a playbook step naming a missing skill.
+      # See docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md.
+      # The vendor workspace runs it too, at the end of its tests; this step
+      # names the failure.
+      - name: Check the vendored tree
+        if: runner.os == 'Linux'
+        run: npm run vendor -- check
       # Browser tests (round page and block corpus) run on Ubuntu only. The
       # POSIX-only checks skip themselves on Windows.
       - run: npm run test:all

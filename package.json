@@ -3,11 +3,13 @@
   "private": true,
   "workspaces": [
     "packages/visual-grilling",
-    "packages/setup-milliways"
+    "packages/setup-milliways",
+    "packages/vendor"
   ],
   "scripts": {
     "test": "node scripts/test.mjs",
     "test:all": "node scripts/test.mjs --all",
-    "try": "npm run try --workspace packages/visual-grilling"
+    "try": "npm run try --workspace packages/visual-grilling",
+    "vendor": "node packages/vendor/cli.ts"
   }
 }

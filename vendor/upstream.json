@@ -1,0 +1,40 @@
+{
+  "upstreams": {
+    "cursor-plugins": {
+      "repo": "https://github.com/cursor/plugins",
+      "commit": "e43c7ee26e0038c6c1fa8380dd34ce86ff94cb2a",
+      "watch": [
+        "pstack/skills",
+        "cursor-team-kit/skills"
+      ],
+      "include": {
+        "LICENSES/pstack.txt": {
+          "path": "pstack/LICENSE",
+          "verbatim": true
+        },
+        "LICENSES/cursor-team-kit.txt": {
+          "path": "cursor-team-kit/LICENSE",
+          "verbatim": true
+        },
+        "skills/how": "pstack/skills/how"
+      },
+      "exclude": {}
+    },
+    "mattpocock-skills": {
+      "repo": "https://github.com/mattpocock/skills",
+      "commit": "24fe0ef7737efae15c87225755e9f6f5965e4888",
+      "watch": [
+        "skills/engineering",
+        "skills/productivity"
+      ],
+      "include": {
+        "LICENSES/mattpocock-skills.txt": {
+          "path": "LICENSE",
+          "verbatim": true
+        },
+        "skills/grilling": "skills/productivity/grilling"
+      },
+      "exclude": {}
+    }
+  }
+}

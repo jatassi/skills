@@ -49,3 +49,15 @@
 **Verdict**: a verifier's pass or fail on a pull request, bound to its head SHA and patch-id so that a rebase can't carry a stale pass.
 
 **Ledger**: the record of what has been verified, kept in GitHub (issue comments, pull request labels and checks) keyed by pull request and head SHA, at one tier: live-ui-verified, unit-test-verified, type-check-only, verifier-blocked or verifier-failed.
+
+## Vendoring
+
+**Upstream**: a repo milliways vendors skills from, pinned to one commit in `vendor/upstream.json`: cursor/plugins (pstack and cursor-team-kit) and mattpocock/skills.
+
+**Derived form**: what a vendored file would be with no fork: the upstream file at the pinned commit, at its local path, after the substitution table.
+
+**Substitution**: a mechanical rewrite in `vendor/substitutions.json`, applied to every upstream file on every sync (Task tool → Agent tool, a model version → its tier).
+
+**Fork**: a vendored file allowed to differ from its derived form, declared in `vendor/forks.json` with a kind (policy, which changes what a skill does, or port-feature, which adapts it to Claude Code or the kitchen) and a reason. Any other difference fails the check.
+
+**Skill triage**: deciding, for an upstream skill new since the last pin, whether milliways includes or excludes it. Not to be confused with issue triage and its labels.

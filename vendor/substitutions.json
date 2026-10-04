@@ -1,0 +1,69 @@
+{
+  "substitutions": [
+    {
+      "pattern": "`~/.cursor/rules/pstack-models.mdc`",
+      "replacement": "`docs/agents/models.md`",
+      "why": "Model roles live in the kitchen's models document, not a Cursor rules file."
+    },
+    {
+      "pattern": "the `pstack-models.mdc` rule",
+      "replacement": "the kitchen's models document (`docs/agents/models.md`)",
+      "why": "Model roles live in the kitchen's models document, not a Cursor rules file."
+    },
+    {
+      "regex": "if the rule or (the|that) line is missing",
+      "replacement": "if the document or $1 line is missing",
+      "why": "Follows the rules file -> models document rewrite."
+    },
+    {
+      "pattern": "- `readonly`: `true`",
+      "replacement": "- read-only: say so in its prompt (the `Agent` tool has no read-only flag)",
+      "why": "Claude Code's Agent tool rejects unknown parameters, and has no readonly flag."
+    },
+    {
+      "regex": "\\bTask subagent",
+      "replacement": "`Agent` subagent",
+      "why": "Claude Code spawns subagents with the Agent tool, not Task."
+    },
+    {
+      "regex": "\\bthe Task tool\\b",
+      "replacement": "the Agent tool",
+      "why": "Claude Code spawns subagents with the Agent tool, not Task."
+    },
+    {
+      "pattern": "`Task`",
+      "replacement": "`Agent`",
+      "why": "Claude Code spawns subagents with the Agent tool, not Task."
+    },
+    {
+      "regex": "\\bgeneralPurpose\\b",
+      "replacement": "general-purpose",
+      "why": "Claude Code's built-in agent type is general-purpose."
+    },
+    {
+      "regex": "\\bAskQuestion\\b",
+      "replacement": "AskUserQuestion",
+      "why": "Claude Code's question tool is AskUserQuestion."
+    },
+    {
+      "pattern": ".cursor/skills/",
+      "replacement": ".claude/skills/",
+      "why": "Project skills live in .claude/skills/ in Claude Code."
+    },
+    {
+      "regex": "(subagent_type[\"'`]?:\\s*[\"'`])(poteto-agent|comment-sicko)([\"'`])",
+      "replacement": "$1milliways:$2$3",
+      "why": "Plugin agents register under the plugin's namespace; a bare name fails to dispatch."
+    },
+    {
+      "regex": "`claude-(opus|sonnet|haiku|fable)-[^`]*`",
+      "replacement": "`$1`",
+      "why": "Models are named by tier, never by version, so the kitchen floats on the latest of each tier."
+    },
+    {
+      "regex": "default `(?:grok|gpt|composer|gemini)-[^`]+`",
+      "replacement": "default `sonnet`",
+      "why": "Defaults are Claude-only so a cloud thread is fully covered; explorers and code delegates are sonnet. A more specific rule above this one can pick another tier for a role."
+    }
+  ]
+}
