@@ -27,7 +27,7 @@ npm run vendor -- sync [--upstream <name>] [--to <sha>|HEAD] [--overwrite]
 ```
 
 `check` derives every upstream at its pin and compares it with the tree. It exits 1 on any of these:
-- a vendored file that differs from its derived form, is missing, or is extra, with no fork declared;
+- a vendored file that differs from its derived form (bytes, or the executable bit on POSIX), is missing, or is extra, with no fork declared;
 - a fork that no longer differs (stale);
 - a fork outside every include;
 - a denylisted line;
@@ -39,7 +39,7 @@ It runs at the end of the vendor workspace's tests (whenever `npm test` picks th
 
 `sync` moves the named upstream, or all of them, to `--to`. Without `--to` it re-derives each upstream at its pin, which is how a new include or rule lands. It writes the tree, moves the pin and then runs `check`. Each non-forked file is rewritten from upstream. A fork upstream left alone is kept. A fork upstream changed is three-way merged, and a collision is written with git's conflict markers. The run reports every upstream skill folder that is new since the old pin and neither included nor excluded. If any vendored file has diverged from its old derived form without a declared fork, sync stops before writing anything. `--overwrite` restores those files instead. It is also how edits to the substitution table reach files that aren't forks. Exit 1 means something needs a human, and 2 means a usage or configuration error.
 
-Upstream commits are fetched into bare clones under `node_modules/.cache/milliways-vendor/`, and files are read from git's object store, so bytes and line endings are upstream's on every platform.
+Upstream commits are fetched into bare clones under `node_modules/.cache/milliways-vendor/`, and files are read from git's object store, so bytes and line endings are upstream's on every platform. `.gitattributes` marks the vendored folders `-text` so that a checkout never converts them either. Check also compares the executable bit, on POSIX only.
 
 ## Consequences
 

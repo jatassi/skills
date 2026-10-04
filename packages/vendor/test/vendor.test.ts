@@ -1,3 +1,5 @@
+import { chmodSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { CHECKS, Fixture, type FixtureUpstream, SUBSTITUTIONS } from './fixture.ts';
 
@@ -161,6 +163,16 @@ describe('an undeclared divergence', () => {
     expect(result.out).toContain('deleted: skills/foo/mine.md');
     expect(fx.read('skills/foo/SKILL.md')).not.toContain('4. Celebrate.');
     expect(fx.read('skills/foo/mine.md')).toBeUndefined();
+  });
+
+  test.skipIf(process.platform === 'win32')('a changed executable bit fails check, and sync --overwrite restores it', () => {
+    fx.run('sync', '--overwrite');
+    chmodSync(join(fx.root, 'skills/foo/SKILL.md'), 0o755);
+    const result = fx.run('check');
+    expect(result.status).toBe(1);
+    expect(result.out).toContain('skills/foo/SKILL.md [undeclared-divergence] is executable');
+    expect(fx.run('sync', '--overwrite').status).toBe(0);
+    expect(statSync(join(fx.root, 'skills/foo/SKILL.md')).mode & 0o111).toBe(0);
   });
 
   test('declaring it a fork satisfies check', () => {

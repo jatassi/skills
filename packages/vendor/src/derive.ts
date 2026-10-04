@@ -5,12 +5,8 @@
 import type { Include, Rule, Upstream } from './config.ts';
 import type { Blob, Tree } from './git.ts';
 
-export interface DerivedFile extends Blob {
-  include: Include;
-}
-
 /** Local path -> derived file. */
-export type Derived = Map<string, DerivedFile>;
+export type Derived = Map<string, Blob>;
 
 export class DeriveError extends Error {}
 
@@ -51,7 +47,7 @@ export function derive(upstream: Upstream, tree: Tree, rules: Rule[]): Derived {
       const bytes = include.verbatim || isBinary(blob.bytes)
         ? blob.bytes
         : Buffer.from(applySubstitutions(blob.bytes.toString('utf8'), rules, to));
-      derived.set(to, { bytes, executable: blob.executable, include });
+      derived.set(to, { bytes, executable: blob.executable });
     }
   }
   return derived;

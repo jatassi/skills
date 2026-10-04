@@ -37,7 +37,6 @@ export interface Upstream {
 }
 
 export interface Rule {
-  key: string;
   match: string | RegExp;
   /** Only in local paths this matches. */
   files: RegExp | null;
@@ -186,11 +185,8 @@ function parseSubstitutions(json: Json): Rule[] {
     if (typeof replacement !== 'string') throw new ConfigError(`${where}: needs a "replacement" string`);
     if (!isString(why)) throw new ConfigError(`${where}: needs a "why"`);
     if (files !== undefined && !isString(files)) throw new ConfigError(`${where}: "files" must be a regex over local paths`);
-    if (flags !== undefined && (typeof flags !== 'string' || /[^imsu]/.test(flags))) {
-      throw new ConfigError(`${where}: "flags" may only use i, m, s and u`);
-    }
+    checkFlags(where, flags);
     return {
-      key: (pattern as string | undefined) ?? `/${regex as string}/`,
       match: pattern !== undefined ? (pattern as string) : compile(where, regex as string, `g${flags ?? ''}`),
       files: files === undefined ? null : compile(where, files as string, ''),
       replacement,
@@ -207,6 +203,12 @@ function parseSubstitutions(json: Json): Rule[] {
     }
   });
   return rules;
+}
+
+function checkFlags(where: string, flags: unknown) {
+  if (flags !== undefined && (typeof flags !== 'string' || /[^imsu]/.test(flags))) {
+    throw new ConfigError(`${where}: "flags" may only use i, m, s and u`);
+  }
 }
 
 function compile(where: string, source: string, flags: string): RegExp {
@@ -255,9 +257,7 @@ function parseChecks(json: Json): Checks {
       if ((token === undefined) === (regex === undefined)) throw new ConfigError(`${where}: needs exactly one of "token" or "regex"`);
       if (isString(token)) return { rule, label: token, test: (line) => line.includes(token), hint };
       if (!isString(regex)) throw new ConfigError(`${where}: "token" or "regex" must be a non-empty string`);
-      if (flags !== undefined && (typeof flags !== 'string' || /[^imsu]/.test(flags))) {
-        throw new ConfigError(`${where}: "flags" may only use i, m, s and u`);
-      }
+      checkFlags(where, flags);
       const re = compile(where, regex, (flags as string | undefined) ?? '');
       return { rule, label: `/${regex}/${(flags as string | undefined) ?? ''}`, test: (line) => re.test(line), hint };
     }),

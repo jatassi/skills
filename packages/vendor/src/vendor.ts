@@ -8,22 +8,23 @@
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { type Config, type Include, type Upstream, within, writePin } from './config.ts';
-import { derive, type Derived, isBinary, isTriaged, watchedSkills } from './derive.ts';
-import { merge3, type Upstreams } from './git.ts';
+import { derive, DeriveError, type Derived, isBinary, isTriaged, watchedSkills } from './derive.ts';
+import { type Blob, merge3, type Upstreams } from './git.ts';
 import { lintText, type Violation } from './lint.ts';
 
 export type { Violation } from './lint.ts';
 
 /** Local files under one include, by repo-relative POSIX path. */
-function localFiles(root: string, include: Include): Map<string, Buffer> {
-  const files = new Map<string, Buffer>();
+function localFiles(root: string, include: Include): Map<string, Blob> {
+  const files = new Map<string, Blob>();
   const visit = (rel: string) => {
     const abs = join(root, rel);
     if (!existsSync(abs)) return;
-    if (statSync(abs).isDirectory()) {
+    const stat = statSync(abs);
+    if (stat.isDirectory()) {
       for (const name of readdirSync(abs).sort()) visit(`${rel}/${name}`);
     } else {
-      files.set(rel, readFileSync(abs));
+      files.set(rel, { bytes: readFileSync(abs), executable: (stat.mode & 0o100) !== 0 });
     }
   };
   visit(include.local);
@@ -31,6 +32,9 @@ function localFiles(root: string, include: Include): Map<string, Buffer> {
 }
 
 const ownerOf = (upstream: Upstream, path: string) => upstream.includes.find((include) => within(path, include.local));
+
+// Windows has no executable bit, so modes are compared on POSIX only.
+const POSIX = process.platform !== 'win32';
 
 const sameBytes = (a: Buffer | undefined, b: Buffer | undefined) => (a === undefined ? b === undefined : b !== undefined && a.equals(b));
 
@@ -49,9 +53,13 @@ export function check(config: Config, upstreams: Upstreams): CheckReport {
     files += local.size;
     for (const path of new Set([...derived.keys(), ...local.keys()])) {
       const want = derived.get(path)?.bytes;
-      const have = local.get(path);
+      const have = local.get(path)?.bytes;
       const fork = config.forks.get(path);
       if (sameBytes(want, have)) {
+        const executable = derived.get(path)?.executable;
+        if (!fork && POSIX && executable !== undefined && executable !== local.get(path)?.executable) {
+          violations.push({ path, rule: 'undeclared-divergence', message: `is ${executable ? 'not ' : ''}executable, unlike ${upstream.name}; rerun sync --overwrite to restore its mode` });
+        }
         if (fork) violations.push({ path, rule: 'stale-fork', message: `declared a ${fork.kind} fork in vendor/forks.json but matches ${upstream.name}; delete the entry` });
       } else if (!fork) {
         const how = !have ? 'is missing' : !want ? `is not in ${upstream.name}` : `differs from ${upstream.name}`;
@@ -117,14 +125,20 @@ export function sync(config: Config, upstreams: Upstreams, options: SyncOptions)
     const next = derive({ ...upstream, commit: to }, newTree, config.substitutions);
     // An include added since the pin, with nothing vendored yet, is fresh:
     // it has no old form, so nothing in it can have diverged.
-    const local = new Map<string, Buffer>();
+    const local = new Map<string, Blob>();
     const old: Derived = new Map();
     for (const include of upstream.includes) {
       const files = localFiles(config.root, include);
       if (files.size === 0) continue;
-      for (const [path, bytes] of files) local.set(path, bytes);
-      const before = derive({ ...upstream, includes: [include] }, oldTree, config.substitutions);
-      for (const [path, file] of before) old.set(path, file);
+      for (const [path, file] of files) local.set(path, file);
+      try {
+        const before = derive({ ...upstream, includes: [include] }, oldTree, config.substitutions);
+        for (const [path, file] of before) old.set(path, file);
+      } catch (error) {
+        // An include repointed at a path the old pin doesn't have: every
+        // vendored file under it is then undeclared divergence.
+        if (!(error instanceof DeriveError)) throw error;
+      }
     }
     const result: UpstreamSync = {
       name: upstream.name, from: upstream.commit, to,
@@ -133,10 +147,11 @@ export function sync(config: Config, upstreams: Upstreams, options: SyncOptions)
     for (const path of [...new Set([...old.keys(), ...next.keys(), ...local.keys()])].sort()) {
       const was = old.get(path);
       const now = next.get(path);
-      const have = local.get(path);
+      const have = local.get(path)?.bytes;
       if (!config.forks.has(path)) {
         if (!sameBytes(have, was?.bytes) && !options.overwrite) report.undeclared.push({ path, upstream: upstream.name });
-        if (now && !sameBytes(have, now.bytes)) {
+        const modeDiffers = POSIX && now !== undefined && have !== undefined && now.executable !== local.get(path)?.executable;
+        if (now && (!sameBytes(have, now.bytes) || modeDiffers)) {
           (have ? result.updated : result.added).push(path);
           actions.push({ path, write: now });
         } else if (!now && have) {
