@@ -10,6 +10,10 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 | [`visual-grilling`](skills/visual-grilling/SKILL.md) | Grilling with each round shown as a page in the browser, answered and commented on there. Needs Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`. |
 | [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Take a build-graph parent: spec it in a comment on the parent, then cut it into linked, blocked sub-issues. |
 | [`setup-milliways`](skills/setup-milliways/SKILL.md) | Make a repo a kitchen: the `docs/agents` config and its index, the one root `AGENTS.md` line, the GitHub labels and a model-role table detected from your harness. Safe to re-run. |
+| [`grilling`](skills/grilling/SKILL.md) | Grill you about a plan, a round of numbered questions at a time. Vendored from [Matt Pocock's skills](https://github.com/mattpocock/skills). |
+| [`how`](skills/how/SKILL.md) | Explain how a part of the codebase works, with explorer and explainer subagents. Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack). |
+
+Vendored skills are pinned to an upstream commit and changed only by the rewrites in [`vendor/substitutions.json`](vendor/substitutions.json) and the forks declared in [`vendor/forks.json`](vendor/forks.json) ([ADR 0004](docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md)). Upstream licences are in [`LICENSES/`](LICENSES) and attributions in [`NOTICE`](NOTICE).
 
 ## Install
 
@@ -47,8 +51,12 @@ skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a 
 │   ├── plugin.json              # Claude Code plugin manifest
 │   └── marketplace.json         # Claude Code marketplace (this repo = one plugin)
 ├── .github/workflows/           # release.yml, the only workflow: tests pull requests, releases merges to main
-└── skills/                      # Shared by both formats
-    └── <skill>/SKILL.md
+├── skills/                      # Shared by both formats; vendored skills sit beside our own
+│   └── <skill>/SKILL.md
+├── vendor/                      # upstream.json, substitutions.json, forks.json, checks.json
+├── LICENSES/                    # upstream licences, vendored verbatim
+├── NOTICE                       # upstream attributions
+└── packages/                    # dev-only workspaces: visual-grilling's source, the vendor CLI
 ```
 
 ## Development
@@ -66,6 +74,23 @@ npm run try                       # build into skills/visual-grilling/dist/, the
 `npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Shared tooling changes run everything.
 
 Work on `dev`, not `main`. Never commit the `npm run try` output: `dist/` is gitignored, and only a release commits it. After the first release `dist/` is tracked, so a try build shows up as changes to it; discard them with `git restore skills/visual-grilling/dist`. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.
+
+### Vendored skills
+
+The vendor CLI in `packages/vendor/` keeps vendored skills equal to their pinned upstream after the substitution table, except for declared forks. [ADR 0004](docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md) has the file formats and the full rules.
+
+```
+npm run vendor -- check                                  # fail on any undeclared divergence or check violation
+npm run vendor -- sync                                   # re-derive every upstream at its pin (after editing vendor/*.json)
+npm run vendor -- sync --to HEAD                         # move every pin to upstream HEAD, merging into forks
+npm run vendor -- sync --upstream <name> --to <sha>      # move one pin to one commit
+npm run vendor -- sync --overwrite                       # restore files that diverged without a declared fork
+```
+
+- **To vendor a skill**, add it under `include` in `vendor/upstream.json` and run `sync`.
+- **To change a vendored file**, prefer a rule in `vendor/substitutions.json`. When the change isn't mechanical, edit the file and declare it in `vendor/forks.json` with its `kind` (`policy` or `port-feature`) and `why`.
+- `packages/vendor`'s tests, which end with `check`, run whenever `vendor/`, `skills/`, `agents/`, `LICENSES/`, `NOTICE` or `.gitattributes` changes.
+- **After a sync**, review the diff. Resolve any `CONFLICT` it printed, and include or exclude each new upstream skill it lists for triage.
 
 ## Releasing
 
