@@ -5,7 +5,7 @@ description: "Turn the current conversation into a spec and publish it to the pr
 
 This skill takes the current conversation context and codebase understanding and produces a spec. Do NOT interview the user; just synthesize what you already know.
 
-Find the issue tracker and the triage label vocabulary through the kitchen config index, `docs/agents/AGENTS.md`: open the documents its table lists for them and follow them. If the index is missing, tell the user to run `/setup-milliways`.
+Find the issue tracker, the triage label vocabulary and the domain docs (where the glossary and ADRs live) through the kitchen config index, `docs/agents/AGENTS.md`: open the documents its table lists for them and follow them. If the index is missing, tell the user to run `/setup-milliways`.
 
 ## Process
 

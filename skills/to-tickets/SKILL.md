@@ -7,7 +7,7 @@ description: Break a plan, spec, or the current conversation into a set of trace
 
 Break a plan, spec, or conversation into a set of **tickets**: tracer-bullet vertical slices, each declaring the tickets that **block** it.
 
-Find the issue tracker and the triage label vocabulary through the kitchen config index, `docs/agents/AGENTS.md`: open the documents its table lists for them and follow them. If the index is missing, tell the user to run `/setup-milliways`.
+Find the issue tracker, the triage label vocabulary and the domain docs (where the glossary and ADRs live) through the kitchen config index, `docs/agents/AGENTS.md`: open the documents its table lists for them and follow them. If the index is missing, tell the user to run `/setup-milliways`.
 
 ## Process
 

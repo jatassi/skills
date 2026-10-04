@@ -7,7 +7,7 @@ description: Diagnosis loop for hard bugs and performance regressions. Use when 
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 
-When exploring the codebase, read `GLOSSARY.md` (if it exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
+When exploring the codebase, read `GLOSSARY.md` (if it exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching. Find where the glossary and ADRs live through the kitchen config index, `docs/agents/AGENTS.md`: open the document its table lists for the domain and follow it. Without one, look for `GLOSSARY.md` at the repo root and ADRs in `docs/adr/`.
 
 ## Redact
 

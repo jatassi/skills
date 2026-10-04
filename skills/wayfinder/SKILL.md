@@ -21,7 +21,7 @@ The map is a single issue on this repo's issue tracker, labelled `wayfinder:map`
 
 The map is an **index**, not a store. It lists the decisions made and points at the tickets that hold their detail; a decision lives in exactly one place, its ticket, so the map never restates it, only gists it and links.
 
-**Where the map, its child tickets, blocking, and frontier queries physically live is tracker-specific.** Find the issue tracker through the kitchen config index, `docs/agents/AGENTS.md`: open the document its table lists for it and follow it. If the index is missing, tell the user to run `/setup-milliways`. Consult the tracker doc's "Wayfinding operations" section for how _this_ repo expresses them. If the index lists no issue tracker, default to the local-markdown tracker.
+**Where the map, its child tickets, blocking, and frontier queries physically live is tracker-specific.** Find the issue tracker through the kitchen config index, `docs/agents/AGENTS.md`: open the document its table lists for it and follow it. If the index is missing or lists no issue tracker, tell the user to run `/setup-milliways`: a kitchen runs on GitHub Issues. Consult the tracker doc's "Wayfinding operations" section for how _this_ repo expresses them.
 
 ### The map body
 

@@ -9,6 +9,8 @@ Actively build and sharpen the project's domain model as you design. This is the
 
 ## File structure
 
+Find where the glossary and ADRs live through the kitchen config index, `docs/agents/AGENTS.md`: open the document its table lists for the domain and follow it. Where it differs from the layouts below, it wins. Without one, use these layouts.
+
 Most repos have a single context:
 
 ```

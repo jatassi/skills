@@ -8,7 +8,7 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 | --- | --- |
 | [`auto-grill`](skills/auto-grill/SKILL.md) | A relentless interview where an agent stand-in answers in your place. |
 | [`visual-grilling`](skills/visual-grilling/SKILL.md) | Grilling with each round shown as a page in the browser, answered and commented on there. Needs Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`. |
-| [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Take a build-graph parent: spec it in a comment on the parent, then cut it into linked, blocked sub-issues. |
+| [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Run `make-it-so`'s Spec and tickets playbook: grill the work, publish a spec to the issue tracker, then cut it into blocked tickets other threads pick up. |
 | [`setup-milliways`](skills/setup-milliways/SKILL.md) | Make a repo a kitchen: the `docs/agents` config and its index, the one root `AGENTS.md` line, the GitHub labels and a model-role table detected from your harness. Safe to re-run. Also ships the [Projects kit](skills/setup-milliways/projects): the coordinator brief for a Claude Project's instructions, and the prompts for the risk-digest, garden-sweep, garden-cluster and upstream-sync routines. |
 | [`trust-ladder`](skills/trust-ladder/SKILL.md) | Score each area of a kitchen on the trust ladder from its merged pull requests: clean streaks, unclean merges, promotions and demotions due, and yesterday's merges ranked by risk, as JSON. |
 
@@ -49,7 +49,7 @@ Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack), with
 
 ### From Matt Pocock's skills
 
-Vendored from [mattpocock/skills](https://github.com/mattpocock/skills), its Engineering and Productivity buckets. `ask-matt` and `setup-matt-pocock-skills` are left out: `make-it-so` and `setup-milliways` replace them. Skills marked * are model-invocable here, unlike upstream, so `make-it-so`'s playbooks can call them. Skills that read the issue tracker or triage labels find them through the `docs/agents/AGENTS.md` index that `setup-milliways` writes.
+Vendored from [mattpocock/skills](https://github.com/mattpocock/skills), its Engineering and Productivity buckets. `ask-matt` and `setup-matt-pocock-skills` are left out: `make-it-so` and `setup-milliways` replace them. Skills marked * are model-invocable here, unlike upstream, so `make-it-so`'s playbooks can call them. Skills that read the issue tracker, the triage labels or the domain docs (glossary and ADRs) find them through the `docs/agents/AGENTS.md` index that `setup-milliways` writes.
 
 | Skill | What it does |
 | --- | --- |
@@ -62,7 +62,7 @@ Vendored from [mattpocock/skills](https://github.com/mattpocock/skills), its Eng
 | [`grilling`](skills/grilling/SKILL.md) | Grill you about a plan, a round of numbered questions at a time. |
 | [`handoff`](skills/handoff/SKILL.md) | Compact the conversation into a handoff document for another agent. |
 | [`implement`](skills/implement/SKILL.md) * | Implement a piece of work from a spec or tickets, test-first, then review it. |
-| [`implement-spec`](skills/implement-spec/SKILL.md) | Implement a whole spec and its tickets on one integration branch, with subagents per ticket. |
+| [`implement-spec`](skills/implement-spec/SKILL.md) | Hand off a spec's tickets: one Feature thread per ready ticket, each landing as its own PR, frontier by frontier. |
 | [`improve-codebase-architecture`](skills/improve-codebase-architecture/SKILL.md) | Find deepening opportunities, report them as an HTML page, then grill through the one you pick. |
 | [`pr`](skills/pr/SKILL.md) | Open a pull request with the kitchen's PR anatomy, or a draft prototype PR for the chef to pick a variant. |
 | [`prototype`](skills/prototype/SKILL.md) | Build a throwaway prototype to answer a design question. |

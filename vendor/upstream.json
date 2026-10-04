@@ -166,8 +166,8 @@
         "skills/writing-for-agents": "skills/productivity/writing-for-agents"
       },
       "exclude": {
-        "skills/engineering/ask-matt": "Superseded by make-it-so, the kitchen router.",
-        "skills/engineering/setup-matt-pocock-skills": "Superseded by setup-milliways, which writes the docs/agents config the forked lookups read."
+        "skills/engineering/ask-matt": "Superseded by make-it-so, the kitchen router. Its context-hygiene and phase-boundary doctrine is replaced by principle-guard-the-context-window, make-it-so's fresh subagents by default, the pause-safely playbook and the garden-to-correct loop; the Spec and tickets playbook keeps its steps in one unbroken context.",
+        "skills/engineering/setup-matt-pocock-skills": "Superseded by setup-milliways, which writes the docs/agents config the forked lookups read. Kitchens run on GitHub Issues only (#66), so its GitLab, local-markdown and Other tracker templates are dropped, and a skill that finds no tracker in the index sends the user to /setup-milliways."
       }
     }
   }
