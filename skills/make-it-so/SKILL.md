@@ -1,17 +1,23 @@
 ---
-name: poteto-mode
-description: poteto's agent style for concise, detailed responses, deliberate subagents, unslopped prose, simple code, and verified work. Use for poteto, /poteto-mode, or requests to work in this style.
-mode: true
-icon: crown
-color: yellow
-reminder: New task? Playbook match or rigor needed -> apply /poteto-mode. Casual turn or user opts out -> don't.
+name: make-it-so
+description: The kitchen's router. Classifies a task, binds the thread to the playbook written for it, and holds it to poteto's working style (concise replies, deliberate subagents, unslopped prose, simple code, verified work). Use at the start of every non-trivial task, for /make-it-so, or when the repo's AGENTS.md says to.
 ---
 
-# Poteto mode
+# Make it so
+
+The kitchen's router. Route the task (Non-negotiables), match it to a playbook (Playbooks), and copy that playbook's steps into your todo list before any other work.
 
 ## Non-negotiables
 
 The Principles section below grounds every trigger. In your reply, name each principle that shaped a decision and the specific choice it changed. Cite only principles whose leaf SKILL.md you read this session.
+
+**Routing rule.** Before you ask the chef anything or start to build, check the task against these, in order:
+
+- **Running something can answer it** (behavior, timing, layout, output, perf) → prototype. Run the Prototype playbook (`playbooks/prototype.md`), which builds with the **prototype** skill, and let the result decide.
+- **A one-way door, or a call of taste, intent or domain words only the chef holds** → grill. Use the **visual-grilling** skill first. When the chef is away from their Mac, run plain-text rounds with the **grilling** skill. When the answers should land as ADRs and glossary entries, run the **grill-with-docs** skill through the same channel. A one-way door is any change on the One-way doors list in `docs/agents/autonomy.md`.
+- **Bigger than one context** (more than one agent session can hold) → the **wayfinder** skill. Chart it as a map of decision tickets before anyone writes code.
+
+Human-in-the-loop work (a grilling, a prototype pick, a ticket labelled for a human per `docs/agents/triage-labels.md`) runs as a local Projects thread on the chef's Mac, using visual-grilling, with plain-text rounds as the fallback when the chef is away. A cloud thread never waits on it. It parks the question with its default and keeps going.
 
 Remaining triggers:
 
@@ -20,8 +26,11 @@ Remaining triggers:
 - Any code → name the data shape first, and choose its organizing structure per **principle-model-the-domain**.
 - Code crossing a function boundary → the **architect** skill, parallel design exploration before implementing.
 - Parallel fan-out → the **swarm** skill for coverage matrices, races, gauntlets, and exploration partitions. Use **arena** for design or code bakeoffs with base selection and grafting.
-- Contested design → the **interrogate** skill (multi-model adversarial) before shipping.
-- Nontrivial multi-step → write the throughput checkpoint (Feature step 3).
+- Implementing a spec or tickets → the **implement** skill, test-first with the **tdd** skill at the seams the design named. A reported bug with a cheap local test path → the **tdd-bug-fix** skill.
+- Something broken, throwing, failing or slow → the Bug fix playbook, which runs the **diagnosing-bugs** skill's loop.
+- Large work, or a one-way door, that needs the chef's intent written down → the Spec and tickets playbook (`playbooks/spec-and-tickets.md`), which runs **grill-with-docs**, then **to-spec**, then **to-tickets**.
+- Every change, before its PR → the **code-review** skill (Standards and Spec). A one-way door, or a design still contested after review → the **interrogate** skill (multi-model adversarial) as well, before shipping.
+- Nontrivial multi-step → write the throughput checkpoint (Feature step 4).
 - Any prose surface → the **unslop** skill. Your reply is a prose surface. Write it per **Writing the reply**. Agent-facing prose also follows the **writing-for-agents** skill (the reference for writing skills and other agent-facing documents).
 - Docs, RFCs, readmes, PR descriptions, or commit messages → the **technical-writing** skill (`/technical-writing`).
 - Before commit → the `deslop` skill (`/deslop`).
@@ -31,7 +40,7 @@ Remaining triggers:
 - Any PR-status request → the **Babysit** playbook (`playbooks/babysit.md`). That includes "babysit this", "get it green", "address the review-bot comments", and the commonest phrasing, "check on PR X" / "anything outstanding on X". Never triggered by merely opening a PR. Declare its mode before polling. The playbook's step 1 owns the request-to-mode mapping. Reaching for `drive` inside a phase agent stops that agent finishing its turn.
 - Asked to land or ship a green stack → the **Shipping** playbook (`playbooks/shipping.md`). Green is not safe. Nothing gets armed before an independent per-PR verdict, and only the contiguous verified run from the root lands.
 - The automated PR-review bot or the agentic security review commented → skeptical posture. They catch real bugs and also file non-issues and nitpicks, so assess each on its merits and dismiss noise with a concrete reason instead of churning code. Triage fix / dismiss / ask per `references/bugbot-triage.md`.
-- Broken skill mid-task → fix it in its own PR. Don't block. Don't silently work around it.
+- Broken skill mid-task → fix it in its own PR. Don't block. Don't silently work around it. Anything you do work around gets a `garden` issue in the playbook's Reflect step.
 - Long, autonomous, or multi-phase work, or any task the user steps away from to review later ("going to bed", "trust it when i'm back", "/loop until X") → a decision trail via the **show-me-your-work** skill. Commit it when stakes need an auditable record. Keep it local otherwise.
 
 ## Principles
@@ -83,13 +92,15 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 **Always pause** for irreversible writes: force-push to shared branches, deploys, data deletion, customer messages.
 
+**Merges follow the trust ladder.** The chef merges every PR unless the merge gate in Autopilot-full step 5 (`playbooks/autopilot-full.md`) holds. A one-way door always waits for the chef, in every area, at every rung.
+
 **Session overrides:** "Don't stop" / "going to bed" / "run until done" / "be fully autonomous" → keep going.
 
 **No is an acceptable answer.** Asked whether to do something, invited to add scope, or shown an approach, reply with your real judgment. Decline, push back, or say "this doesn't earn its place" when true. A recommendation is a judgment, not a validation. Agreement is not the default, candor over sycophancy.
 
 ## Subagents
 
-**Use `subagent_type: "milliways:poteto-agent"` for any subagent you spawn inside a playbook step** (code-writing delegates, ad-hoc helpers). `/poteto-mode` and `poteto-agent` route through the same wrapper. Routed workflow skills (`how`, `why`, `interrogate`, `reflect`, `swarm`) set their own `subagent_type` for diverse-model review. Respect what the skill prescribes, don't override to `poteto-agent`.
+**Use `subagent_type: "milliways:poteto-agent"` for any subagent you spawn inside a playbook step** (code-writing delegates, ad-hoc helpers). `/make-it-so` and `poteto-agent` route through the same wrapper. Routed workflow skills (`how`, `why`, `interrogate`, `reflect`, `swarm`) set their own `subagent_type` for diverse-model review. Respect what the skill prescribes, don't override to `poteto-agent`.
 
 **Defaults for every `Agent` call.** `run_in_background: true`, the full tool set (never limit a delegate to read-only tools, which strips MCP), file pointers not inlined context, and an explicit `model` per role from the kitchen's models document, `docs/agents/models.md`, which `/setup-milliways` writes (defaults `sonnet` for code, `opus` for prose and judgment). Code delegates tier by difficulty. The hardest changes (cross-cutting design, gnarly concurrency, subtle algorithms) go to the `hardest-code` role (default `opus`), whether the task needs judgment on vague intent or is a precisely specified sequence of steps to execute to the letter. Trivial mechanical edits go to the `code` role. A role's row in the models document overrides these defaults and the model choices in the routed skills (`how`, `why`, `arena`, `swarm`, `architect`, `interrogate`, `reflect`). Its Covers column maps pstack's role lines to rows: the code playbooks (`feature, refactoring`, `bug-fix`, `perf-issue`, `hillclimb`) read `code`, `hardest tasks` reads `hardest-code`, and `judgment and prose` reads `judgment`. A row of `inherit` runs that role on the parent's model (omit the `Agent` call's `model`). A row whose model or CLI this thread lacks follows the document's Fallback section.
 
@@ -119,7 +130,9 @@ Comments follow the same rule as the reply. Write them clean as you go. Keep a c
 
 Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos. A step you choose not to do stays in the list with a one-line `skip: <reason>`. Match the task to a playbook below, open its file, and copy its steps in verbatim.
 
-A large or cross-cutting effort (a migration across many call sites, an ambitious multi-part change), or work the user steps away from to trust later, routes to the **figure-it-out** skill even when a narrower playbook like Feature fits. Use **figure-it-out** whenever no bundled playbook fits. It designs a bespoke, rigorous playbook for the task. A standing project-scale program (multi-day, many stacked PRs, a fleet of subagents under one coordinator) routes to **Orchestrate** instead. figure-it-out designs one bespoke run, orchestrate runs the program.
+Every playbook's last step is Reflect, which files a `garden` issue for each thing the thread worked around. Keep it last in the todo list.
+
+The Routing rule comes first. Work bigger than one context goes to the **wayfinder** skill, and each spec its map hands off runs Spec and tickets. A large or cross-cutting effort that fits one context (a migration across many call sites, an ambitious multi-part change), or work the user steps away from to trust later, routes to the **figure-it-out** skill even when a narrower playbook like Feature fits. Use **figure-it-out** whenever no bundled playbook fits. It designs a bespoke, rigorous playbook for the task. A standing project-scale program (multi-day, many PRs, a fleet of subagents under one coordinator) routes to **Orchestrate** instead. figure-it-out designs one bespoke run, orchestrate runs the program.
 
 - **Investigation.** Read-only question: how does X work, why was Y built this way, are we sure about Z, should we do X or Y. `playbooks/investigation.md`.
 - **Bug fix.** A reported defect to reproduce, root-cause, and fix with runtime evidence. `playbooks/bug-fix.md`.
@@ -127,20 +140,20 @@ A large or cross-cutting effort (a migration across many call sites, an ambitiou
 - **Hillclimb.** Sustained, scientific improvement of one metric against a target: loop hypotheses with before/after measurement, a decision log, and one commit per accepted win. Distinct from Perf issue, which is a one-off fix. `playbooks/hillclimb.md`.
 - **Runtime forensics.** Diagnose a runtime symptom (leak, idle-CPU spin, glitch) from live instrumentation. The deliverable is a diagnosis, not a fix. `playbooks/runtime-forensics.md`.
 - **Trace forensics.** Diagnose a captured profiling artifact (cpuprofile, trace, spindump, heap snapshot) handed to you after the fact. The deliverable is a diagnosis, not a fix. `playbooks/trace-forensics.md`.
-- **Feature.** New or changed behavior, built from a named data shape. `playbooks/feature.md`.
+- **Feature.** New or changed behavior, built from a named data shape: prototype, architect, implement test-first, verify, PR. `playbooks/feature.md`.
+- **Spec and tickets.** Large work, or a one-way door, whose intent the chef must settle before anyone builds: grill with docs, write the spec, cut the tickets. `playbooks/spec-and-tickets.md`.
 - **Refactoring.** A behavior-preserving change to structure or shape (rename, extract, inline, dedupe, move). `playbooks/refactoring.md`.
-- **Prototype.** A throwaway sketch to make a design or behavioral decision cheaply, or to settle an empirical fork by observing it instead of asking the human ("prototype", "mock it up", "try this layout", "sketch it to decide"). `playbooks/prototype.md`.
+- **Prototype.** A throwaway sketch to make a design or behavioral decision cheaply, or to settle an empirical fork by observing it instead of asking the human ("prototype", "mock it up", "try this layout", "sketch it to decide"). A choice for the chef ships as a draft `prototype:` PR, and the winning branch becomes the build thread's reference spec. `playbooks/prototype.md`.
 - **Visual parity.** Pixel-exact UI equivalence: matching two implementations or migrating a styling system. `playbooks/visual-parity.md`.
 - **Authoring or modifying a skill.** Writing or editing a SKILL.md. `playbooks/authoring-a-skill.md`.
 - **Eval.** Testing how a skill, structure, or prompt change affects agent behavior before promoting it. `playbooks/eval.md`.
 - **Babysit.** Driving a PR or a stack to merge-ready: conflicts, review threads, CI. `playbooks/babysit.md`.
 - **Shipping.** The half after Babysit. Independently verifying a green stack, then landing the contiguous verified run bottom-up through `gh` by default or Origin when its CLI is available. `playbooks/shipping.md`.
 - **Autonomous run.** A long task to drive to completion without stopping ("run until done", "/loop until X"). `playbooks/autonomous-run.md`.
-- **Orchestrate.** A standing project handed to one coordinator chat: multi-day, many stacked PRs, dozens to hundreds of subagents, minimal human turns ("run this whole project", "own this migration until it lands"). Distinct from Autonomous run, which drives one task to a predicate. Work one agent could finish inside the session's budget routes there, not here, however program-shaped the phrasing sounds. `playbooks/orchestrate.md`.
-- **Autopilot-full.** A queue of independent PRs run to merged with full autonomy. One owner per PR carries build through merge, and the root swarm-verifies each PR before its owner merges ("autopilot this queue", "full autopilot", one-owner-per-PR programs). `playbooks/autopilot-full.md`.
-- **Autopilot-stack.** A queue of changes built and verified with full autonomy, delivered as one linear reviewed base-branch stack the operator lands ("autopilot-stack", "stack them, don't ship", "build the stack, I'll land it"). `playbooks/autopilot-stack.md`.
+- **Orchestrate.** A standing project handed to one coordinator chat: multi-day, many PRs, dozens to hundreds of subagents, minimal human turns ("run this whole project", "own this migration until it lands"). Distinct from Autonomous run, which drives one task to a predicate. Work one agent could finish inside the session's budget routes there, not here, however program-shaped the phrasing sounds. `playbooks/orchestrate.md`.
+- **Autopilot-full.** A queue of independent PRs run to merged with full autonomy. One owner per PR carries build through merge, and the root swarm-verifies each PR before its owner merges through the merge gate ("autopilot this queue", "full autopilot", one-owner-per-PR programs). When the chef wants to review before landing, or withholds merge authority, owners stop at merge-ready and the chef merges. The kitchen does not stack PRs, so pstack's Autopilot-stack is not shipped. `playbooks/autopilot-full.md`.
 - **Session pickup.** Resuming or taking over a prior agent's in-flight work from a transcript, cloud session link, or pushed branch. `playbooks/session-pickup.md`.
 - **Pause safely.** Suspending in-flight work cleanly so it can be resumed, on an explicit pause, going offline, a Claude Code restart, or imminent context compaction. The complement to Session pickup. Full steps: `playbooks/pause-safely.md`.
-- **Multi-phase or multi-PR plan.** Work that spans phases or stacked PRs. `playbooks/multi-phase-plan.md`.
+- **Multi-phase or multi-PR plan.** Work that spans phases or several PRs. `playbooks/multi-phase-plan.md`.
 - **Worktree and simulator cleanup.** Reclaiming local disk by pruning merged or abandoned git worktrees and stale iOS simulators ("what's using my disk", "clean up worktrees", "prune safe-to-prune worktrees", "free up space", "delete old simulators"). `playbooks/worktree-cleanup.md`.
 - **Opening a PR.** Invoked at the end of every other playbook. `playbooks/opening-a-pr.md`.

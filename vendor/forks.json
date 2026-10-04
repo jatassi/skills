@@ -1,15 +1,15 @@
 {
   "agents/poteto-agent.md": {
     "kind": "port-feature",
-    "why": "The agent reads poteto-mode before any work, but a Claude Code plugin subagent cannot find the plugin's install path; it preloads the skill through the skills frontmatter field instead."
+    "why": "The agent reads make-it-so before any work, but a Claude Code plugin subagent cannot find the plugin's install path; it preloads the skill through the skills frontmatter field instead (milliways:make-it-so, the renamed poteto-mode)."
   },
   "skills/architect/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (bug-fix, refactoring, prototype), figure-it-out and no-comments."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (bug-fix, refactoring, prototype), figure-it-out and no-comments."
   },
   "skills/arena/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (eval, feature, orchestrate), and architect. Model fallback: runner and judge fallbacks follow the models document's Model values and Fallback section instead of Cursor slug families; candidates get worktrees through isolation: \"worktree\"; a judge from the same family is recorded as such."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (eval, feature, orchestrate), and architect. Model fallback: runner and judge fallbacks follow the models document's Model values and Fallback section instead of Cursor slug families; candidates get worktrees through isolation: \"worktree\"; a judge from the same family is recorded as such."
   },
   "skills/automate-me/SKILL.md": {
     "kind": "port-feature",
@@ -17,7 +17,7 @@
   },
   "skills/benchmark-checklist/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (hillclimb, perf-issue)."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (hillclimb, perf-issue)."
   },
   "skills/blast-radius/SKILL.md": {
     "kind": "policy",
@@ -37,7 +37,7 @@
   },
   "skills/figure-it-out/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router (no playbook fits) and playbooks/refactoring.md."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router (no playbook fits) and playbooks/refactoring.md."
   },
   "skills/grill-with-docs/agents/openai.yaml": {
     "kind": "policy",
@@ -49,7 +49,7 @@
   },
   "skills/how/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode playbooks (investigation, multi-phase-plan, hillclimb, refactoring, bug-fix), poteto-mode's router, milliways:comment-sicko, and architect, explain, blast-radius and no-comments."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so playbooks (investigation, multi-phase-plan, hillclimb, refactoring, bug-fix), make-it-so's router, milliways:comment-sicko, and architect, explain, blast-radius and no-comments."
   },
   "skills/implement-spec/SKILL.md": {
     "kind": "port-feature",
@@ -65,19 +65,19 @@
   },
   "skills/interrogate/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (bug-fix, multi-phase-plan, opening-a-pr), and architect. Model fallback: reviewers follow the models document's Model values and Fallback section, where a second family arrives as a <cli>:<tier> seat, instead of Cursor slug families and a self-editing default table."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (bug-fix, multi-phase-plan, opening-a-pr), and architect. Model fallback: reviewers follow the models document's Model values and Fallback section, where a second family arrives as a <cli>:<tier> seat, instead of Cursor slug families and a self-editing default table."
   },
   "skills/no-comments/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router (before review) and playbooks (opening-a-pr, multi-phase-plan, autopilot-full, autopilot-stack)."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router (before review) and playbooks (opening-a-pr, multi-phase-plan, autopilot-full, autopilot-stack)."
   },
-  "skills/poteto-mode/playbooks/orchestrate.md": {
+  "skills/make-it-so/playbooks/orchestrate.md": {
     "kind": "policy",
-    "why": "The orch CLI is excluded and the verification ledger lives in GitHub: every orch command becomes a direct store-file edit or a ledger comment on the PR, the store moves to ~/.claude/projects/<project>/, and restacks and cloud-only spawns become background agents with worktree isolation. The orch frontier command's empty-gt guard becomes an instruction. Worktree agents share one repository, so workers release their branches and the stacker frees held branches before a restack. Every agent runs on this machine, so the isolation exception covers only the coordinator's own working tree and worktree agents may read the store. The different-family verifier resolves to the models document's verifier and verifier-diff-audit roles, with a fallback line when there is no second family."
+    "why": "The orch CLI is excluded and the verification ledger lives in GitHub: every orch command becomes a direct store-file edit or a ledger comment on the PR, the store moves to ~/.claude/projects/<project>/, and restacks and cloud-only spawns become background agents with worktree isolation. The orch frontier command's empty-gt guard becomes an instruction. Worktree agents share one repository, so workers release their branches and the stacker frees held branches before a restack. Every agent runs on this machine, so the isolation exception covers only the coordinator's own working tree and worktree agents may read the store. The different-family verifier resolves to the models document's verifier and verifier-diff-audit roles, with a fallback line when there is no second family. Kitchen: every landing passes Autopilot-full's merge gate, and a closed gate parks in gates.md for the chef; human-in-the-loop units become local Projects threads running visual-grilling, with plain-text grilling as the fallback; a marker sentence says the Projects coordinator plus routines replace the /loop wakes. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). No stacks (spec #66 story 42): Stack safety becomes Merge safety, where each unit is one PR off trunk, dependent units are merge-then-branch, the frontier is recomputed with gh instead of gt, and one lander replaces the stacker."
   },
-  "skills/poteto-mode/SKILL.md": {
+  "skills/make-it-so/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and milliways:poteto-agent preloads it, and Claude Code cannot preload a skill with model invocation off. Roles: the Subagents defaults resolve from docs/agents/models.md (written by setup-milliways) instead of setup-pstack and Cursor model slugs. Leaf skills: says where principle leaves and this skill's own files live (<milliways>), since Claude Code does not list skills with model invocation off."
+    "why": "Router: renamed make-it-so and made the kitchen's entry point, reached through the root AGENTS.md line, so the sticky-mode frontmatter (mode, icon, color, reminder) goes and the description says when to route. Routing rule: running something can answer it -> prototype; a one-way door or taste, intent or domain words only the chef holds -> grill, visual-grilling first; bigger than one context -> wayfinder; human-in-the-loop work runs as a local Projects thread with a plain-text fallback. Overlap wiring: Matt's implement, tdd, diagnosing-bugs, code-review, prototype and grilling are the procedures for their jobs; tdd-bug-fix stays for bugs, interrogate for one-way doors, and the Spec and tickets playbook is listed. Every playbook ends with Reflect. No stacks: Autopilot-stack is not listed (its playbook is deleted), and Orchestrate and multi-phase plans no longer say stacked PRs. Autonomy: merges follow the trust ladder's merge gate, and one-way doors always wait for the chef. Model-invocable: milliways:poteto-agent preloads it, and Claude Code cannot preload a skill with model invocation off. Roles: the Subagents defaults resolve from docs/agents/models.md (written by setup-milliways) instead of setup-pstack and Cursor model slugs. Leaf skills: says where principle leaves and this skill's own files live (<milliways>), since Claude Code does not list skills with model invocation off."
   },
   "skills/pr/SKILL.md": {
     "kind": "policy",
@@ -89,19 +89,19 @@
   },
   "skills/show-me-your-work/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (autonomous-run, hillclimb, autopilot-full, autopilot-stack, orchestrate, multi-phase-plan), and figure-it-out. Cross-model review: the trail review runs on the models document's verifier-diff-audit seat when there is one, otherwise on a fresh verifier subagent with the review marked same-family, since a Claude-only cloud thread has no second family."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (autonomous-run, hillclimb, autopilot-full, autopilot-stack, orchestrate, multi-phase-plan), and figure-it-out. Cross-model review: the trail review runs on the models document's verifier-diff-audit seat when there is one, otherwise on a fresh verifier subagent with the review marked same-family, since a Claude-only cloud thread has no second family."
   },
   "skills/swarm/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router (parallel fan-out) and playbooks (multi-phase-plan, autopilot-full)."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router (parallel fan-out) and playbooks (multi-phase-plan, autopilot-full)."
   },
   "skills/tdd-bug-fix/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode playbooks/bug-fix.md step 5."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so playbooks/bug-fix.md step 5."
   },
   "skills/technical-writing/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router and playbooks (opening-a-pr, multi-phase-plan)."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (opening-a-pr, multi-phase-plan)."
   },
   "skills/to-spec/agents/openai.yaml": {
     "kind": "policy",
@@ -125,7 +125,7 @@
   },
   "skills/unslop/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode's router (any prose surface), playbooks (investigation, opening-a-pr, multi-phase-plan), and explain, recall, blast-radius, automate-me, technical-writing and show-me-your-work."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router (any prose surface), playbooks (investigation, opening-a-pr, multi-phase-plan), and explain, recall, blast-radius, automate-me, technical-writing and show-me-your-work."
   },
   "skills/wayfinder/agents/openai.yaml": {
     "kind": "policy",
@@ -137,6 +137,98 @@
   },
   "skills/why/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by poteto-mode playbooks (bug-fix, investigation), milliways:comment-sicko, and architect, explain, recall and blast-radius."
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so playbooks (bug-fix, investigation), milliways:comment-sicko, and architect, explain, recall and blast-radius."
+  },
+  "skills/make-it-so/playbooks/autopilot-full.md": {
+    "kind": "policy",
+    "why": "Merge gate (spec #66, trust ladder): the owner merges only when the PR's area is gated in docs/agents/autonomy.md (first matching Areas row per path against the PR's base branch, lowest rung across areas), CI is green, a fresh verifier passed at the head SHA and patch-id with the live lane as the floor, and the door is two-way (no door:one-way label, no path or change on the One-way doors list). Otherwise it stops at merge-ready for the chef; the operator's grant no longer opens a closed gate. A marker sentence says the Projects coordinator plus routines replace the hourly /loop tick. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
+  },
+  "skills/make-it-so/playbooks/autopilot-stack.md": {
+    "kind": "policy",
+    "why": "Deleted: the kitchen does not stack PRs (spec #66 story 42, one concern per PR so the merge gate reasons about one PR at a time). Autopilot-full covers the same queue, and when the chef wants to review before landing or withholds merge authority, its owners stop at merge-ready. make-it-so, Opening a PR, Babysit and the multi-phase plan no longer name it. If upstream changes this file, sync reports a conflict to re-check the deletion."
+  },
+  "skills/make-it-so/playbooks/bug-fix.md": {
+    "kind": "policy",
+    "why": "Overlap: Matt's diagnosing-bugs is the kitchen's diagnosis procedure, so steps 1 and 2 run its loop (the repro is its feedback loop, the binary search its hypothesis phases) while keeping pstack's surface and evidence rules; tdd-bug-fix stays at step 5. Matt's code-review reviews the branch before Opening a PR. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
+  },
+  "skills/make-it-so/playbooks/feature.md": {
+    "kind": "policy",
+    "why": "Overlap, in the spec's order prototype -> architect -> implement and tdd -> verify -> pr: a prototype step (Matt's prototype skill, or a winning prototype branch checked out as the reference spec and rebuilt on the paved path) before architect; the code delegate runs Matt's implement test-first with Matt's tdd; verify names the live-lane floor; Matt's code-review reviews every change, with interrogate kept for one-way doors and contested designs; Opening a PR writes the PR with the pr skill. Follow-ups get their own PRs, since the kitchen does not stack. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
+  },
+  "skills/make-it-so/playbooks/opening-a-pr.md": {
+    "kind": "policy",
+    "why": "The pr skill owns the PR anatomy (title, body sections, evidence, labels), so pstack's Titles and Descriptions rules give way to it. No stacks (spec #66 story 42): one concern per PR, branched from trunk, dependent work merge-then-branch, and pstack's stack mechanics and Autopilot-stack references go. A prototype: PR is the one draft. Matt's code-review runs before every PR, and interrogate only for one-way doors. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
+  },
+  "skills/make-it-so/playbooks/prototype.md": {
+    "kind": "policy",
+    "why": "Overlap: Matt's prototype skill builds the prototype. Prototype-as-spec: a choice for the chef ships as the pr skill's Prototype PRs draft (prototype: title, prototype label, one screencast per variant), the chef picks by commenting, the PR closes unmerged with the decision recorded, and the kept branch is the build thread's reference spec, rebuilt on the paved path by Feature. A fork inside the thread's own task is decided from the evidence without a PR. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
+  },
+  "skills/make-it-so/playbooks/spec-and-tickets.md": {
+    "kind": "policy",
+    "why": "Port-only playbook, not in pstack: large or one-way-door work runs grill-with-docs (visual-grilling first), interrogate for a one-way door, to-spec, then to-tickets, per the spec's overlap table, and hands each ticket to its own playbook. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/babysit.md": {
+    "kind": "policy",
+    "why": "Drops the sentence naming Autopilot-stack's root, since that playbook is deleted (no stacks). Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
+  },
+  "skills/make-it-so/playbooks/multi-phase-plan.md": {
+    "kind": "policy",
+    "why": "No stacks: the execution playbook is Autopilot-full (Autopilot-stack is deleted), dependent PRs start after their parent merges, and the merge box says the owner merges when the merge gate holds or the chef merges. A marker sentence in the skeleton's `/loop 1h` box says the Projects coordinator plus routines replace the hourly tick. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
+  },
+  "skills/make-it-so/playbooks/authoring-a-skill.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/autonomous-run.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/eval.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/hillclimb.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/investigation.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/pause-safely.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/perf-issue.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/refactoring.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/runtime-forensics.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/session-pickup.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/shipping.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/trace-forensics.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/visual-parity.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/worktree-cleanup.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
   }
 }

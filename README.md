@@ -14,11 +14,11 @@ Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/do
 
 ### From pstack
 
-Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack), with the four [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) skills it depends on, ported from Cursor to Claude Code. Model roles come from the `docs/agents/models.md` that `setup-milliways` writes. Its two agents, `poteto-agent` and `comment-sicko`, are in [`agents/`](agents) and dispatch as `milliways:<name>`. Left out: `bro` (Matt's `wait-what` covers it), `setup-pstack` (replaced by `setup-milliways`), `make-bot-ui` and the Benny automations (Cursor-only), and the `orch` CLI (the orchestrate ledger lives in GitHub). The skills `poteto-mode`'s playbooks call are model-invocable here, unlike upstream.
+Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack), with the four [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) skills it depends on, ported from Cursor to Claude Code. Model roles come from the `docs/agents/models.md` that `setup-milliways` writes. Its two agents, `poteto-agent` and `comment-sicko`, are in [`agents/`](agents) and dispatch as `milliways:<name>`. Left out: `bro` (Matt's `wait-what` covers it), `setup-pstack` (replaced by `setup-milliways`), `make-bot-ui` and the Benny automations (Cursor-only), and the `orch` CLI (the orchestrate ledger lives in GitHub). The skills `make-it-so`'s playbooks call are model-invocable here, unlike upstream.
 
 | Skill | What it does |
 | --- | --- |
-| [`poteto-mode`](skills/poteto-mode/SKILL.md) | pstack's working style and router: principles, subagent defaults, and the playbooks (bug fix, feature, refactoring, babysit, opening a PR, shipping, orchestrate, multi-phase plans and more). |
+| [`make-it-so`](skills/make-it-so/SKILL.md) | The kitchen's router, pstack's `poteto-mode` renamed: it routes the task (prototype what running can answer, grill what only the chef holds, wayfinder what outgrows one context), binds the thread to a playbook, and holds it to pstack's principles and subagent defaults. The playbooks call Matt's skills where they own the job, end with a reflect step that files `garden` issues, and gate autopilot merges on the trust ladder. |
 | [`architect`](skills/architect/SKILL.md) | Sketch types, signatures and module structure before code, then stay in the loop while it is filled in. |
 | [`arena`](skills/arena/SKILL.md) | Run N candidates at the same task, pick a base and graft the best parts of the rest into it. |
 | [`automate-me`](skills/automate-me/SKILL.md) | Draft or revise your personal `-mode` skill from how you work. |
@@ -41,7 +41,7 @@ Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack), with
 | [`typescript-best-practices`](skills/typescript-best-practices/SKILL.md) | TypeScript best practices. |
 | [`unslop`](skills/unslop/SKILL.md) | Cut AI tells from any writing. |
 | [`why`](skills/why/SKILL.md) | Find out why something is the way it is, from every evidence source the session can reach. |
-| `principle-*` | pstack's 24 engineering principles, one leaf skill each, indexed from `poteto-mode`. |
+| `principle-*` | pstack's 24 engineering principles, one leaf skill each, indexed from `make-it-so`. |
 | [`deslop`](skills/deslop/SKILL.md) | Remove AI-generated code slop. From cursor-team-kit. |
 | [`control-ui`](skills/control-ui/SKILL.md) | Build or adapt a local browser harness to drive and inspect a UI. From cursor-team-kit. |
 | [`control-cli`](skills/control-cli/SKILL.md) | Build or adapt a local harness to drive and profile a CLI or TUI. From cursor-team-kit. |
