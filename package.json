@@ -5,7 +5,8 @@
     "packages/visual-grilling"
   ],
   "scripts": {
-    "test": "npm test --workspace packages/visual-grilling",
+    "test": "node scripts/test.mjs",
+    "test:all": "node scripts/test.mjs --all",
     "try": "npm run try --workspace packages/visual-grilling"
   }
 }
