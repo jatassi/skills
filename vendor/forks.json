@@ -1,7 +1,7 @@
 {
   "skills/code-review/SKILL.md": {
     "kind": "port-feature",
-    "why": "Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+    "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
   },
   "skills/grill-with-docs/agents/openai.yaml": {
     "kind": "policy",
@@ -13,7 +13,7 @@
   },
   "skills/implement-spec/SKILL.md": {
     "kind": "port-feature",
-    "why": "Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+    "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
   },
   "skills/implement/agents/openai.yaml": {
     "kind": "policy",
@@ -29,7 +29,7 @@
   },
   "skills/to-spec/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
   },
   "skills/to-tickets/agents/openai.yaml": {
     "kind": "policy",
@@ -37,11 +37,11 @@
   },
   "skills/to-tickets/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
   },
   "skills/triage/SKILL.md": {
     "kind": "port-feature",
-    "why": "Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+    "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
   },
   "skills/wayfinder/agents/openai.yaml": {
     "kind": "policy",
@@ -49,6 +49,6 @@
   },
   "skills/wayfinder/SKILL.md": {
     "kind": "policy",
-    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. make-it-so routes work bigger than one context here. Config lookup: kitchens keep the issue tracker and triage labels in docs/agents behind the docs/agents/AGENTS.md index, not in an '## Agent skills' block in AGENTS.md, and setup-milliways (not setup-matt-pocock-skills, which is excluded) writes them."
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. make-it-so routes work bigger than one context here. Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
   }
 }

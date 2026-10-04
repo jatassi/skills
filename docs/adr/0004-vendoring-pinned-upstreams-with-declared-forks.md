@@ -16,7 +16,7 @@ All four live in `vendor/` and are data. Adding a skill, a rewrite or a fork is 
 
 - **`upstream.json`**: per upstream, the `repo`, the pinned `commit` (a full SHA), the paths it ships (`include`, local path → upstream path, a file or a folder; `{ "path", "verbatim": true }` copies bytes untouched and skips the checks, for licences and scripts), the upstream folders whose child folders are skills (`watch`), and the upstream paths deliberately not shipped, each with its reason (`exclude`).
 - **`substitutions.json`**: ordered rules, each a literal `pattern` or a `regex` (with optional `flags`), a `replacement` (a regex rule may use `$1`), an optional `files` regex over local paths, and a `why`. Each rule runs on the output of the ones before it. A literal pattern that contains an earlier one is rejected, so put the more specific rule first.
-- **`forks.json`**: local path → `{ "kind": "policy" | "port-feature", "why" }`. A `policy` fork changes what a skill does. A `port-feature` fork adapts it to Claude Code or the kitchen in a way no mechanical rewrite can.
+- **`forks.json`**: local path → `{ "kind": "policy" | "port-feature", "why" }`. A `policy` fork changes what a skill does. A `port-feature` fork adapts it to Claude Code or the kitchen in a way no mechanical rewrite can. A file that carries both kinds of change keeps one entry, of kind `policy`, whose `why` names each change.
 - **`checks.json`**: the denylist (each entry a `rule` name, a `token` or `regex`, and a `hint`), the built-in agent types, the plugin namespace, which local paths are playbooks, and the patterns that find a skill named in a playbook step.
 
 ## The commands
