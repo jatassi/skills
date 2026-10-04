@@ -13,6 +13,12 @@
       "why": "Bugbot -> automated PR-review bot, in a quoted example that starts lowercase. Runs before the global Bugbot rules so they cannot capitalise it wrongly."
     },
     {
+      "pattern": "On GitHub, use the watcher's Bugbot pass count.",
+      "replacement": "On GitHub, use the watcher's pass count for Cursor's PR-review bot only; the watcher recognises no other bot's threads and reports 0 passes for them. For any other review bot, derive the pass count from the PR's review history (`gh api \"repos/<owner>/<repo>/pulls/<pr>/reviews\"`, filtered to the bot's login), as on Origin.",
+      "files": "^skills/poteto-mode/playbooks/babysit\\.md$",
+      "why": "watch-pr ships verbatim and counts passes only for Cursor's review bot (isBugbot and passKey in scripts/watch-pr/github.ts), so under any other bot the lean-dismiss rule would read a count that is always 0. Runs before the global Bugbot rules."
+    },
+    {
       "pattern": "# Bugbot triage",
       "replacement": "# Automated PR-review bot triage",
       "why": "Bugbot -> automated PR-review bot. Heading form."
@@ -530,6 +536,24 @@
       "regex": "use `grok-[^`]+`",
       "replacement": "use `sonnet`",
       "why": "swarm workers are covered by the models.md code role (sonnet); the default-grok rule misses swarm's 'use' phrasing."
+    },
+    {
+      "pattern": "`~/Library/Application Support/Cursor` (`state.vscdb.backup`, and `snapshots/roots/<root>` where a `<root>` named for a folder you opened as a workspace balloons)",
+      "replacement": "session folders under `~/.claude/projects/` named for worktrees you already removed",
+      "files": "^skills/poteto-mode/playbooks/worktree-cleanup\\.md$",
+      "why": "Cursor's app-support state belongs to the Cursor IDE; under Claude Code the per-worktree residue is the session folders under ~/.claude/projects/."
+    },
+    {
+      "pattern": "  - [ ] `git show origin/main:<control skill path>`\n",
+      "replacement": "  - [ ] `<milliways>/skills/<control skill>/SKILL.md`, or `git show origin/main:<its path>` for a repo-local simulator skill\n  - [ ] `git show origin/main:<each repo doc the program reads, such as AGENTS.md and docs/agents/>`\n",
+      "files": "^skills/poteto-mode/playbooks/multi-phase-plan\\.md$",
+      "why": "control-ui and control-cli ship in the milliways plugin, not in trunk, so the control-skill read points at the plugin; a separate box keeps a trunk read that resolves and carries the `git show origin/main:` marker that check-plan.mjs requires."
+    },
+    {
+      "pattern": "The root is the only topology writer.",
+      "replacement": "The root is the only topology writer. Git checks a branch out in only one worktree, and each owner's worktree holds its branch, so the root rebases on a detached HEAD (`git switch --detach <branch>`, rebase, then push `HEAD:<branch>`) and never checks out an owner's branch.",
+      "files": "^skills/poteto-mode/playbooks/autopilot-stack\\.md$",
+      "why": "Owners are worktree agents on this machine rather than separate cloud clones, so the root's rebases (steps 6 and 7) would hit git's one-worktree-per-branch rule."
     }
   ]
 }

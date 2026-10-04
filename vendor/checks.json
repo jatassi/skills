@@ -11,6 +11,7 @@
     { "rule": "cursor-ism", "regex": "\\b(?:grok|gpt|composer)-\\d", "flags": "i", "hint": "a Grok or GPT model slug; defaults are Claude tiers (haiku, sonnet, opus, fable)" },
     { "rule": "cursor-ism", "token": "Bugbot", "hint": "say the automated PR-review bot" },
     { "rule": "cursor-ism", "token": "`/goal`", "hint": "a Cursor command; use standing orders" },
+    { "rule": "cursor-ism", "token": "Application Support/Cursor", "hint": "Cursor IDE state; Claude Code keeps its per-session state under ~/.claude/projects/" },
     { "rule": "model-version", "regex": "\\bclaude-(?:opus|sonnet|haiku|fable|instant|\\d)", "hint": "name the tier (haiku, sonnet, opus, fable), never a version" },
     { "rule": "model-version", "regex": "\\b(?:opus|sonnet|haiku|fable)[ -]?\\d+(?:[.-]\\d+)*\\b", "flags": "i", "hint": "name the tier (haiku, sonnet, opus, fable), never a version" },
     { "rule": "claude-md", "token": "CLAUDE.md", "hint": "kitchens use AGENTS.md only, never CLAUDE.md" }

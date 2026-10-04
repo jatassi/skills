@@ -69,7 +69,7 @@
   },
   "skills/poteto-mode/playbooks/orchestrate.md": {
     "kind": "policy",
-    "why": "The orch CLI is excluded and the verification ledger lives in GitHub: every orch command becomes a direct store-file edit or a ledger comment on the PR, the store moves to ~/.claude/projects/<project>/, and restacks and cloud-only spawns become background agents with worktree isolation."
+    "why": "The orch CLI is excluded and the verification ledger lives in GitHub: every orch command becomes a direct store-file edit or a ledger comment on the PR, the store moves to ~/.claude/projects/<project>/, and restacks and cloud-only spawns become background agents with worktree isolation. The orch frontier command's empty-gt guard becomes an instruction. Worktree agents share one repository, so workers release their branches and the stacker frees held branches before a restack. Every agent runs on this machine, so the isolation exception covers only the coordinator's own working tree and worktree agents may read the store. The different-family verifier resolves to the models document's verifier and verifier-diff-audit roles, with a fallback line when there is no second family."
   },
   "skills/poteto-mode/SKILL.md": {
     "kind": "policy",

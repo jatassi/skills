@@ -35,7 +35,8 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
 - [ ] Read these at program start, and repo paths from trunk. Re-read them at every tick.
   - [ ] `<milliways>/skills/poteto-mode/playbooks/<execution playbook>.md`
   - [ ] `<milliways>/skills/swarm/SKILL.md`
-  - [ ] `git show origin/main:<control skill path>`
+  - [ ] `<milliways>/skills/<control skill>/SKILL.md`, or `git show origin/main:<its path>` for a repo-local simulator skill
+  - [ ] `git show origin/main:<each repo doc the program reads, such as AGENTS.md and docs/agents/>`
   - [ ] `<milliways>/skills/poteto-mode/playbooks/opening-a-pr.md`
   - [ ] `<milliways>/skills/<each other leaf skill the program uses>`
 - [ ] On the operator's go, arm the audit tick as `/loop 1h` with the tick prompt below. Never leave the cadence to memory.
