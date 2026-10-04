@@ -41,7 +41,7 @@ Done when every confirmed change is on disk and the root `AGENTS.md` carries the
 
 ## 4. Labels
 
-Run `labels`. It reads the triage strings from `docs/agents/triage-labels.md` and creates, through `gh`, each missing label: the five triage labels, `wayfinder:map`, `wayfinder:research`, `wayfinder:prototype`, `wayfinder:grilling`, `wayfinder:task`, `garden`, `door:one-way` and `prototype`. If `gh` isn't signed in, tell the chef to run `gh auth login`, then run `labels` again.
+Run `labels`. It reads the triage strings from `docs/agents/triage-labels.md` and creates, through `gh`, each missing label: the five triage labels, `wayfinder:map`, `wayfinder:research`, `wayfinder:prototype`, `wayfinder:grilling`, `wayfinder:task`, `garden`, `door:one-way`, `prototype`, and the five verifier tiers `live-ui-verified`, `unit-test-verified`, `type-check-only`, `verifier-blocked` and `verifier-failed`. If `gh` isn't signed in, tell the chef to run `gh auth login`, then run `labels` again.
 
 ## 5. Verification
 

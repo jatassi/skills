@@ -352,10 +352,15 @@ describe('labels', { skip: WIN && 'the fake gh is a POSIX shell script' }, () =>
     const created = gh.calls().filter((c) => c.startsWith('label create')).map((c) => c.split(' ')[2]);
     assert.deepEqual(created.sort(), [
       'door:one-way',
+      'live-ui-verified',
       'needs-info',
       'prototype',
       'ready-for-agent',
       'ready-for-human',
+      'type-check-only',
+      'unit-test-verified',
+      'verifier-blocked',
+      'verifier-failed',
       'wayfinder:grilling',
       'wayfinder:map',
       'wayfinder:prototype',

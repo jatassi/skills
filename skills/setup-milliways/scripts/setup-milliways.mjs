@@ -60,6 +60,11 @@ const KITCHEN_LABELS = [
   ['garden', '0e8a16', 'A workaround, banned pattern or repeated mistake to correct'],
   ['door:one-way', 'b60205', 'Irreversible change: always waits for the chef'],
   ['prototype', 'fbca04', 'Throwaway prototype pull request, closed unmerged after the pick'],
+  ['live-ui-verified', '0e8a16', 'Verifier passed at the head SHA with live evidence from the running app'],
+  ['unit-test-verified', '7bcf8f', 'Verifier passed at the head SHA on tests, without live evidence'],
+  ['type-check-only', 'fef2c0', 'Verifier checked types only at the head SHA'],
+  ['verifier-blocked', 'd93f0b', 'Verifier could not run at the head SHA'],
+  ['verifier-failed', 'b60205', 'Verifier failed at the head SHA'],
 ];
 
 const SKIP_DIRS = new Set(['.git', 'node_modules']);
