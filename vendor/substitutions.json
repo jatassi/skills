@@ -556,12 +556,6 @@
       "why": "Owners are worktree agents on this machine rather than separate cloud clones, so the root's rebases (steps 6 and 7) would hit git's one-worktree-per-branch rule."
     },
     {
-      "regex": "\\n$",
-      "replacement": "\n\n**Reflect, the last step.** Keep this as the last item in the todo list, and do it before you send the reply. List what this thread had to work around: a broken or missing tool, a flaky check, a skill or doc that misled you, a lint you suppressed, a pattern you copied knowing it was wrong. File one `garden` issue for each, per `docs/agents/garden.md`, unless an open one already covers it, and name what you filed in the reply. In a repo without that document, list them in the reply instead. Run the full **reflect** skill as well when the thread was long or the chef asks for it. A playbook run inside another one, such as Opening a PR at the end of Feature, leaves this step to the outer playbook.\n",
-      "files": "^skills/make-it-so/playbooks/[^/]+\\.md$",
-      "why": "Every playbook ends with a reflect step that files `garden` issues for what the thread worked around (spec #66, make-it-so). The same paragraph is appended to every playbook file, upstream's and any new one a sync brings, so it is a mechanical rewrite, not a per-file fork."
-    },
-    {
       "regex": "\\bpoteto-mode\\b",
       "replacement": "make-it-so",
       "why": "Declared rename: pstack's poteto-mode router ships as make-it-so (local folder skills/make-it-so), so every reference to it follows (/poteto-mode, its playbook paths, figure-it-out and automate-me). Verbatim scripts keep upstream's name. Runs last, after every rule that matches upstream's wording."

@@ -73,7 +73,7 @@
   },
   "skills/make-it-so/playbooks/orchestrate.md": {
     "kind": "policy",
-    "why": "The orch CLI is excluded and the verification ledger lives in GitHub: every orch command becomes a direct store-file edit or a ledger comment on the PR, the store moves to ~/.claude/projects/<project>/, and restacks and cloud-only spawns become background agents with worktree isolation. The orch frontier command's empty-gt guard becomes an instruction. Worktree agents share one repository, so workers release their branches and the stacker frees held branches before a restack. Every agent runs on this machine, so the isolation exception covers only the coordinator's own working tree and worktree agents may read the store. The different-family verifier resolves to the models document's verifier and verifier-diff-audit roles, with a fallback line when there is no second family. Kitchen: every landing passes Autopilot-full's merge gate, and a closed gate parks in gates.md for the chef; human-in-the-loop units become local Projects threads running visual-grilling, with plain-text grilling as the fallback; a marker sentence says the Projects coordinator plus routines replace the /loop wakes. The reflect step that the substitution table appends to every playbook is carried by hand, since forks don't pick up rewrites. No stacks (spec #66 story 42): Stack safety becomes Merge safety, where each unit is one PR off trunk, dependent units are merge-then-branch, the frontier is recomputed with gh instead of gt, and one lander replaces the stacker."
+    "why": "The orch CLI is excluded and the verification ledger lives in GitHub: every orch command becomes a direct store-file edit or a ledger comment on the PR, the store moves to ~/.claude/projects/<project>/, and restacks and cloud-only spawns become background agents with worktree isolation. The orch frontier command's empty-gt guard becomes an instruction. Worktree agents share one repository, so workers release their branches and the stacker frees held branches before a restack. Every agent runs on this machine, so the isolation exception covers only the coordinator's own working tree and worktree agents may read the store. The different-family verifier resolves to the models document's verifier and verifier-diff-audit roles, with a fallback line when there is no second family. Kitchen: every landing passes Autopilot-full's merge gate, and a closed gate parks in gates.md for the chef; human-in-the-loop units become local Projects threads running visual-grilling, with plain-text grilling as the fallback; a marker sentence says the Projects coordinator plus routines replace the /loop wakes. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). No stacks (spec #66 story 42): Stack safety becomes Merge safety, where each unit is one PR off trunk, dependent units are merge-then-branch, the frontier is recomputed with gh instead of gt, and one lander replaces the stacker."
   },
   "skills/make-it-so/SKILL.md": {
     "kind": "policy",
@@ -141,7 +141,7 @@
   },
   "skills/make-it-so/playbooks/autopilot-full.md": {
     "kind": "policy",
-    "why": "Merge gate (spec #66, trust ladder): the owner merges only when the PR's area is gated in docs/agents/autonomy.md (first matching Areas row per path against the PR's base branch, lowest rung across areas), CI is green, a fresh verifier passed at the head SHA and patch-id with the live lane as the floor, and the door is two-way (no door:one-way label, no path or change on the One-way doors list). Otherwise it stops at merge-ready for the chef; the operator's grant no longer opens a closed gate. A marker sentence says the Projects coordinator plus routines replace the hourly /loop tick. Forks don't pick up rewrites, so this file carries the substitution table's appended Reflect step and the poteto-mode -> make-it-so rename by hand."
+    "why": "Merge gate (spec #66, trust ladder): the owner merges only when the PR's area is gated in docs/agents/autonomy.md (first matching Areas row per path against the PR's base branch, lowest rung across areas), CI is green, a fresh verifier passed at the head SHA and patch-id with the live lane as the floor, and the door is two-way (no door:one-way label, no path or change on the One-way doors list). Otherwise it stops at merge-ready for the chef; the operator's grant no longer opens a closed gate. A marker sentence says the Projects coordinator plus routines replace the hourly /loop tick. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
   },
   "skills/make-it-so/playbooks/autopilot-stack.md": {
     "kind": "policy",
@@ -149,30 +149,86 @@
   },
   "skills/make-it-so/playbooks/bug-fix.md": {
     "kind": "policy",
-    "why": "Overlap: Matt's diagnosing-bugs is the kitchen's diagnosis procedure, so steps 1 and 2 run its loop (the repro is its feedback loop, the binary search its hypothesis phases) while keeping pstack's surface and evidence rules; tdd-bug-fix stays at step 5. Matt's code-review reviews the branch before Opening a PR. Forks don't pick up rewrites, so this file carries the substitution table's appended Reflect step and the poteto-mode -> make-it-so rename by hand."
+    "why": "Overlap: Matt's diagnosing-bugs is the kitchen's diagnosis procedure, so steps 1 and 2 run its loop (the repro is its feedback loop, the binary search its hypothesis phases) while keeping pstack's surface and evidence rules; tdd-bug-fix stays at step 5. Matt's code-review reviews the branch before Opening a PR. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
   },
   "skills/make-it-so/playbooks/feature.md": {
     "kind": "policy",
-    "why": "Overlap, in the spec's order prototype -> architect -> implement and tdd -> verify -> pr: a prototype step (Matt's prototype skill, or a winning prototype branch checked out as the reference spec and rebuilt on the paved path) before architect; the code delegate runs Matt's implement test-first with Matt's tdd; verify names the live-lane floor; Matt's code-review reviews every change, with interrogate kept for one-way doors and contested designs; Opening a PR writes the PR with the pr skill. Follow-ups get their own PRs, since the kitchen does not stack. Forks don't pick up rewrites, so this file carries the substitution table's appended Reflect step and the poteto-mode -> make-it-so rename by hand."
+    "why": "Overlap, in the spec's order prototype -> architect -> implement and tdd -> verify -> pr: a prototype step (Matt's prototype skill, or a winning prototype branch checked out as the reference spec and rebuilt on the paved path) before architect; the code delegate runs Matt's implement test-first with Matt's tdd; verify names the live-lane floor; Matt's code-review reviews every change, with interrogate kept for one-way doors and contested designs; Opening a PR writes the PR with the pr skill. Follow-ups get their own PRs, since the kitchen does not stack. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
   },
   "skills/make-it-so/playbooks/opening-a-pr.md": {
     "kind": "policy",
-    "why": "The pr skill owns the PR anatomy (title, body sections, evidence, labels), so pstack's Titles and Descriptions rules give way to it. No stacks (spec #66 story 42): one concern per PR, branched from trunk, dependent work merge-then-branch, and pstack's stack mechanics and Autopilot-stack references go. A prototype: PR is the one draft. Matt's code-review runs before every PR, and interrogate only for one-way doors. Forks don't pick up rewrites, so this file carries the substitution table's appended Reflect step and the poteto-mode -> make-it-so rename by hand."
+    "why": "The pr skill owns the PR anatomy (title, body sections, evidence, labels), so pstack's Titles and Descriptions rules give way to it. No stacks (spec #66 story 42): one concern per PR, branched from trunk, dependent work merge-then-branch, and pstack's stack mechanics and Autopilot-stack references go. A prototype: PR is the one draft. Matt's code-review runs before every PR, and interrogate only for one-way doors. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
   },
   "skills/make-it-so/playbooks/prototype.md": {
     "kind": "policy",
-    "why": "Overlap: Matt's prototype skill builds the prototype. Prototype-as-spec: a choice for the chef ships as the pr skill's Prototype PRs draft (prototype: title, prototype label, one screencast per variant), the chef picks by commenting, the PR closes unmerged with the decision recorded, and the kept branch is the build thread's reference spec, rebuilt on the paved path by Feature. A fork inside the thread's own task is decided from the evidence without a PR. Forks don't pick up rewrites, so this file carries the substitution table's appended Reflect step and the poteto-mode -> make-it-so rename by hand."
+    "why": "Overlap: Matt's prototype skill builds the prototype. Prototype-as-spec: a choice for the chef ships as the pr skill's Prototype PRs draft (prototype: title, prototype label, one screencast per variant), the chef picks by commenting, the PR closes unmerged with the decision recorded, and the kept branch is the build thread's reference spec, rebuilt on the paved path by Feature. A fork inside the thread's own task is decided from the evidence without a PR. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
   },
   "skills/make-it-so/playbooks/spec-and-tickets.md": {
     "kind": "policy",
-    "why": "Port-only playbook, not in pstack: large or one-way-door work runs grill-with-docs (visual-grilling first), interrogate for a one-way door, to-spec, then to-tickets, per the spec's overlap table, and hands each ticket to its own playbook. It carries the Reflect step every playbook ends with by hand."
+    "why": "Port-only playbook, not in pstack: large or one-way-door work runs grill-with-docs (visual-grilling first), interrogate for a one-way door, to-spec, then to-tickets, per the spec's overlap table, and hands each ticket to its own playbook. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
   },
   "skills/make-it-so/playbooks/babysit.md": {
     "kind": "policy",
-    "why": "Drops the sentence naming Autopilot-stack's root, since that playbook is deleted (no stacks). Forks don't pick up rewrites, so this file carries the substitution table's appended Reflect step and the poteto-mode -> make-it-so rename by hand."
+    "why": "Drops the sentence naming Autopilot-stack's root, since that playbook is deleted (no stacks). Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
   },
   "skills/make-it-so/playbooks/multi-phase-plan.md": {
     "kind": "policy",
-    "why": "No stacks: the execution playbook is Autopilot-full (Autopilot-stack is deleted), dependent PRs start after their parent merges, and the merge box says the owner merges when the merge gate holds or the chef merges. Forks don't pick up rewrites, so this file carries the substitution table's appended Reflect step and the poteto-mode -> make-it-so rename by hand."
+    "why": "No stacks: the execution playbook is Autopilot-full (Autopilot-stack is deleted), dependent PRs start after their parent merges, and the merge box says the owner merges when the merge gate holds or the chef merges. A marker sentence in the skeleton's `/loop 1h` box says the Projects coordinator plus routines replace the hourly tick. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
+  },
+  "skills/make-it-so/playbooks/authoring-a-skill.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/autonomous-run.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/eval.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/hillclimb.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/investigation.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/pause-safely.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/perf-issue.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/refactoring.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/runtime-forensics.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/session-pickup.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/shipping.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/trace-forensics.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/visual-parity.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/worktree-cleanup.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
   }
 }
