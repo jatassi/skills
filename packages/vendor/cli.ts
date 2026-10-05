@@ -20,7 +20,7 @@
 //
 // Both take --root <repo> (default: this repo) and --cache <dir> (default:
 // node_modules/.cache/milliways-vendor under the root). Exit 2 is a usage or
-// configuration error.
+// configuration error. --help prints the usage and exits 0.
 
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -76,8 +76,13 @@ function main(argv: string[]): number {
       upstream: { type: 'string' },
       to: { type: 'string' },
       overwrite: { type: 'boolean', default: false },
+      help: { type: 'boolean' },
     },
   });
+  if (values.help) {
+    console.log(USAGE);
+    return 0;
+  }
   const [command, ...rest] = positionals;
   if (rest.length || (command !== 'check' && command !== 'sync')) throw new UsageError(USAGE);
   const root = resolve(values.root ?? join(dirname(fileURLToPath(import.meta.url)), '../..'));
