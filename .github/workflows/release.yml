@@ -8,7 +8,7 @@
 # run on Ubuntu, macOS and Windows at the minimum Node, and the
 # bundle it ran against is kept under the git tree it tested. The merge then
 # releases without testing again: it requires a tested bundle for exactly the
-# tree it is releasing, builds visual-grilling into skills/visual-grilling/dist/,
+# tree it is releasing, builds visual-grilling into skills/grilling/dist/,
 # checks the build against that bundle, bumps both plugin manifests (patch, or
 # the pull request's release:minor or release:major label), pins the
 # marketplace entry to the new tag (an https url source, per ADR 0002's
@@ -208,17 +208,17 @@ jobs:
             exit 1
           fi
       - run: npm ci
-      - name: Build into skills/visual-grilling/dist/
+      - name: Build into skills/grilling/dist/
         run: npm run try
       # Ships exactly what was tested: the build is deterministic, so any
       # difference means something changed between the two builds.
       - name: Require the build to match the tested bundle
-        run: diff -r "$RUNNER_TEMP/tested-bundle" skills/visual-grilling/dist
+        run: diff -r "$RUNNER_TEMP/tested-bundle" skills/grilling/dist
       - name: Bump the manifests and pin the marketplace to the tag
         run: node packages/visual-grilling/release.ts manifests --version "$VERSION"
       - name: Write the release notes
         run: |
-          node packages/visual-grilling/release.ts notes --dist skills/visual-grilling/dist --notes "$RUNNER_TEMP/notes.md" > "$RUNNER_TEMP/release.md"
+          node packages/visual-grilling/release.ts notes --dist skills/grilling/dist --notes "$RUNNER_TEMP/notes.md" > "$RUNNER_TEMP/release.md"
           cat "$RUNNER_TEMP/release.md"
       - name: Commit and tag
         run: |
@@ -226,7 +226,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add plugin.json .claude-plugin/plugin.json .claude-plugin/marketplace.json
           # dist/ is gitignored so that nothing else commits it.
-          git add --all --force skills/visual-grilling/dist
+          git add --all --force skills/grilling/dist
           if [ -n "$(git status --porcelain --untracked-files=all | grep -v '^[AMDR] ')" ]; then
             echo "::error::The release changed files it should not have:"
             git status --short --untracked-files=all

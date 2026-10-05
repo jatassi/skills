@@ -2,7 +2,7 @@
 
 ## Grilling
 
-**Channel**: the surface a grilling round is presented on and answers return through. The terminal is the default channel; `visual-grilling` adds a browser channel. A channel never changes the grilling procedure itself.
+**Channel**: the surface a grilling round is presented on and answers return through. `grilling` has two: the browser channel, its round pages, and the text channel, rounds printed in the reply. It picks the browser when it can show the user a page and the user hasn't asked for text. A channel never changes the grilling procedure itself.
 
 **Round page**: the browser channel's rendering of one grilling round: the round's numbered questions stacked as cards, each with its recommended answer and a way to answer inline.
 
@@ -20,7 +20,7 @@
 
 **Design tree**: the map of decisions a grilling session is working through, each branch hanging off the decision it depends on and marked settled or open. The agent restates the whole tree each round; the round page shows it beside the questions.
 
-**Grilling session**: one agent session's run of `visual-grilling`, from its first round page until grilling concludes or the agent session ends. Its rounds, submissions and files belong to it alone and are gone when it ends; resuming the agent session starts a new grilling session.
+**Grilling session**: one agent session's run of `grilling`'s browser channel, from its first round page until grilling concludes or the agent session ends. Its rounds, submissions and files belong to it alone and are gone when it ends; resuming the agent session starts a new grilling session.
 
 ## Kitchen
 

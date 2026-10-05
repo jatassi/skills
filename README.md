@@ -13,7 +13,7 @@ It is packaged as a [Claude Code plugin](https://code.claude.com/docs/en/plugins
 /plugin install milliways@jatassi
 ```
 
-Skills are namespaced `milliways:`, so `visual-grilling` runs as `milliways:visual-grilling`. The plugin used to be called `jatassi-skills`; if you have that installed, uninstall it (`/plugin uninstall jatassi-skills@jatassi`) and install `milliways` in its place.
+Skills are namespaced `milliways:`, so `grilling` runs as `milliways:grilling`. The plugin used to be called `jatassi-skills`; if you have that installed, uninstall it (`/plugin uninstall jatassi-skills@jatassi`) and install `milliways` in its place.
 
 The marketplace pins the plugin to the latest release tag, so Claude Code installs exactly the build that release tested, not whatever is on `main`.
 
@@ -29,7 +29,7 @@ This installs every skill in the repo into any agent the [`skills` CLI](https://
 
 Point your client at this repository; the manifest is [`plugin.json`](plugin.json) at the root.
 
-skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a release, so they get the same build as Claude Code. The exception is the few minutes while a release is building, when the skill text on `main` can be newer than the `visual-grilling` build.
+skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a release, so they get the same build as Claude Code. The exception is the few minutes while a release is building, when the skill text on `main` can be newer than the `grilling` browser build.
 
 ## How a kitchen works
 
@@ -39,7 +39,7 @@ A **kitchen** is a repo whose root `AGENTS.md` carries exactly one line:
 Start every non-trivial task with the `make-it-so` skill. Kitchen config: `docs/agents/AGENTS.md`.
 ```
 
-That line is the entry point. [`make-it-so`](skills/make-it-so/SKILL.md), the router, classifies the task and copies the matching playbook's steps into the thread's todo list. Its routing rule sends a question that running something can answer to a prototype, a one-way door or a question of taste to grilling (visual-grilling first), and work bigger than one context to wayfinder. Every playbook ends with a reflect step that files `garden` issues for anything the thread had to work around.
+That line is the entry point. [`make-it-so`](skills/make-it-so/SKILL.md), the router, classifies the task and copies the matching playbook's steps into the thread's todo list. Its routing rule sends a question that running something can answer to a prototype, a one-way door or a question of taste to grilling, and work bigger than one context to wayfinder. Every playbook ends with a reflect step that files `garden` issues for anything the thread had to work around.
 
 Everything else the kitchen needs lives in `docs/agents/`, behind its own `AGENTS.md` index: the issue tracker, triage labels, domain docs, the model-role table, verification, autonomy and garden. This repo is a kitchen itself, so [`docs/agents/`](docs/agents) shows the full set.
 
@@ -78,7 +78,6 @@ Trust is earned per area. [`docs/agents/autonomy.md`](docs/agents/autonomy.md) d
 | Skill | What it does |
 | --- | --- |
 | [`auto-grill`](skills/auto-grill/SKILL.md) | A relentless interview where an agent stand-in answers in your place. |
-| [`visual-grilling`](skills/visual-grilling/SKILL.md) | Grilling with each round shown as a page in the browser, answered and commented on there. Needs Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`. |
 | [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Run `make-it-so`'s Spec and tickets playbook: grill the work, publish a spec to the issue tracker, then cut it into blocked tickets other threads pick up. |
 | [`setup-milliways`](skills/setup-milliways/SKILL.md) | Make a repo a kitchen: the `docs/agents` config and its index, the one root `AGENTS.md` line, the GitHub labels and a model-role table detected from your harness. Safe to re-run. Also ships the [Projects kit](skills/setup-milliways/projects): the coordinator brief for a Claude Project's instructions, and the prompts for the risk-digest, garden-sweep, garden-cluster and upstream-sync routines. |
 | [`trust-ladder`](skills/trust-ladder/SKILL.md) | Score each area of a kitchen on the trust ladder from its merged pull requests: clean streaks, unclean merges, promotions and demotions due, and yesterday's merges ranked by risk, as JSON. |
@@ -130,7 +129,7 @@ Vendored from [mattpocock/skills](https://github.com/mattpocock/skills), its Eng
 | [`domain-modeling`](skills/domain-modeling/SKILL.md) | Build and sharpen the domain model: `GLOSSARY.md` terms and ADRs. |
 | [`grill-me`](skills/grill-me/SKILL.md) | A relentless interview to sharpen a plan or design. |
 | [`grill-with-docs`](skills/grill-with-docs/SKILL.md) * | A relentless interview that also writes ADRs and glossary entries as it goes. |
-| [`grilling`](skills/grilling/SKILL.md) | Grill you about a plan, a round of numbered questions at a time. |
+| [`grilling`](skills/grilling/SKILL.md) | Grill you about a plan, a round of numbered questions at a time, as a page in the browser when it can show you one and as plain text otherwise. The browser needs Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`. Adds the browser channel to upstream's skill. |
 | [`handoff`](skills/handoff/SKILL.md) | Compact the conversation into a handoff document for another agent. |
 | [`implement`](skills/implement/SKILL.md) * | Implement a piece of work from a spec or tickets, test-first, then review it. |
 | [`implement-spec`](skills/implement-spec/SKILL.md) | Hand off a spec's tickets: one `make-it-so` thread per ready ticket, each in its matching playbook and landing as its own PR, frontier by frontier. |
@@ -184,20 +183,20 @@ Upstream licences are vendored verbatim in [`LICENSES/`](LICENSES), and [`NOTICE
 ├── NOTICE                       # upstream attributions
 ├── package.json                 # dev scripts only; lists no dependencies, since this root is also the plugin root
 ├── scripts/                     # test.mjs (changed-workspace test runner), test-bun.mjs, install-dev.mjs
-└── packages/                    # the dev workspaces' npm root: visual-grilling's source, the vendor CLI, setup-milliways' and trust-ladder's tests
+└── packages/                    # the dev workspaces' npm root: the grilling browser channel's source, the vendor CLI, setup-milliways' and trust-ladder's tests
 ```
 
 ## Development
 
-`visual-grilling`'s CLI, server and round page are built from the TypeScript workspace in `packages/visual-grilling/`, outside the shipped skill folder. `setup-milliways`'s CLI ships as plain Node in `skills/setup-milliways/scripts/`, and its tests live in `packages/setup-milliways/`; `trust-ladder`'s scorer is the same, in `skills/trust-ladder/scripts/` with tests in `packages/trust-ladder/`.
+`grilling`'s browser channel (its CLI, server and round page) is built from the TypeScript workspace in `packages/visual-grilling/`, outside the shipped skill folder. `setup-milliways`'s CLI ships as plain Node in `skills/setup-milliways/scripts/`, and its tests live in `packages/setup-milliways/`; `trust-ladder`'s scorer is the same, in `skills/trust-ladder/scripts/` with tests in `packages/trust-ladder/`.
 
 ```
 npm install                              # installs the dev workspaces in packages/
 npm run playwright -- install chromium   # once, for the round page tests
 npm test                                 # test only the workspaces changed since the merge-base with dev
-npm run test:all                         # every workspace: visual-grilling type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
+npm run test:all                         # every workspace: visual-grilling (the grilling browser channel) type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
 npm run test:bun                         # pstack's vendored Bun scripts and their upstream tests; needs Bun, not part of npm test
-npm run try                              # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
+npm run try                              # build into skills/grilling/dist/, then: claude --plugin-dir .
 ```
 
 `npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing `packages/package.json` or its lockfile runs everything, unless the change only adds a workspace, which then runs alone. Changing the root `package.json` or `package-lock.json` always runs everything. `--dry-run` prints the pick without running it.
@@ -208,7 +207,7 @@ The vendored pstack scripts run on Bun. `npm run test:bun` finds every `skills/*
 
 Pull requests into `dev` run [`ci.yml`](.github/workflows/ci.yml) on Ubuntu: `npm test`, `npm run vendor -- check` and `npm run test:bun`, the same commands as above. Its check is named `ci (dev)`. The Release workflow adds the three-OS `npm run test:all` on pull requests into `main`.
 
-Work on `dev`, not `main`. Never commit the `npm run try` output: `dist/` is gitignored, and only a release commits it. After the first release `dist/` is tracked, so a try build shows up as changes to it; discard them with `git restore skills/visual-grilling/dist`. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.
+Work on `dev`, not `main`. Never commit the `npm run try` output: `dist/` is gitignored, and only a release commits it. After the first release `dist/` is tracked, so a try build shows up as changes to it; discard them with `git restore skills/grilling/dist`. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.
 
 ### Vendored skills
 
@@ -229,7 +228,7 @@ npm run vendor -- sync --overwrite                       # restore files that di
 
 ## Releasing
 
-Every merge to `main` is a release ([ADR 0003](docs/adr/0003-every-merge-to-main-is-a-release.md)). Only the [Release workflow](.github/workflows/release.yml) commits `skills/visual-grilling/dist/` ([ADR 0002](docs/adr/0002-installs-pinned-to-release-tags.md)). There is no CHANGELOG; the notes go on the GitHub Release.
+Every merge to `main` is a release ([ADR 0003](docs/adr/0003-every-merge-to-main-is-a-release.md)). Only the [Release workflow](.github/workflows/release.yml) commits `skills/grilling/dist/` ([ADR 0002](docs/adr/0002-installs-pinned-to-release-tags.md)). There is no CHANGELOG; the notes go on the GitHub Release.
 
 1. Land changes on `dev`. Run `npm update --prefix packages` within the pinned majors from time to time, with `npm test`.
 2. Open a pull request from `dev` into `main`. Its description becomes the release notes. Label it `release:minor` or `release:major` for more than a patch bump.
