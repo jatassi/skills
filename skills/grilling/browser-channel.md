@@ -1,11 +1,8 @@
----
-name: visual-grilling
-description: Grilling with each round shown as a page in the browser, answered and commented on there.
----
+# The browser channel
 
-Call the Skill tool with "grilling" and follow it. This skill changes only the channel: each round goes to the user as a round page in the browser, and the round submission comes back through the CLI. Your conversation with the user stays a channel too.
+This channel changes only where rounds appear: each round goes to the user as a round page in the browser, and the round submission comes back through the CLI. Your conversation with the user stays a channel too.
 
-The CLI is `node ${CLAUDE_SKILL_DIR}/dist/cli.mjs`, where `${CLAUDE_SKILL_DIR}` is this skill's folder; `--help` lists its commands, flags and outcome lines. Read [`round-file.md`](round-file.md) before your first round. Read [`illustrating.md`](illustrating.md) before a round that illustrates.
+The CLI is `node <this skill's folder>/dist/cli.mjs`, the command the Channel step ran; `--help` lists its commands, flags and outcome lines. Read [`round-file.md`](round-file.md) before your first round. Read [`illustrating.md`](illustrating.md) before a round that illustrates.
 
 ## Each round
 
@@ -29,6 +26,4 @@ A reply the user types in the terminal answers the open round just as a submissi
 
 ## When grilling concludes
 
-Stop every server you started: run `end`, once with each `--session <id>` you used (or bare, if `present` never printed one). Do this when grilling concludes, when the user abandons or redirects it mid-grilling, and always before your work in this agent session ends. `end` deletes every file of the grilling session, and does nothing for one that is already gone.
-
-If a skill asks you to call another skill which is not available, stop and ask the user to install the missing skills instead of fabricating their content.
+Stop every server you started: run `end`, once with each `--session <id>` you used (or bare, if `present` never printed one). Do this when grilling concludes, when the user abandons or redirects it mid-grilling, when the user switches to the text channel, and always before your work in this agent session ends. `end` deletes every file of the grilling session, and does nothing for one that is already gone.

@@ -80,7 +80,7 @@ A verdict that lands after the owning thread stopped is a queue event like any c
 
 ### Human-in-the-loop work
 
-Some units only the chef can settle: a grilling, a decision on a one-way door, or any ticket carrying the human triage label in `docs/agents/triage-labels.md`. These never go to a cloud thread. Start each one as a thread on the chef's own machine (**Work locally**), running the `visual-grilling` skill, which shows each round as a page in the browser. When the chef is away from their machine, the same thread runs plain-text rounds with the `grilling` skill instead. Paste the standing orders into its brief, because a local thread doesn't load project memory.
+Some units only the chef can settle: a grilling, a decision on a one-way door, or any ticket carrying the human triage label in `docs/agents/triage-labels.md`. These never go to a cloud thread. Start each one as a thread on the chef's own machine (**Work locally**), running the `grilling` skill, which shows each round as a page in the browser, or as plain text when the chef is away from their machine. Paste the standing orders into its brief, because a local thread doesn't load project memory.
 
 A prototype pick has one channel, its draft `prototype:` PR. The thread that opens it parks and stops. When the chef comments a pick, start a new thread on your next drain (or the chef starts one) that finishes the pr skill's Prototype PRs steps. It records the decision and closes the PR unmerged.
 
@@ -125,4 +125,4 @@ Take every number from GitHub, not from memory, through the read paths in What y
 4. The verification ledger lives in GitHub, keyed by PR and head SHA. CI green is never a verdict.
 5. A thread owns the PR it opens and runs make-it-so's Babysit playbook in `drive` mode to merge-ready. Nothing merges unless the merge gate holds or the chef explicitly asks. One-way doors wait for the chef.
 6. If you can't reach something you need, report exactly what and stop.
-7. Human-in-the-loop work runs as a local thread with visual-grilling, with plain-text grilling as the fallback.
+7. Human-in-the-loop work runs as a local thread with the grilling skill.

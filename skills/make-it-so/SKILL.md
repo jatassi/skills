@@ -17,10 +17,10 @@ The Principles section below grounds every trigger. In your reply, name each pri
 
 - **A wayfinder map, or an issue labelled `wayfinder:*`** → the **wayfinder** skill's Work through the map mode. It claims the ticket, then calls the skill the ticket's type names, so the rules below never route a wayfinder ticket.
 - **Running something can answer it** (behavior, timing, layout, output, perf) → prototype. Run the Prototype playbook (`playbooks/prototype.md`), which builds with the **prototype** skill, and let the result decide.
-- **A one-way door, or a call of taste, intent or domain words only the chef holds** → grill. Use the **visual-grilling** skill first. When the chef is away from their machine, run plain-text rounds with the **grilling** skill. When the answers should land as ADRs and glossary entries, run the **grill-with-docs** skill through the same channel. A one-way door is any change on the One-way doors list in `docs/agents/autonomy.md`.
+- **A one-way door, or a call of taste, intent or domain words only the chef holds** → grill with the **grilling** skill, which shows rounds in the browser or as plain text. When the answers should land as ADRs and glossary entries, use the **grill-with-docs** skill instead. A one-way door is any change on the One-way doors list in `docs/agents/autonomy.md`.
 - **Bigger than one context** (more than one agent session can hold) → the **wayfinder** skill. Chart it as a map of decision tickets before anyone writes code.
 
-Human-in-the-loop work (a grilling, a ticket labelled for a human per `docs/agents/triage-labels.md`) runs as a local Projects thread on the chef's machine, using visual-grilling, with plain-text rounds as the fallback when the chef is away. A cloud thread never waits on it. It parks the question with its default and keeps going. A prototype pick has one channel, the draft `prototype:` PR that the Prototype playbook opens.
+Human-in-the-loop work (a grilling, a ticket labelled for a human per `docs/agents/triage-labels.md`) runs as a local Projects thread on the chef's machine, using the grilling skill. A cloud thread never waits on it. It parks the question with its default and keeps going. A prototype pick has one channel, the draft `prototype:` PR that the Prototype playbook opens.
 
 Remaining triggers:
 
