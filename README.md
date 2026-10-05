@@ -203,6 +203,8 @@ npm run try                       # build into skills/visual-grilling/dist/, the
 
 The vendored pstack scripts run on Bun. `npm run test:bun` finds every `skills/*/scripts/package.json` with a test script and runs it; the Release workflow does the same on Ubuntu for pull requests into `main`. Cloud environments that use these scripts must install Bun in their setup script.
 
+Pull requests into `dev` run [`ci.yml`](.github/workflows/ci.yml) on Ubuntu: `npm test`, `npm run vendor -- check` and `npm run test:bun`, the same commands as above. Its check is named `ci (dev)`. The Release workflow adds the three-OS `npm run test:all` on pull requests into `main`.
+
 Work on `dev`, not `main`. Never commit the `npm run try` output: `dist/` is gitignored, and only a release commits it. After the first release `dist/` is tracked, so a try build shows up as changes to it; discard them with `git restore skills/visual-grilling/dist`. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.
 
 ### Vendored skills

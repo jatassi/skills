@@ -17,7 +17,8 @@
 # Dispatching it by hand on main tests and releases main as it is: the way to
 # retry a release that failed after its merge.
 #
-# This is the only thing that commits dist/, and the only workflow in the repo.
+# This is the only thing that commits dist/. ci.yml tests pull requests into
+# dev; this workflow handles main.
 
 name: Release
 
