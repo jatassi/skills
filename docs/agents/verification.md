@@ -10,7 +10,15 @@ Every verdict includes the live lane: drive the running app the way a user does,
 
 When the verify skill above is `none`, prove the behaviour live by hand with whatever drives the surface (a browser, the CLI, a simulator), and propose creating one with `create-verification-skill`. Once a verify skill exists, `maintain-verification-skill` keeps it and its feature map current.
 
-The verifier runs on the `verifier` role in `docs/agents/models.md`, its swarm lanes included. It is a fresh subagent: never the agent that wrote the change, and never resumed from an earlier round.
+## Who verifies
+
+The verifier is a fresh worktree subagent. This is the one statement of who verifies, and the merge gate counts any verdict that meets it.
+
+- **Who spawns it.** The PR's worker may spawn it: `isolation: "worktree"`, on the `verifier` role in `docs/agents/models.md`, its swarm lanes included.
+- **Who it is.** A fresh agent, never the agent that wrote the change, and never resumed from an earlier round.
+- **What it gets.** The pull request, its ticket and the VERIFY commands. Nothing else from the worker: no plan, transcript, self-report or summary of the change.
+
+The verifier records its own verdict on the pull request (The ledger). The worker cites that verdict to reach merge-ready, and the merge gate counts it. The Projects coordinator, or an Autopilot-full root, may still start a separate verifier thread when it wants more independence. The gate doesn't require one.
 
 ## The ledger
 
