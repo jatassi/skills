@@ -3,12 +3,12 @@
 **You own the plan, not the code. The plan is a checklist an owner runs box by box and the operator audits from the evidence.** The plan is the deliverable. Do not implement.
 
 1. When the change is one or two files with an obvious approach, skip the plan. Say so and stop.
-2. Settle open questions by prototype before you write. Run `playbooks/prototype.md` for each. Keep the branch, the SHA, and the screenshots for Appendix A. Ask the operator only about a product or preference call that no run can settle. Give options (the **never-block-on-the-human** principle skill).
+2. Settle open questions by prototype before you write. Run `playbooks/prototype.md` for each. Keep the branch, the SHA, and the screenshots for Appendix A. Ask the operator only about a product or preference call that no run can settle. Give options (the **never-block-on-the-human** principle skill). A pick that is the chef's never parks this playbook. File it as a prototype ticket, labelled `prototype`, in the issue tracker that `docs/agents/AGENTS.md` lists, name that ticket under **Depends on.** in each PR section that waits on its answer, and list it in Appendix A as unproven. The chef's pick closes the ticket and unblocks those sections.
 3. Explore in subagents with `subagent_type: "milliways:poteto-agent"` and an explicit model per the Subagents section (the **guard-the-context-window** principle skill). Each returns file pointers, conventions, test commands, and entry points. No inlined dumps.
-4. Copy the skeleton below into the plan file and fill every placeholder. Unless the operator names a path, write the file under `~/.claude/projects/<project>/docs/`. In a Claude Project the plan lives as GitHub tickets, not a local file. Check the file as step 6 says, then publish it to the issue tracker that `docs/agents/AGENTS.md` lists, with the program checklist as the parent issue and one sub-issue per PR section. Keep every heading and every sub-block in the order shown. One section per PR. One PR is one change with its own evidence (the **sequence-verifiable-units** principle skill). Name the execution playbook in **How to read this**. It is `playbooks/autopilot-full.md`. When the operator wants to review before landing or withholds merge authority, say so there, and owners stop at merge-ready for the chef. A standing program takes `playbooks/orchestrate.md`.
+4. Copy the skeleton below into the plan file and fill every placeholder. Unless the operator names a path, write the file under `~/.claude/projects/<project>/docs/`. Keep every heading and every sub-block in the order shown. One section per PR. One PR is one change with its own evidence (the **sequence-verifiable-units** principle skill). Name the execution playbook in **How to read this**. It is `playbooks/autopilot-full.md`. When the operator wants to review before landing or withholds merge authority, say so there, and owners stop at merge-ready for the chef. A standing program takes `playbooks/orchestrate.md`.
 5. Write under `/technical-writing` in full, then `/unslop`. The body is one Diátaxis mode, how-to. Appendices hold explanation and reference. Each heading states the task or the finding. No long dashes. No mid-sentence colons.
 6. Run `node <milliways>/skills/make-it-so/scripts/check-plan.mjs <plan.md>` and fix every line it prints (the **encode-lessons-in-structure** principle skill).
-7. Hand back. Post the plan path and the script's output, then stop. Execution starts on the operator's explicit go, under the execution playbook the plan names.
+7. Publish in a Claude Project, then hand back. Outside a Claude Project the file is the plan, and nothing is published. In a Claude Project, publish the file that steps 5 and 6 finalized to the issue tracker that `docs/agents/AGENTS.md` lists, with the program checklist as the parent issue and one sub-issue per PR section. From then on the published parent issue is the plan, not the file. Post the plan path, or in a Claude Project the parent issue link, and the script's output, then stop. Execution starts on the operator's explicit go, under the execution playbook the plan names.
 
 **Verification.** Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked (the **prove-it-works** principle skill). That sentence is the verification rule. Every verification block opens with it. The live block is mandatory. Ten lanes at the PR head drive the real surface through its control skill, per the **swarm** skill, on the models document's `verifier` role (default `opus`), never `code`. Each lane is one box with a concrete scenario, the screenshot it saves, and its pass predicate. One lane is the **Regression lane against trunk.** It runs the same load-bearing scenario on trunk and head. If trunk does not have the feature, the lane records that fact and gates the behavior the diff adds plus the end state the user waits for instead of inventing a trunk result. The perf gate is dual-sided. Trunk and head must both produce the named metric. If trunk lacks the feature, also isolate the work the diff adds and set an absolute budget for that work plus the end-to-end state the user waits for. Do not claim a ratio between unlike scenarios. The perf block names the metric, the interleaved probe, the trunk baseline measured first, and the rule with the number that fails. A PR that changes an interaction is review-gated. The operator reviews it in chat with screenshots and a video before merge. A PR that changes no interaction writes `**Review gate.** None. <PR id> is not review-gated.` and no boxes under it.
 
@@ -46,7 +46,7 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
 ### Spawn owners
 
 - [ ] Spawn one owner per PR with the full lifecycle the execution playbook names.
-- [ ] Follow this dependency graph. Start dependent work only after its parent merges.
+- [ ] Follow this dependency graph. Start dependent work only after its parent merges, or after its prototype ticket closes.
   - [ ] <PR id> and <PR id> are independent and first. Both branch from `main`.
   - [ ] <PR id> after <PR id>.
 - [ ] Hold the file boundaries. <PR id or class> touches only `<glob>`.
@@ -78,7 +78,7 @@ Each live lane runs in its own background agent with worktree isolation (`run_in
 
 ## <Task as a verb phrase> (<PR id>)
 
-**Depends on.** <PR id, or None.>
+**Depends on.** <PR id or prototype ticket, or None.>
 
 **Files.**
 
@@ -153,6 +153,6 @@ Each live lane runs in its own background agent with worktree isolation (`run_in
 <Docs to read before editing. Which PRs get `<milliways>/skills/how/SKILL.md` and `<milliways>/skills/interrogate/SKILL.md`. The trail per `<milliways>/skills/show-me-your-work/SKILL.md`.>
 ````
 
-**Reply:** the plan path, the PR ids with their dependencies and the review-gated set, what the prototypes proved and what stays unproven, and the check script's output.
+**Reply:** the plan path, or in a Claude Project the parent issue link, the PR ids with their dependencies and the review-gated set, what the prototypes proved and what stays unproven, and the check script's output.
 
 **Reflect, the last step.** Keep this as the last item in the todo list, and do it before you send the reply. List what this thread had to work around: a broken or missing tool, a flaky check, a skill or doc that misled you, a lint you suppressed, a pattern you copied knowing it was wrong. File one `garden` issue for each, per `docs/agents/garden.md`, unless an open one already covers it, and name what you filed in the reply. In a repo without that document, list them in the reply instead. Run the full **reflect** skill as well when the thread was long or the chef asks for it. A playbook run inside another one, such as Opening a PR at the end of Feature, leaves this step to the outer playbook.

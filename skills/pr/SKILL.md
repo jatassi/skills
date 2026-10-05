@@ -230,4 +230,6 @@ A prototype PR asks the chef to pick between variants of a UI. Nothing in it mer
    gh pr close <n> --comment "$(cat decision.md)"
    ```
 
+   When the ticket is a prototype ticket (labelled `prototype`), close it too with `gh issue close <ticket>`, which unblocks the tickets that wait on its answer.
+
    Keep the branch: the build uses it as the reference spec and rebuilds the winning variant properly, so no prototype shortcut lands.
