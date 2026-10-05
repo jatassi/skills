@@ -58,8 +58,8 @@ It never overwrites a file, so re-running it only adds what a later milliways br
 
 The Projects kit in [`skills/setup-milliways/projects/`](skills/setup-milliways/projects) runs the kitchen from a Claude Project. Cloud threads see only what is committed to the repo or added as a plugin, nothing from `~/.claude`, so the kit is plain files you paste into the project:
 
-1. Create a Claude Project with the kitchen repo as its only repository, and add milliways under **Project settings > Plugins**.
-2. Paste [`coordinator-brief.md`](skills/setup-milliways/projects/coordinator-brief.md) into the project instructions, and set its first standing order to the branch pull requests target. It makes the project conversation a coordinator that writes briefs and starts threads, never edits code, and keeps the verification ledger in GitHub.
+1. Create a Claude Project with the kitchen repo as its only repository, and add milliways under **Project settings > Plugins**. The plugin loads into the project's new cloud threads, not into the project conversation, so the coordinator has no milliways skills and doesn't need them. If Project settings has no Plugins tab, the plugin can't reach threads; see [#107](https://github.com/jatassi/skills/issues/107).
+2. Paste [`coordinator-brief.md`](skills/setup-milliways/projects/coordinator-brief.md) into the project instructions, and set its first standing order to the branch pull requests target. It makes the project conversation a coordinator that writes briefs and starts threads, never edits code, and keeps the verification ledger in GitHub. The coordinator reads GitHub through the conversation's helper or a short read-only thread.
 3. Create the four routines in [`routines/`](skills/setup-milliways/projects/routines) from the project's **Routines** tab:
    - [`risk-digest`](skills/setup-milliways/projects/routines/risk-digest.md), daily: ranks yesterday's merges by risk and moves the trust ladder.
    - [`garden-sweep`](skills/setup-milliways/projects/routines/garden-sweep.md), nightly: files a `garden` issue for each banned pattern that landed.

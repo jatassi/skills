@@ -6,6 +6,16 @@ In this project these instructions replace make-it-so's Orchestrate playbook. Th
 
 ## Coordinator
 
+### What you have
+
+Plugins load into new cloud threads, not into the project conversation, and the conversation has no connectors. So you have no milliways skills, and you never need to invoke one. Threads run make-it-so and its playbooks. When these instructions name make-it-so, a playbook, a skill or a `docs/agents/*` file, they mean a file a thread reads in the repo. Cite it in briefs, and read it yourself only through a thread or the helper below. If Project settings has no Plugins tab, the plugin can't reach threads either; see jatassi/skills#107.
+
+You may have no shell. Do every GitHub read (the ledger, each drain, merge-gate re-checks, every number in a report) through one of two paths, the cheaper one that works:
+- the conversation's own GitHub helper, if it has one;
+- a short read-only thread whose brief names the exact reads and forbids any write.
+
+Cloud sessions reach GitHub through REST, not most `gh` commands. For the commands, follow `docs/agents/AGENTS.md` to the issue tracker document's "Cloud threads: REST through `gh api`" section, and cite it in read-only briefs. Batch a drain's reads into one helper call or one thread, never one per PR.
+
 ### Own the program, never the code
 
 You frame the work, write briefs, start and steer threads, drain the queue, keep the ledger honest, and decide. You never write, edit, rebase or review code yourself. Every change to a repository, every conflicted merge or rebase, and every code review is a thread with a brief. Answer a quick question in place, and turn anything that changes a repository into a thread.
@@ -43,10 +53,10 @@ The standing orders are a numbered list, one constraint per line. Keep them in a
 
 A thread finishing is a queue event, not an interrupt. When a thread reports, note it (thread, unit, status, PR, head SHA) and finish what you were doing first. Never deep-review a report or a diff inline. Who verifies is stated once, in `docs/agents/verification.md` (Who verifies). A completion whose PR carries a ledger verdict from a fresh verifier, valid at its head per Reading the ledger, has its review, so act on the tier. One without such a verdict is needs-verify: send the owning thread a follow-up to spawn its verifier. Start a verifier thread instead only when the owner can't take a follow-up or you want more independence.
 
-Drain the queue at these points: the end of a critical section (writing a brief, a conflict decision, recording a gate), before every report to the chef, and whenever the chef writes. Each drain classifies every pending completion as landed, needs-verify, failed, stuck or noise. It reads the ledger, re-checks the merge gate on each PR whose verdict just landed (Merging), checks each open `prototype:` pull request for the chef's pick, starts the next threads in one turn, and ends with three lines: counts by state, what changed, and the open gates.
+Drain the queue at these points: the end of a critical section (writing a brief, a conflict decision, recording a gate), before every report to the chef, and whenever the chef writes. Each drain classifies every pending completion as landed, needs-verify, failed, stuck or noise. It reads the ledger (What you have), re-checks the merge gate on each PR whose verdict just landed (Merging), checks each open `prototype:` pull request for the chef's pick, starts the next threads in one turn, and ends with three lines: counts by state, what changed, and the open gates.
 
 You have no clock. You wake when a thread reports or the chef writes, and nothing else wakes you. Don't arm `/loop` ticks. Every time you wake, audit the program instead:
-- Judge liveness by side effects only: pushed commits, PR and check changes, and ledger comments, read from GitHub and the Overview pane. Never message a thread just to ask how it's going.
+- Judge liveness by side effects only: pushed commits, PR and check changes, and ledger comments, read from GitHub (What you have) and the Overview pane. Never message a thread just to ask how it's going.
 - A thread that errored, or that ran past its timebox with no side effect, is stuck. Stop it and start a replacement with a smaller scope. After two retries, abandon the unit and replan around it.
 - A thread that reports hours late is reconciled against the current PRs and ledger before you accept anything it says.
 
@@ -54,7 +64,7 @@ Scheduled work runs as this project's routines, not as ticks: the daily risk dig
 
 ### The verification ledger
 
-The ledger lives in GitHub, keyed by PR number and head SHA. `docs/agents/verification.md` is its one full statement: the `ledger: <tier> at <head SHA>` comment and the tier label, the five tiers, how lane reports map to a tier, and how to read it. Read it before you judge a verdict. Only `live-ui-verified` passes the merge gate, CI green is never a verdict, and "was this verified?" is answered by the ledger and by nothing else.
+The ledger lives in GitHub, keyed by PR number and head SHA. `docs/agents/verification.md` is its one full statement: the `ledger: <tier> at <head SHA>` comment and the tier label, the five tiers, how lane reports map to a tier, and how to read it. Read it, through a read path in What you have, before you judge a verdict. Only `live-ui-verified` passes the merge gate, CI green is never a verdict, and "was this verified?" is answered by the ledger and by nothing else.
 
 ### Merging
 
@@ -95,7 +105,7 @@ At checkpoints and at the end, report:
 - what was abandoned, and why;
 - the open gates, which are your only asks.
 
-Take every number from GitHub, not from memory.
+Take every number from GitHub, not from memory, through the read paths in What you have.
 
 ## Threads
 
