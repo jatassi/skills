@@ -3,7 +3,9 @@
 # docs/adr/0003-every-merge-to-main-is-a-release.md.
 #
 # Changes land on dev and reach main by pull request. On the pull request,
-# npm test runs on Ubuntu, macOS and Windows at the minimum Node, and the
+# the vendored tree is checked against its pinned upstreams, and every
+# workspace's tests (npm run test:all)
+# run on Ubuntu, macOS and Windows at the minimum Node, and the
 # bundle it ran against is kept under the git tree it tested. The merge then
 # releases without testing again: it requires a tested bundle for exactly the
 # tree it is releasing, builds visual-grilling into skills/visual-grilling/dist/,
@@ -83,9 +85,29 @@ jobs:
       - name: Install Chromium
         if: runner.os == 'Linux'
         run: npx playwright install --with-deps chromium
+      # Every vendored file must be its pinned upstream file after the
+      # substitution table, or a fork declared in vendor/forks.json, and none
+      # may carry a Cursor-ism, a pinned model version, a CLAUDE.md reference,
+      # an un-namespaced agent type or a playbook step naming a missing skill.
+      # See docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md.
+      # The vendor workspace runs it too, at the end of its tests; this step
+      # names the failure.
+      - name: Check the vendored tree
+        if: runner.os == 'Linux'
+        run: npm run vendor -- check
+      # pstack's scripts are vendored verbatim on Bun, with their upstream
+      # tests; a sync that breaks one fails the pull request. The tests use
+      # fakes (no gh, git or network), so Linux is enough: the scripts run in
+      # Linux cloud environments and on the chef's machine. Found by glob so the
+      # skill folder can be renamed.
+      - uses: oven-sh/setup-bun@v2
+        if: runner.os == 'Linux'
+      - name: Test the vendored Bun scripts
+        if: runner.os == 'Linux'
+        run: npm run test:bun
       # Browser tests (round page and block corpus) run on Ubuntu only. The
       # POSIX-only checks skip themselves on Windows.
-      - run: npm test
+      - run: npm run test:all
         env:
           VG_SKIP_BROWSER_TESTS: ${{ runner.os == 'Linux' && '0' || '1' }}
       - name: Name the tested bundle after the tested tree

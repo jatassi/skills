@@ -1,11 +1,17 @@
 {
-  "name": "jatassi-skills-dev",
+  "name": "milliways-dev",
   "private": true,
   "workspaces": [
-    "packages/visual-grilling"
+    "packages/visual-grilling",
+    "packages/setup-milliways",
+    "packages/vendor",
+    "packages/trust-ladder"
   ],
   "scripts": {
-    "test": "npm test --workspace packages/visual-grilling",
-    "try": "npm run try --workspace packages/visual-grilling"
+    "test": "node scripts/test.mjs",
+    "test:all": "node scripts/test.mjs --all",
+    "try": "npm run try --workspace packages/visual-grilling",
+    "vendor": "node packages/vendor/cli.ts",
+    "test:bun": "node scripts/test-bun.mjs"
   }
 }

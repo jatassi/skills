@@ -20,7 +20,7 @@ import { parseArgs } from 'node:util';
 import { kib, type OutputSize, outputSizes } from './build/sizes.ts';
 
 const REPO = 'jatassi/skills';
-const PLUGIN = 'jatassi-skills';
+const PLUGIN = 'milliways';
 const PLUGIN_MANIFESTS = ['plugin.json', '.claude-plugin/plugin.json'];
 const MARKETPLACE = '.claude-plugin/marketplace.json';
 const VERSION_LINE = /"version": "([^"]*)"/;

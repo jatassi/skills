@@ -1,0 +1,258 @@
+{
+  "agents/poteto-agent.md": {
+    "kind": "port-feature",
+    "why": "The agent reads make-it-so before any work, but a Claude Code plugin subagent cannot find the plugin's install path; it preloads the skill through the skills frontmatter field instead (milliways:make-it-so, the renamed poteto-mode). Delegation base case (#77 audit): a subagent spawned for one playbook step executes that step and does not re-route through a playbook or spawn again unless its brief says so, so Feature's delegate cannot re-enter Feature step 5."
+  },
+  "skills/architect/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (bug-fix, refactoring, prototype), figure-it-out and no-comments."
+  },
+  "skills/arena/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (eval, feature, orchestrate), and architect. Model fallback: runner and judge fallbacks follow the models document's Model values and Fallback section instead of Cursor slug families; candidates get worktrees through isolation: \"worktree\"; a judge from the same family is recorded as such."
+  },
+  "skills/automate-me/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Claude Code registers skills only directly under skills/, so Cursor category directories go; AskUserQuestion takes 1-4 questions of 2-4 options with multiSelect, not allow_multiple; writing-for-agents keeps its frontmatter rules in SKILL-MECHANICS.md and has no test/iterate loop; a cloud thread holds only its own transcript."
+  },
+  "skills/benchmark-checklist/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (hillclimb, perf-issue)."
+  },
+  "skills/blast-radius/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and the pr skill runs it on every PR for the blast radius and the one fact the change is safe because of."
+  },
+  "skills/code-review/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
+  },
+  "skills/codebase-design/DESIGN-IT-TWICE.md": {
+    "kind": "port-feature",
+    "why": "Domain lookup: upstream reached the domain docs through the '## Agent skills' block in AGENTS.md (docs/agents/domain.md); kitchens list the domain document in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, so the skill finds where GLOSSARY.md and the ADRs live through that index, falling back to the repo root and docs/adr/."
+  },
+  "skills/create-verification-skill/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and setup-milliways offers it and invokes it on yes, and docs/agents/verification.md points threads at it."
+  },
+  "skills/diagnosing-bugs/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Domain lookup: upstream reached the domain docs through the '## Agent skills' block in AGENTS.md (docs/agents/domain.md); kitchens list the domain document in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, so the skill finds where GLOSSARY.md and the ADRs live through that index, falling back to the repo root and docs/adr/."
+  },
+  "skills/domain-modeling/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Domain lookup: upstream reached the domain docs through the '## Agent skills' block in AGENTS.md (docs/agents/domain.md); kitchens list the domain document in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, so the skill finds where GLOSSARY.md and the ADRs live through that index, falling back to the repo root and docs/adr/."
+  },
+  "skills/explain/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Step 5 relied on Cursor's image-generation tool, which Claude Code lacks; spatial ideas get a drawn SVG or HTML sketch, keeping the build-up rule."
+  },
+  "skills/figure-it-out/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router (no playbook fits) and playbooks/refactoring.md. Kitchen ending (#77 audit): ends with an Opening a PR phase (when the run ships a change) and the Reflect step every make-it-so playbook ends with; verdicts use the vocabulary of docs/agents/verification.md instead of VERIFIED, NOT VERIFIED or INCONCLUSIVE. Its description scopes it to one PR's worth of cross-cutting work, matching the router's order for large work."
+  },
+  "skills/grill-with-docs/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin."
+  },
+  "skills/grill-with-docs/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. Domain lookup: upstream reached the domain docs through the '## Agent skills' block in AGENTS.md (docs/agents/domain.md); kitchens list the domain document in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, so the skill finds where GLOSSARY.md and the ADRs live through that index, falling back to the repo root and docs/adr/."
+  },
+  "skills/how/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so playbooks (investigation, multi-phase-plan, hillclimb, refactoring, bug-fix), make-it-so's router, milliways:comment-sicko, and architect, explain, blast-radius and no-comments."
+  },
+  "skills/implement-spec/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index. Hand-off: kitchens land each ticket as its own PR off trunk, written with the pr skill, and never stack PRs or use an integration branch, so the skill runs make-it-so's Spec and tickets hand-off instead: one thread per frontier ticket that runs make-it-so on it, so the ticket lands in its matching playbook (Feature, Bug fix, and so on) and as its own PR through Opening a PR, merged by the chef or through the merge gate. It stays user-only, as upstream. Round 3 (#77 audit): a prototype ticket's thread ends at a draft prototype: PR that never merges; the ticket closes on the chef's pick, the skill reports it as awaiting the pick (never landed or a merge candidate), and its dependents wait until it closes."
+  },
+  "skills/implement/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin."
+  },
+  "skills/implement/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user."
+  },
+  "skills/improve-codebase-architecture/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Domain lookup: upstream reached the domain docs through the '## Agent skills' block in AGENTS.md (docs/agents/domain.md); kitchens list the domain document in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, so the skill finds where GLOSSARY.md and the ADRs live through that index, falling back to the repo root and docs/adr/."
+  },
+  "skills/interrogate/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (bug-fix, multi-phase-plan, opening-a-pr), and architect. Model fallback: reviewers follow the models document's Model values and Fallback section, where a second family arrives as a <cli>:<tier> seat, instead of Cursor slug families and a self-editing default table."
+  },
+  "skills/no-comments/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router (before review) and playbooks (opening-a-pr, multi-phase-plan, autopilot-full, autopilot-stack)."
+  },
+  "skills/make-it-so/playbooks/orchestrate.md": {
+    "kind": "policy",
+    "why": "The orch CLI is excluded and the verification ledger lives in GitHub: every orch command becomes a direct store-file edit or a ledger comment on the PR, the store moves to ~/.claude/projects/<project>/, and restacks and cloud-only spawns become background agents with worktree isolation. The orch frontier command's empty-gt guard becomes an instruction. Worktree agents share one repository, so workers release their branches and the lander frees held branches before a rebase. Every agent runs on this machine, so the isolation exception covers only the coordinator's own working tree and worktree agents may read the store. The different-family verifier resolves to the models document's verifier and verifier-diff-audit roles, with a fallback line when there is no second family. Kitchen: every landing passes Autopilot-full's merge gate, and a closed gate parks in gates.md for the chef; human-in-the-loop units become local Projects threads running visual-grilling, with plain-text grilling as the fallback; a marker sentence says the Projects coordinator plus routines replace the /loop wakes and points at the Projects kit (the coordinator brief and routine prompts) in skills/setup-milliways/projects/. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). No stacks (spec #66 story 42): Stack safety becomes Merge safety, where each unit is one PR off trunk, dependent units are merge-then-branch, the frontier is recomputed with gh instead of gt, and one lander replaces the stacker. Audit fixes (#77 audit): in a Claude Project the coordinator brief replaces this playbook and the project conversation does not route through make-it-so; the standing-orders register is standing-orders.md, the brief's name; the ledger paragraph points at docs/agents/verification.md, its one full statement; the retro watcher becomes the post-merge sweep, which files issues (garden for workarounds); a prototype pick leaves the human-in-the-loop list, since its one channel is the draft prototype: PR, and a drain that finds the pick spawns the unit that finishes it. Round 2 (#77 audit): the done predicate counts units merged with their ledger tier recorded; a unit verified by one cheap command gets its receipt recorded as unit-test-verified or type-check-only, which never passes the gate, so it waits for the chef's merge, and the cheap-unit pilot fans out once its receipt is in the ledger. The merge gate binds every merge except the chef's own; landing names units whose gate holds rather than verified units; the cheap pilot's path ends at its merge-ready stop. Local threads run on the chef's own machine, not a Mac by name."
+  },
+  "skills/make-it-so/SKILL.md": {
+    "kind": "policy",
+    "why": "Router: renamed make-it-so and made the kitchen's entry point, reached through the root AGENTS.md line, so the sticky-mode frontmatter (mode, icon, color, reminder) goes and the description says when to route. Routing rule: running something can answer it -> prototype; a one-way door or taste, intent or domain words only the chef holds -> grill, visual-grilling first; bigger than one context -> wayfinder; human-in-the-loop work runs as a local Projects thread with a plain-text fallback. Overlap wiring: Matt's implement, tdd, diagnosing-bugs, code-review, prototype and grilling are the procedures for their jobs; tdd-bug-fix stays for bugs, interrogate for one-way doors, and the Spec and tickets playbook is listed. Every playbook ends with Reflect. No stacks: Autopilot-stack is not listed (its playbook is deleted), and Orchestrate and multi-phase plans no longer say stacked PRs. Autonomy: merges follow the trust ladder's merge gate, and one-way doors always wait for the chef. Model-invocable: milliways:poteto-agent preloads it, and Claude Code cannot preload a skill with model invocation off. Roles: the Subagents defaults resolve from docs/agents/models.md (written by setup-milliways) instead of setup-pstack and Cursor model slugs. Leaf skills: says where principle leaves and this skill's own files live (<milliways>), since Claude Code does not list skills with model invocation off. Audit fixes (#77 audit): the Subagents section states the delegation base case (a step's subagent executes the step and does not re-route or spawn unless briefed to); the Playbooks preamble orders large work (wayfinder, then Spec and tickets, then Multi-phase plan run by Autopilot-full with the plan as GitHub tickets in a Claude Project, then figure-it-out, then Autonomous run); a chef's explicit merge request is the chef's own merge, recorded in the ledger comment, and every other merge, Shipping's and Babysit's included, goes through the merge gate; Shipping and Babysit take one PR or a queue of independent PRs; in a Claude Project the coordinator brief replaces Orchestrate; a prototype pick's one channel is its draft prototype: PR, so it leaves the human-in-the-loop list; Opening a PR ends every playbook that ships a change; on-ramps suggest /triage and /improve-codebase-architecture to the chef, send codebase upkeep to the garden loop, and send a spec to build to Spec and tickets' hand-off. The sequence-verifiable-units entry says order commits and PRs, not stack them. Round 2 (#77 audit): the Shipping line and the trust-ladder paragraph point at docs/agents/verification.md for the chef's own merge, which holds whatever the PR's tier, and every other merge goes through the gate; in a Claude Project a multi-phase plan's published parent issue is the plan. The chef's own merge covers merge, land or ship. Local threads run on the chef's own machine, not a Mac by name."
+  },
+  "skills/pr/SKILL.md": {
+    "kind": "policy",
+    "why": "PR anatomy: keeps Summary, Evidence and Merge Danger, and adds a conventional-commit title, a calldiff call-tree summary sanity-checked for dynamic dispatch (Mermaid as fallback), a scope line, before/after media attached with gh --attach, the red-then-green test, a Blast radius: high|medium|low line with the one fact it is safe because of, the door:one-way label, commits regrouped in dependency order, the verifier verdict at the head SHA with its tier label, a decision-log link and the Fix-forward: #N line, which the trust-ladder scorer reads. One concern per PR, no stacks. Adds the Prototype PRs variant: a draft titled prototype: with a screencast per variant, closed unmerged with the chef's pick recorded on the PR and the ticket. Audit fixes (#77 audit): the opening thread never waits for a prototype pick; the pick resumes as a new thread (started by the Projects coordinator or the chef) that records the decision and closes the PR unmerged; verdict and tier lines point at docs/agents/verification.md, the ledger's one full statement. Domain docs (#77 audit): the glossary is found through the docs/agents/AGENTS.md index's domain document, falling back to GLOSSARY.md at the repo root and ADRs in docs/adr/, like the other forked Matt skills. Round 2 (#77 audit): the pick's thread also closes a prototype ticket, which unblocks the tickets that wait on its answer."
+  },
+  "skills/reflect/SKILL.md": {
+    "kind": "policy",
+    "why": "Step 1 hard-codes Cursor's three transcript layouts and its JSONL record shape; Claude Code has a session and a subagent layout, and its first user event carries the prompt. Step 5 handed work to Cursor create-skill's draft/test/iterate and description-optimization loops, which writing-for-agents (a reference, not a loop) does not have. Model-invocable (#77 audit): a skill with disable-model-invocation can only be typed by the user, and every make-it-so playbook's Reflect step calls it (and figure-it-out's). The Backlog files garden issues per docs/agents/garden.md instead of an unnamed devex tracker, and a pass run from a Reflect step with no chef in the thread parks the Accepted list as a gate rather than waiting."
+  },
+  "skills/show-me-your-work/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (autonomous-run, hillclimb, autopilot-full, autopilot-stack, orchestrate, multi-phase-plan), and figure-it-out. Cross-model review: the trail review runs on the models document's verifier-diff-audit seat when there is one, otherwise on a fresh verifier subagent with the review marked same-family, since a Claude-only cloud thread has no second family."
+  },
+  "skills/swarm/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router (parallel fan-out) and playbooks (multi-phase-plan, autopilot-full). Worker role from the caller (#77 audit): verifier lanes run on the models document's verifier role, never code (the merge gate requires it); swarm workers is the fallback when the caller names no role."
+  },
+  "skills/tdd-bug-fix/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so playbooks/bug-fix.md step 5."
+  },
+  "skills/tdd/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Domain lookup: upstream reached the domain docs through the '## Agent skills' block in AGENTS.md (docs/agents/domain.md); kitchens list the domain document in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, so the skill finds where GLOSSARY.md and the ADRs live through that index, falling back to the repo root and docs/adr/."
+  },
+  "skills/technical-writing/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router and playbooks (opening-a-pr, multi-phase-plan)."
+  },
+  "skills/to-spec/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin."
+  },
+  "skills/to-spec/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. Config lookup: kitchens list the issue tracker, the triage labels and the domain docs (where GLOSSARY.md and the ADRs live) in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
+  },
+  "skills/to-tickets/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin."
+  },
+  "skills/to-tickets/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. Config lookup: kitchens list the issue tracker, the triage labels and the domain docs (where GLOSSARY.md and the ADRs live) in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
+  },
+  "skills/triage/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Config lookup: kitchens list the issue tracker, the triage labels and the domain docs (where GLOSSARY.md and the ADRs live) in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index."
+  },
+  "skills/unslop/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so's router (any prose surface), playbooks (investigation, opening-a-pr, multi-phase-plan), and explain, recall, blast-radius, automate-me, technical-writing and show-me-your-work."
+  },
+  "skills/wait-what/SKILL.md": {
+    "kind": "port-feature",
+    "why": "Domain lookup: upstream reached the domain docs through the '## Agent skills' block in AGENTS.md (docs/agents/domain.md); kitchens list the domain document in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, so the skill finds GLOSSARY.md through that index, falling back to the repo root."
+  },
+  "skills/wayfinder/agents/openai.yaml": {
+    "kind": "policy",
+    "why": "Model-invocable in Codex too (allow_implicit_invocation): make-it-so's playbooks call this skill as a step, in any harness that loads the plugin. make-it-so routes work bigger than one context here."
+  },
+  "skills/wayfinder/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: make-it-so's playbooks call this skill as a step, and a skill with disable-model-invocation can only be typed by the user. make-it-so routes work bigger than one context here. Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index. No-tracker fallback: kitchens run on GitHub Issues only (#66) and the local-markdown tracker document is not shipped, so with no tracker in the index the skill sends the user to /setup-milliways."
+  },
+  "skills/why/SKILL.md": {
+    "kind": "policy",
+    "why": "Model-invocable: a skill with disable-model-invocation can only be typed by the user, and it is called by make-it-so playbooks (bug-fix, investigation), milliways:comment-sicko, and architect, explain, recall and blast-radius."
+  },
+  "skills/make-it-so/playbooks/autopilot-full.md": {
+    "kind": "policy",
+    "why": "Merge gate (spec #66, trust ladder): the owner merges only when the PR's area is gated in docs/agents/autonomy.md (first matching Areas row per path against the PR's base branch, lowest rung across areas), CI is green, a fresh verifier passed at the head SHA and patch-id with the live lane as the floor, and the door is two-way (no door:one-way label, no path or change on the One-way doors list). Otherwise it stops at merge-ready for the chef; the operator's grant no longer opens a closed gate. A marker sentence says the Projects coordinator plus routines replace the hourly /loop tick and points at the Projects kit (the coordinator brief and routine prompts) in skills/setup-milliways/projects/. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites. Audit fixes (#77 audit): no private-stack exception, so a dependent change is merge-then-branch; verifier lanes run on the models document's verifier role, never code, and the gate's fresh verdict is live-ui-verified per docs/agents/verification.md; the retro pass becomes the post-merge sweep (late review-bot threads, trunk CI after merge, promised follow-ups with no issue), which the risk-digest routine runs in a Claude Project. Round 2 (#77 audit): items the operator reserves (not names) stay with the operator, so a named PR the chef says to merge stays the chef's own merge per docs/agents/verification.md. Round 3 (#77 audit): the merge gate's text points to the chef's-own-merge exception in docs/agents/verification.md."
+  },
+  "skills/make-it-so/playbooks/autopilot-stack.md": {
+    "kind": "policy",
+    "why": "Deleted: the kitchen does not stack PRs (spec #66 story 42, one concern per PR so the merge gate reasons about one PR at a time). Autopilot-full covers the same queue, and when the chef wants to review before landing or withholds merge authority, its owners stop at merge-ready. make-it-so, Opening a PR, Babysit and the multi-phase plan no longer name it. If upstream changes this file, sync reports a conflict to re-check the deletion."
+  },
+  "skills/make-it-so/playbooks/bug-fix.md": {
+    "kind": "policy",
+    "why": "Overlap: Matt's diagnosing-bugs is the kitchen's diagnosis procedure, so steps 1 and 2 run its loop (the repro is its feedback loop, the binary search its hypothesis phases) while keeping pstack's surface and evidence rules; tdd-bug-fix stays at step 5. Matt's code-review reviews the branch before Opening a PR. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites."
+  },
+  "skills/make-it-so/playbooks/feature.md": {
+    "kind": "policy",
+    "why": "Overlap, in the spec's order prototype -> architect -> implement and tdd -> verify -> pr: a prototype step (Matt's prototype skill, or a winning prototype branch checked out as the reference spec and rebuilt on the paved path) before architect; the code delegate runs Matt's implement test-first with Matt's tdd; verify names the live-lane floor; Matt's code-review reviews every change, with interrogate kept for one-way doors and contested designs; Opening a PR writes the PR with the pr skill. Follow-ups get their own PRs, since the kitchen does not stack. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites. Audit fixes (#77 audit): the step 5 brief says \"You own the diff; do not spawn.\" (the delegation base case) and has the delegate skip implement's own code-review, which step 8 owns."
+  },
+  "skills/make-it-so/playbooks/opening-a-pr.md": {
+    "kind": "policy",
+    "why": "The pr skill owns the PR anatomy (title, body sections, evidence, labels), so pstack's Titles and Descriptions rules give way to it. No stacks (spec #66 story 42): one concern per PR, branched from trunk, dependent work merge-then-branch, and pstack's stack mechanics and Autopilot-stack references go. A prototype: PR is the one draft. Matt's code-review runs before every PR, and interrogate only for one-way doors. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites. Audit fixes (#77 audit): invoked at the end of every playbook that ships a change; a thread started from a Projects coordinator brief owns its PR, runs Babysit in drive mode to merge-ready, and merges only through the merge gate or on the chef's explicit request; queue replaces stack. Round 2 (#77 audit): a subagent that opens a PR skips code-review and interrogate when the calling playbook already ran them, as Feature step 8 does, the same guard as the PRs paragraph. Round 3 (#77 audit): the PRs paragraph's interrogate gets the same guard as code-review, skipped when the calling playbook already ran it."
+  },
+  "skills/make-it-so/playbooks/prototype.md": {
+    "kind": "policy",
+    "why": "Overlap: Matt's prototype skill builds the prototype. Prototype-as-spec: a choice for the chef ships as the pr skill's Prototype PRs draft (prototype: title, prototype label, one screencast per variant), the chef picks by commenting, the PR closes unmerged with the decision recorded, and the kept branch is the build thread's reference spec, rebuilt on the paved path by Feature. A fork inside the thread's own task is decided from the evidence without a PR. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites. Audit fixes (#77 audit): the draft prototype: PR is the pick's one channel; the opening thread (and the thread that sent it) parks and stops, and the chef's pick resumes as a new thread, started by the Projects coordinator or the chef, that runs steps 7 and 8. Round 2 (#77 audit): Spec and tickets and a Multi-phase plan never send a chef's pick here inline; they cut it as a prototype ticket whose own thread runs this playbook, and closing that ticket unblocks the work that waits on it. Round 3 (#77 audit): a thread that runs this playbook for a prototype ticket ends at its draft PR, and the thread that spawned it (the Spec and tickets hand-off, implement-spec, a Multi-phase plan root) keeps going with only the dependent tickets or sections blocked; only a Feature thread that sent its own chef's pick here parks."
+  },
+  "skills/make-it-so/playbooks/spec-and-tickets.md": {
+    "kind": "policy",
+    "why": "Port-only playbook, not in pstack: large or one-way-door work runs grill-with-docs (visual-grilling first), interrogate for a one-way door, to-spec, then to-tickets, per the spec's overlap table, and hands each ticket to its own playbook. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). Audit fixes (#77 audit): the trigger narrows to large work whose intent the chef hasn't settled (settled multi-PR work is a Multi-phase plan), and the steps stay in one unbroken context, with no compact or clear between them, carrying ask-matt's phase-boundary rule. Round 2 (#77 audit): a chef's prototype pick never parks the playbook, which finishes in its one unbroken context; step 4 cuts the open question as a prototype ticket that blocks only the tickets depending on its answer, and the chef's pick closes it. The prototype ticket is labelled for an agent and step 5 hands it to the Prototype playbook. Local threads run on the chef's own machine, not a Mac by name."
+  },
+  "skills/make-it-so/playbooks/babysit.md": {
+    "kind": "policy",
+    "why": "Drops the sentence naming Autopilot-stack's root, since that playbook is deleted (no stacks). Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites. No stacks (#77 audit): Babysit takes one PR or a queue of independent PRs, watched one PR at a time with watch-pr's single mode; a fix whose PR merged becomes a new PR off trunk; GitHub's queued-stack mode and the stacked-parent merge note go. A PR's owner (an Autopilot-full owner or a thread started from a Projects coordinator brief) babysits its own PR in drive mode and merges only through the merge gate. Round 2 (#77 audit): an owner merges through the merge gate or as the chef's own merge per docs/agents/verification.md."
+  },
+  "skills/make-it-so/playbooks/multi-phase-plan.md": {
+    "kind": "policy",
+    "why": "No stacks: the execution playbook is Autopilot-full (Autopilot-stack is deleted), dependent PRs start after their parent merges, and the merge box says the owner merges when the merge gate holds or the chef merges. A marker sentence in the skeleton's `/loop 1h` box says the Projects coordinator plus routines replace the hourly tick and points at the Projects kit (the coordinator brief and routine prompts) in skills/setup-milliways/projects/. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). It also carries the poteto-mode -> make-it-so rename by hand, since forks don't pick up rewrites. Audit fixes (#77 audit): the marker sentence drops its mid-sentence colon so the skeleton passes check-plan.mjs (packages/vendor/test/check-plan.test.ts runs it); A stack child targets its parent branch goes; live lanes run on the models document's verifier role (`<verifier model>` in the skeleton), never code; a clean verdict is live-ui-verified per docs/agents/verification.md. Round 2 (#77 audit): the plan is published to the tracker only in a Claude Project and only after steps 5 and 6 finalize the file, after which the parent issue is the plan and step 7 posts its link; a chef's prototype pick never parks the playbook but becomes a prototype ticket named under Depends on. in the PR sections that wait on it. Step 2 runs the Prototype playbook only for forks that are the thread's own, a prototype ticket is labelled for an agent, and the skeleton spawns one Prototype thread per open prototype ticket."
+  },
+  "skills/make-it-so/playbooks/authoring-a-skill.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/autonomous-run.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/eval.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/hillclimb.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/investigation.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/pause-safely.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/perf-issue.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/refactoring.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). Large work (#77 audit): large structural work routes by make-it-so's order for large work, so only one PR's worth with no playbook fit goes to figure-it-out."
+  },
+  "skills/make-it-so/playbooks/runtime-forensics.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/session-pickup.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). Order (#77 audit): verifying the inherited claims comes before the hand-off, so ends here sits on the last step."
+  },
+  "skills/make-it-so/playbooks/shipping.md": {
+    "kind": "policy",
+    "why": "Merge gate and no stacks (spec #66, #77 audit): Shipping takes one PR or a queue of independent PRs instead of a stack, so the contiguous-run, bottom-PR, retarget and queued-stack steps become per-PR steps watched with watch-pr's single mode. Verifiers run on the models document's verifier role and record their verdict as a ledger comment and tier label per docs/agents/verification.md, and only live-ui-verified lands, apart from the chef's own merge. Before any merge or --auto, the merge gate in autopilot-full step 5 must hold, else the PR stops at merge-ready for the chef, unless the chef explicitly asked to merge it, which is the chef's own merge, recorded in the ledger comment. Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66). A PR's owner does its rebase; Shipping rebases only a PR with no live owner, and arms --auto only when the gate's other checks hold and required checks enforce CI, or on the chef's request. Round 2 (#77 audit): step 2 exempts a PR the chef named in the thread and said to merge or ship, the chef's own merge whatever its tier, so it skips steps 1 and 3 and step 5's gate check, and its ledger comment records its actual tier per docs/agents/verification.md. Step 1 still resolves the forge for an exempt PR, and land counts like merge or ship. Round 3 (#77 audit): the chef's own merge also covers a request relayed verbatim by the Projects coordinator or an Autopilot-full root, per docs/agents/verification.md; when step 4 rebases an exempt PR, its patch-id is compared before and after, and its ledger comment names the prior tier only if the patch-id is unchanged, else no verdict at the new head."
+  },
+  "skills/make-it-so/playbooks/trace-forensics.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/visual-parity.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  },
+  "skills/make-it-so/playbooks/worktree-cleanup.md": {
+    "kind": "policy",
+    "why": "Reflect: ends with the Reflect step every make-it-so playbook ends with, which files a garden issue for each thing the thread worked around (spec #66)."
+  }
+}
