@@ -65,7 +65,7 @@
   },
   "skills/implement-spec/SKILL.md": {
     "kind": "port-feature",
-    "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index. Hand-off: kitchens land each ticket as its own PR off trunk, written with the pr skill, and never stack PRs or use an integration branch, so the skill runs make-it-so's Spec and tickets hand-off instead: one Feature thread per frontier ticket, merged by the chef or through the merge gate. It stays user-only, as upstream."
+    "why": "Config lookup: kitchens list the issue tracker and triage labels in the kitchen config index (docs/agents/AGENTS.md) that setup-milliways writes, not in an '## Agent skills' block in AGENTS.md, so the skill finds them through that index. Hand-off: kitchens land each ticket as its own PR off trunk, written with the pr skill, and never stack PRs or use an integration branch, so the skill runs make-it-so's Spec and tickets hand-off instead: one thread per frontier ticket that runs make-it-so on it, so the ticket lands in its matching playbook (Feature, Bug fix, and so on) and as its own PR through Opening a PR, merged by the chef or through the merge gate. It stays user-only, as upstream."
   },
   "skills/implement/agents/openai.yaml": {
     "kind": "policy",

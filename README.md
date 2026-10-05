@@ -62,7 +62,7 @@ Vendored from [mattpocock/skills](https://github.com/mattpocock/skills), its Eng
 | [`grilling`](skills/grilling/SKILL.md) | Grill you about a plan, a round of numbered questions at a time. |
 | [`handoff`](skills/handoff/SKILL.md) | Compact the conversation into a handoff document for another agent. |
 | [`implement`](skills/implement/SKILL.md) * | Implement a piece of work from a spec or tickets, test-first, then review it. |
-| [`implement-spec`](skills/implement-spec/SKILL.md) | Hand off a spec's tickets: one Feature thread per ready ticket, each landing as its own PR, frontier by frontier. |
+| [`implement-spec`](skills/implement-spec/SKILL.md) | Hand off a spec's tickets: one `make-it-so` thread per ready ticket, each in its matching playbook and landing as its own PR, frontier by frontier. |
 | [`improve-codebase-architecture`](skills/improve-codebase-architecture/SKILL.md) | Find deepening opportunities, report them as an HTML page, then grill through the one you pick. |
 | [`pr`](skills/pr/SKILL.md) | Open a pull request with the kitchen's PR anatomy, or a draft prototype PR for the chef to pick a variant. |
 | [`prototype`](skills/prototype/SKILL.md) | Build a throwaway prototype to answer a design question. |
