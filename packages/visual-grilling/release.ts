@@ -7,7 +7,7 @@
 //
 //   node release.ts manifests --version X.Y.Z [--check] [--root <repo>]
 //     Bumps `version` in plugin.json and .claude-plugin/plugin.json, and pins
-//     the marketplace entry's source to the tag vX.Y.Z. Refuses, changing
+//     the marketplace entry's source to the repo's https url at tag vX.Y.Z. Refuses, changing
 //     nothing, unless X.Y.Z is newer than the version both manifests agree on.
 //     With --check it only checks, and writes nothing.
 //
@@ -19,7 +19,8 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { kib, type OutputSize, outputSizes } from './build/sizes.ts';
 
-const REPO = 'jatassi/skills';
+// Cloned over https so an install never depends on the user's SSH setup.
+const REPO_URL = 'https://github.com/jatassi/skills.git';
 const PLUGIN = 'milliways';
 const PLUGIN_MANIFESTS = ['plugin.json', '.claude-plugin/plugin.json'];
 const MARKETPLACE = '.claude-plugin/marketplace.json';
@@ -84,7 +85,7 @@ function bumpAndPin(root: string, version: string, check: boolean): void {
   if (!entry) throw new ReleaseError(`${MARKETPLACE} has no "${PLUGIN}" plugin entry`);
   if (check) return;
 
-  entry.source = { source: 'github', repo: REPO, ref: `v${version}` };
+  entry.source = { source: 'url', url: REPO_URL, ref: `v${version}` };
   for (const { file, text } of plugins) {
     writeFileSync(join(root, file), text.replace(VERSION_LINE, `"version": "${version}"`));
   }
