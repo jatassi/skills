@@ -38,9 +38,13 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          # The dev workspaces' lockfile; the root one lists no dependencies.
+          # See docs/adr/0005-dev-workspaces-live-under-packages.md.
+          cache-dependency-path: packages/package-lock.json
+      # The root postinstall runs npm ci in packages/.
       - run: npm ci
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: npm run playwright -- install --with-deps chromium
       - name: Test the changed workspaces
         run: npm test
       - name: Check the vendored tree
