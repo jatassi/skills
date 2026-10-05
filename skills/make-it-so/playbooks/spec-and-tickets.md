@@ -4,7 +4,7 @@
 
 Keep these steps in one unbroken context, with no compact or clear between them.
 
-1. Grill with the **grill-with-docs** skill, so the answers land as ADRs and glossary entries as you go. Run the rounds through the **visual-grilling** skill when this is a local thread and the chef is at their Mac, and as plain-text rounds when they are away. Facts are yours to find, never the chef's. A question that running something can answer goes to the Prototype playbook (`playbooks/prototype.md`), not to a round.
+1. Grill with the **grill-with-docs** skill, so the answers land as ADRs and glossary entries as you go. Run the rounds through the **visual-grilling** skill when this is a local thread and the chef is at their Mac, and as plain-text rounds when they are away. Facts are yours to find, never the chef's. A question that running something can answer goes to the Prototype playbook (`playbooks/prototype.md`), not to a round. A prototype that waits on the chef's pick parks this playbook. The thread the pick starts resumes it from step 1.
 2. For a one-way door, run the **interrogate** skill over the settled design before you write the spec, and put each finding it proves to the chef. `skip:` for a two-way door.
 3. Write the spec with the **to-spec** skill and publish it to the issue tracker that `docs/agents/AGENTS.md` lists.
 4. Cut the spec into tracer-bullet tickets with the **to-tickets** skill, each declaring its blocking edges. Label each ticket for an agent or a human per `docs/agents/triage-labels.md`. A human-in-the-loop ticket runs later as a local Projects thread with visual-grilling. Name each one-way door in its ticket's body, so the PR that lands it carries the `door:one-way` label.

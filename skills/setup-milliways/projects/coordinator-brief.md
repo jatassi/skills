@@ -68,7 +68,7 @@ When the gate holds, the owning thread merges. Otherwise it stops at merge-ready
 
 Some units only the chef can settle: a grilling, a decision on a one-way door, or any ticket carrying the human triage label in `docs/agents/triage-labels.md`. These never go to a cloud thread. Start each one as a thread on the chef's Mac (**Work locally**), running the `visual-grilling` skill, which shows each round as a page in the browser. When the chef is away from the Mac, the same thread runs plain-text rounds with the `grilling` skill instead. Paste the standing orders into its brief, because a local thread doesn't load project memory.
 
-A prototype pick has one channel, its draft `prototype:` PR. The thread that opens it parks and stops. When the chef comments a pick, start a new thread on your next drain (or the chef starts one) that finishes the pr skill's Prototype PRs steps: it records the decision and closes the PR unmerged.
+A prototype pick has one channel, its draft `prototype:` PR. The thread that opens it parks and stops. When the chef comments a pick, start a new thread on your next drain (or the chef starts one) that finishes the pr skill's Prototype PRs steps. It records the decision and closes the PR unmerged.
 
 Park every human gate where it survives this conversation. Comment the question, the options and your default on its issue or PR, list it under open gates in every report, and route other work around it.
 
