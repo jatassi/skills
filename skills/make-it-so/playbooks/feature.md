@@ -4,7 +4,7 @@
 
 1. `how` over the affected subsystem.
 2. Prototype what running something can answer. When a `prototype:` PR already picked a winner for this work, check out its branch as your reference spec. Build what it shows on the paved path (the repo's real framework, data layer, tests, and conventions). Never merge or copy its shortcuts. When an open design question could be settled by observing it, run the Prototype playbook (`playbooks/prototype.md`, built with the **prototype** skill) before you design. `skip:` only when the direction is set and nothing open could be observed.
-3. `architect` for parallel design exploration.
+3. `architect` for parallel design exploration. `skip: <reason>` only when the change adds no new type, signature or module boundary (a flag, a one-function fix).
 4. Write the throughput checkpoint as four todo items. A dimension that genuinely does not apply (single file, no fan-out) keeps its item with `n/a: <reason>` rather than being dropped:
    - **Blocking first steps.** Gates run before fan-out.
    - **Independent workstreams.** Disjoint files, services, or layers parallelize. Shared writes serialize.
@@ -14,7 +14,7 @@
 6. Verify on the matching surface, through a fresh verifier per Who verifies in `docs/agents/verification.md`, never the step 5 delegate. The live lane is the floor. "Inconclusive" or wrong-surface is not a pass. Flag it.
 7. Rebase into small, ordered commits. Follow-ups get their own PRs.
    Use the **sequence-verifiable-units** principle skill, building, verifying, and committing each small unit before the next.
-8. Review the branch with the **code-review** skill against its merge-base. If the change is a one-way door or the design is still contested, also `interrogate` before shipping.
+8. Review the branch with the **code-review** skill against its merge-base. Each axis subagent's brief says "read `<milliways>/skills/code-review/SKILL.md` in full before starting", never "see" it. If the change is a one-way door or the design is still contested, also `interrogate` before shipping.
 9. Run **Opening a PR**, which writes the PR with the **pr** skill.
 
 Code-coupled work (one feature, one migration) goes to a single owner with the checkpoint inline. That owner fans out internally after the blocking phase. Parent-level fan-out is for slices that produce independent artifacts (audits, cross-subsystem investigations, competing experiments). Rewrite the checkpoint at phase boundaries. Spawn a fresh owner rather than chaining interrupts.
