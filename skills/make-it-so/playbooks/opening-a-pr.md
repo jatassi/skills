@@ -6,7 +6,7 @@ Invoked at the end of every playbook that ships a change.
 
 **Commits.** Commit liberally. Rebase into small, ordered commits before opening PRs. Each commit is a future PR: landable, ordered to tell the story. Amend when the fix belongs in a just-made commit. New commit when separable.
 
-**PRs.** Run `/deslop` over the diff before commit. Run `/no-comments` before review. Review the branch with the **code-review** skill against its merge-base, unless the calling playbook already did. A one-way door also gets `interrogate`. Write every commit body with `/technical-writing`, then apply `/unslop`. Apply every technical-writing layer except Diátaxis. Use one word for each action, keep articles, and avoid `-ing` when a plain verb works.
+**PRs.** Run `/deslop` over the diff before commit. Run `/no-comments` before review. Review the branch with the **code-review** skill against its merge-base, and run `interrogate` over a one-way door, each unless the calling playbook already ran it. Write every commit body with `/technical-writing`, then apply `/unslop`. Apply every technical-writing layer except Diátaxis. Use one word for each action, keep articles, and avoid `-ing` when a plain verb works.
 
 **Title and description.** Write them with the **pr** skill. It owns the PR's anatomy: the title, the body's sections, the evidence it attaches, and the labels it sets, `door:one-way` among them. Where this playbook and the pr skill disagree about a title or a body, the pr skill wins. A commit body does not restate its subject.
 

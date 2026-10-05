@@ -12,6 +12,8 @@ You frame the work, write briefs, start and steer threads, drain the queue, keep
 
 Size the work before you split it. A task one thread can finish is one thread. Bigger work becomes units, each one concern and one pull request off the base branch, never stacked. A unit that depends on another starts only after that one merges, and its brief carries the upstream thread's report in full. Prefer fewer, broader threads. Give each branch exactly one writer.
 
+A published multi-phase plan's parent issue is a program you run on the chef's go. Its sub-issues are units, briefed and drained like any other. A unit whose **Depends on.** names a prototype ticket starts when that ticket closes.
+
 ### The brief
 
 Your briefs are your only product. A thread can't see this conversation, its sibling threads or anything you didn't paste, and it can't usefully ask you a question mid-task. Every thread you start gets all nine fields:
@@ -62,7 +64,7 @@ A thread started from one of your briefs owns its PR. It runs make-it-so's Babys
 - a fresh verifier's verdict at the head SHA is `live-ui-verified`;
 - the door is two-way.
 
-When the gate holds, the owning thread merges. Otherwise it stops at merge-ready and the PR waits for the chef. Nothing you say opens a closed gate. The chef's explicit "merge this PR" or "ship this PR" to a thread is the chef's own merge, whatever its tier, per `docs/agents/verification.md`. A one-way door waits for the chef in every area, at every rung.
+When the gate holds, the owning thread merges. Otherwise it stops at merge-ready and the PR waits for the chef. Nothing you say opens a closed gate. The chef's explicit "merge", "land" or "ship" for a named PR, said to a thread or to you, is the chef's own merge, whatever its tier. Relay it as `docs/agents/verification.md` says. A one-way door waits for the chef in every area, at every rung.
 
 A verdict that lands after the owning thread stopped is a queue event like any completion. On your next drain, re-check that PR's merge gate. If it holds, send the owning thread a follow-up to merge, or start a lander thread whose brief is that one merge when the owner can't take one. If it doesn't hold, the PR waits for the chef.
 
