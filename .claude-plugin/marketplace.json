@@ -13,7 +13,7 @@
         "repo": "jatassi/skills",
         "ref": "v1.0.5"
       },
-      "description": "The kitchen: skills for grilling plans with an agent stand-in or through a visual browser channel, and turning them into specs and tickets."
+      "description": "The kitchen in one plugin: a router that binds each task to a playbook, vendored pstack and Matt Pocock skills, and the setup, Projects kit and trust ladder that let agents ship verified pull requests."
     }
   ]
 }
