@@ -8,7 +8,7 @@ This folder is the kitchen's config. Before a skill, playbook or routine acts on
 | Triage labels | [triage-labels.md](triage-labels.md) | The label string for each of the five triage roles |
 | Domain | [domain.md](domain.md) | Where `GLOSSARY.md` and ADRs live, and how to use them |
 | Models | [models.md](models.md) | Role → model tier and effort, detected families, and the fallback rule |
-| Verification | [verification.md](verification.md) | Which verify skill proves changes, and the live lane as the floor of every verdict |
+| Verification | [verification.md](verification.md) | Which verify skill proves changes, who verifies, and the live lane as the floor of every verdict |
 | Autonomy | [autonomy.md](autonomy.md) | Areas as path globs, the rung of each, clean-merge and promotion rules, and the one-way doors |
 | Garden | [garden.md](garden.md) | Banned patterns, the reflect / sweep / cluster cadences, and how `correct` fixes them |
 

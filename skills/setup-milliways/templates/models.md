@@ -11,7 +11,7 @@ Detected families: {{families}}
 | ---- | ----- | ------ | ------ |
 {{roles}}
 
-Who the verifier is, who may spawn it and what it gets are stated in `docs/agents/verification.md` (Who verifies).
+Who verifies is stated in `docs/agents/verification.md`.
 
 fable has no default role. To promote it for this kitchen, put `fable` in a role's Model cell.
 

@@ -12,19 +12,19 @@ When the verify skill above is `none`, prove the behaviour live by hand with wha
 
 ## Who verifies
 
-The verifier is a fresh worktree subagent. This is the one statement of who verifies, and the merge gate counts any verdict that meets it.
+The verifier is a fresh worktree subagent, and the merge gate counts its verdict.
 
-- **Who spawns it.** The PR's worker may spawn it: `isolation: "worktree"`, on the `verifier` role in `docs/agents/models.md`, its swarm lanes included.
+- **Who spawns it.** The PR's worker may spawn it with `isolation: "worktree"` on the `verifier` role in `docs/agents/models.md`, its swarm lanes included.
 - **Who it is.** A fresh agent, never the agent that wrote the change, and never resumed from an earlier round.
-- **What it gets.** The pull request, its ticket and the VERIFY commands. Nothing else from the worker: no plan, transcript, self-report or summary of the change.
+- **What it gets.** The pull request, its ticket and the commands that verify it (a brief's VERIFY field). Nothing else from the worker: no plan, transcript, self-report or summary of the change.
 
-The verifier records its own verdict on the pull request (The ledger). The worker cites that verdict to reach merge-ready, and the merge gate counts it. The Projects coordinator, or an Autopilot-full root, may still start a separate verifier thread when it wants more independence. The gate doesn't require one.
+The verifier records its own verdict on the pull request (The ledger), and the worker cites that verdict to reach merge-ready. The Projects coordinator may still start a separate verifier thread when it wants more independence, and its verdict counts the same way. The gate doesn't require one. A playbook may ask for more, as Autopilot-full's root swarm does.
 
 ## The ledger
 
 The ledger lives in GitHub, never in memory or a transcript. It holds one verdict per pull request number and head SHA. A verdict is two things on the pull request:
 
-- a comment that starts `ledger: <tier> at <head SHA>` and names the patch-id, the lanes run and the evidence;
+- a comment that starts `ledger: <tier> at <head SHA>` and names the patch-id, the lanes run, the evidence and the verifier that produced it (its agent ID or thread);
 - the tier as the pull request's only tier label. Replace the label when a new verdict lands.
 
 A `ledger: merged on the chef's request` comment records a merge, not a verdict (Reading the ledger).
