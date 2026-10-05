@@ -103,6 +103,14 @@ describe('a scratch repo becomes a kitchen', () => {
     assert.match(text, /wayfinder:map/);
   });
 
+  test('the issue tracker gives cloud threads a REST path on the repo', () => {
+    const text = read(dir, 'docs/agents/issue-tracker.md');
+    assert.match(text, /^## Cloud threads: REST through `gh api`$/m);
+    assert.match(text, /This GraphQL query is not enabled for this session/);
+    assert.match(text, /gh api repos\/acme\/widgets\/issues --method POST/);
+    assert.match(text, /gh api repos\/acme\/widgets\/pulls --method POST/);
+  });
+
   test('CONTEXT.md is renamed GLOSSARY.md, content intact', () => {
     assert.equal(existsSync(join(dir, 'CONTEXT.md')), false);
     assert.equal(read(dir, 'GLOSSARY.md'), '# Glossary\n\n**Widget**: a thing.\n');

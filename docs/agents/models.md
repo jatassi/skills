@@ -17,7 +17,7 @@ Detected families: anthropic
 | review-panel | opus, opus, opus | high | pstack: arena runners; arena cross-judge pool; architect runners |
 | interrogate | opus, opus, opus | high | Adversarial review of one-way doors. pstack: interrogate reviewers |
 
-The verifier is always a fresh subagent: never the agent that wrote the change, and never resumed from an earlier round.
+Who verifies is stated in `docs/agents/verification.md`.
 
 fable has no default role. To promote it for this kitchen, put `fable` in a role's Model cell.
 

@@ -81,7 +81,12 @@ describe('manifests', () => {
     const marketplace = JSON.parse(read('.claude-plugin/marketplace.json'));
     expect(marketplace.plugins).toHaveLength(1);
     expect(marketplace.plugins[0].name).toBe('milliways');
-    expect(marketplace.plugins[0].source).toEqual({ source: 'github', repo: 'jatassi/skills', ref: 'v1.2.0' });
+    // An https url, not a github source: see ADR 0002's amendment.
+    expect(marketplace.plugins[0].source).toEqual({
+      source: 'url',
+      url: 'https://github.com/jatassi/skills.git',
+      ref: 'v1.2.0',
+    });
     expect(read('.claude-plugin/marketplace.json').endsWith('}\n')).toBe(true);
   });
 

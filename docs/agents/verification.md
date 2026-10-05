@@ -10,13 +10,21 @@ Every verdict includes the live lane: drive the running app the way a user does,
 
 When the verify skill above is `none`, prove the behaviour live by hand with whatever drives the surface (a browser, the CLI, a simulator), and propose creating one with `create-verification-skill`. Once a verify skill exists, `maintain-verification-skill` keeps it and its feature map current.
 
-The verifier runs on the `verifier` role in `docs/agents/models.md`, its swarm lanes included. It is a fresh subagent: never the agent that wrote the change, and never resumed from an earlier round.
+## Who verifies
+
+The verifier is a fresh worktree subagent, and the merge gate counts its verdict.
+
+- **Who spawns it.** The PR's worker may spawn it with `isolation: "worktree"` on the `verifier` role in `docs/agents/models.md`, its swarm lanes included.
+- **Who it is.** A fresh agent, never the agent that wrote the change, and never resumed from an earlier round.
+- **What it gets.** The pull request, its ticket and the commands that verify it (a brief's VERIFY field). Nothing else from the worker: no plan, transcript, self-report or summary of the change.
+
+The verifier records its own verdict on the pull request (The ledger), and the worker cites that verdict to reach merge-ready. The Projects coordinator may still start a separate verifier thread when it wants more independence, and its verdict counts the same way. The gate doesn't require one. A playbook may ask for more, as Autopilot-full's root swarm does.
 
 ## The ledger
 
 The ledger lives in GitHub, never in memory or a transcript. It holds one verdict per pull request number and head SHA. A verdict is two things on the pull request:
 
-- a comment that starts `ledger: <tier> at <head SHA>` and names the patch-id, the lanes run and the evidence;
+- a comment that starts `ledger: <tier> at <head SHA>` and names the patch-id, the lanes run, the evidence and the verifier that produced it (its agent ID or thread);
 - the tier as the pull request's only tier label. Replace the label when a new verdict lands.
 
 A `ledger: merged on the chef's request` comment records a merge, not a verdict (Reading the ledger).
@@ -54,4 +62,4 @@ Verifier lanes report `PASS`, `PASS+NOTES` or `FAIL` (a swarm worker's `ISSUES` 
 
 ## Cloud environments
 
-The kitchen's vendored scripts (`watch-pr`, `check-plan`, `worktree-audit`) run on Bun. A cloud environment that uses them must install Bun in its setup script, for example `curl -fsSL https://bun.sh/install | bash`, since cloud threads start without it.
+The kitchen's vendored scripts (`watch-pr`, `check-plan`, `worktree-audit`) run on Bun. Anthropic-hosted cloud environments come with Bun preinstalled, so the setup script doesn't need to install it ([Installed tools](https://code.claude.com/docs/en/cloud-environments#installed-tools)). One caveat: the docs say Bun's package fetching doesn't work correctly through the session's security proxy, and a script's first run fetches its dependency (`commander`) with `bun install`, so that first run may fail in a cloud thread. `watch-pr` doesn't run in cloud threads anyway: GitHub's proxy blocks its GraphQL query, and Babysit reads PR state through REST there.

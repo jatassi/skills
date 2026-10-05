@@ -1,0 +1,54 @@
+# Tests pull requests into dev, so "CI green" has checks behind it before the
+# dev-to-main pull request that release.yml tests and releases.
+#
+# Ubuntu only, at the minimum Node: the change-scoped tests (npm test), the
+# vendor sync check and pstack's Bun scripts. The three-OS matrix and the full
+# npm run test:all stay with release.yml on pull requests into main. Nothing
+# here builds or commits skills/visual-grilling/dist/: only a release does.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 22.22.2
+
+jobs:
+  ci:
+    name: ci (dev)
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: scripts/test.mjs diffs against the merge-base with
+      # origin/dev (or dev), which a shallow checkout does not have.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Make sure origin/dev exists
+        run: git rev-parse --verify --quiet refs/remotes/origin/dev || git fetch --no-tags origin dev:refs/remotes/origin/dev
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          # The dev workspaces' lockfile; the root one lists no dependencies.
+          # See docs/adr/0005-dev-workspaces-live-under-packages.md.
+          cache-dependency-path: packages/package-lock.json
+      # The root postinstall runs npm ci in packages/.
+      - run: npm ci
+      - name: Install Chromium
+        run: npm run playwright -- install --with-deps chromium
+      - name: Test the changed workspaces
+        run: npm test
+      - name: Check the vendored tree
+        run: npm run vendor -- check
+      - uses: oven-sh/setup-bun@v2
+      - name: Test the vendored Bun scripts
+        run: npm run test:bun

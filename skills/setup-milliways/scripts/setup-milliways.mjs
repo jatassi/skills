@@ -24,7 +24,7 @@ const DOCS = [
   ['triage-labels', 'Triage labels', 'The label string for each of the five triage roles'],
   ['domain', 'Domain', 'Where `GLOSSARY.md` and ADRs live, and how to use them'],
   ['models', 'Models', 'Role → model tier and effort, detected families, and the fallback rule'],
-  ['verification', 'Verification', 'Which verify skill proves changes, and the live lane as the floor of every verdict'],
+  ['verification', 'Verification', 'Which verify skill proves changes, who verifies, and the live lane as the floor of every verdict'],
   ['autonomy', 'Autonomy', 'Areas as path globs, the rung of each, clean-merge and promotion rules, and the one-way doors'],
   ['garden', 'Garden', 'Banned patterns, the reflect / sweep / cluster cadences, and how `correct` fixes them'],
 ];
@@ -252,7 +252,10 @@ function render(key, d) {
     case 'index':
       return fill('index.md', { rows: DOCS.map(indexRow).join('\n') });
     case 'issue-tracker':
-      return fill('issue-tracker.md', { repo: d.github ? `\`${d.github}\`` : 'this repo' });
+      return fill('issue-tracker.md', {
+        repo: d.github ? `\`${d.github}\`` : 'this repo',
+        slug: d.github ?? '<owner>/<repo>',
+      });
     case 'models':
       return fill('models.md', {
         harness: d.harness.name + (d.harness.cloud ? ' (cloud)' : ''),

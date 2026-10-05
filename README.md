@@ -58,14 +58,14 @@ It never overwrites a file, so re-running it only adds what a later milliways br
 
 The Projects kit in [`skills/setup-milliways/projects/`](skills/setup-milliways/projects) runs the kitchen from a Claude Project. Cloud threads see only what is committed to the repo or added as a plugin, nothing from `~/.claude`, so the kit is plain files you paste into the project:
 
-1. Create a Claude Project with the kitchen repo as its only repository, and add milliways under **Project settings > Plugins**.
-2. Paste [`coordinator-brief.md`](skills/setup-milliways/projects/coordinator-brief.md) into the project instructions, and set its first standing order to the branch pull requests target. It makes the project conversation a coordinator that writes briefs and starts threads, never edits code, and keeps the verification ledger in GitHub.
+1. Create a Claude Project with the kitchen repo as its only repository, and add milliways under **Project settings > Plugins**. The plugin loads into the project's new cloud threads, not into the project conversation, so the coordinator has no milliways skills and doesn't need them. If Project settings has no Plugins tab, the plugin can't reach threads; see [#107](https://github.com/jatassi/skills/issues/107).
+2. Paste [`coordinator-brief.md`](skills/setup-milliways/projects/coordinator-brief.md) into the project instructions, and set its first standing order to the branch pull requests target. It makes the project conversation a coordinator that writes briefs and starts threads, never edits code, and keeps the verification ledger in GitHub. The coordinator reads GitHub through the conversation's helper or a short read-only thread.
 3. Create the four routines in [`routines/`](skills/setup-milliways/projects/routines) from the project's **Routines** tab:
    - [`risk-digest`](skills/setup-milliways/projects/routines/risk-digest.md), daily: ranks yesterday's merges by risk and moves the trust ladder.
    - [`garden-sweep`](skills/setup-milliways/projects/routines/garden-sweep.md), nightly: files a `garden` issue for each banned pattern that landed.
    - [`garden-cluster`](skills/setup-milliways/projects/routines/garden-cluster.md), weekly: groups open `garden` issues and runs `correct` on each cluster.
    - [`upstream-sync`](skills/setup-milliways/projects/routines/upstream-sync.md), weekly: opens a pull request that moves the vendored upstreams. It is for this repo only.
-4. If threads use the vendored `watch-pr`, `check-plan` or `worktree-audit` scripts, install Bun in the cloud environment's setup script (`curl -fsSL https://bun.sh/install | bash`). Cloud threads start without it.
+4. The vendored `watch-pr`, `check-plan` and `worktree-audit` scripts run on Bun, which cloud environments come with preinstalled. Bun's package fetching can fail through the cloud session's proxy, so a script's first run, which installs its dependency, may fail there (see the Cloud environments section of `docs/agents/verification.md`).
 
 ### The trust ladder and the merge gate
 
@@ -182,8 +182,9 @@ Upstream licences are vendored verbatim in [`LICENSES/`](LICENSES), and [`NOTICE
 ├── vendor/                      # upstream.json, substitutions.json, forks.json, checks.json
 ├── LICENSES/                    # upstream licences, vendored verbatim
 ├── NOTICE                       # upstream attributions
-├── scripts/                     # test.mjs (changed-workspace test runner), test-bun.mjs
-└── packages/                    # dev-only workspaces: visual-grilling's source, the vendor CLI, setup-milliways' and trust-ladder's tests
+├── package.json                 # dev scripts only; lists no dependencies, since this root is also the plugin root
+├── scripts/                     # test.mjs (changed-workspace test runner), test-bun.mjs, install-dev.mjs
+└── packages/                    # the dev workspaces' npm root: visual-grilling's source, the vendor CLI, setup-milliways' and trust-ladder's tests
 ```
 
 ## Development
@@ -191,17 +192,21 @@ Upstream licences are vendored verbatim in [`LICENSES/`](LICENSES), and [`NOTICE
 `visual-grilling`'s CLI, server and round page are built from the TypeScript workspace in `packages/visual-grilling/`, outside the shipped skill folder. `setup-milliways`'s CLI ships as plain Node in `skills/setup-milliways/scripts/`, and its tests live in `packages/setup-milliways/`; `trust-ladder`'s scorer is the same, in `skills/trust-ladder/scripts/` with tests in `packages/trust-ladder/`.
 
 ```
-npm install
-npx playwright install chromium   # once, for the round page tests
-npm test                          # test only the workspaces changed since the merge-base with dev
-npm run test:all                  # every workspace: visual-grilling type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
-npm run test:bun                  # pstack's vendored Bun scripts and their upstream tests; needs Bun, not part of npm test
-npm run try                       # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
+npm install                              # installs the dev workspaces in packages/
+npm run playwright -- install chromium   # once, for the round page tests
+npm test                                 # test only the workspaces changed since the merge-base with dev
+npm run test:all                         # every workspace: visual-grilling type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
+npm run test:bun                         # pstack's vendored Bun scripts and their upstream tests; needs Bun, not part of npm test
+npm run try                              # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
 ```
 
-`npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing root `package.json` or the lockfile runs everything, unless the change only adds a workspace, which then runs alone. `--dry-run` prints the pick without running it.
+`npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing `packages/package.json` or its lockfile runs everything, unless the change only adds a workspace, which then runs alone. Changing the root `package.json` or `package-lock.json` always runs everything. `--dry-run` prints the pick without running it.
 
-The vendored pstack scripts run on Bun. `npm run test:bun` finds every `skills/*/scripts/package.json` with a test script and runs it; the Release workflow does the same on Ubuntu for pull requests into `main`. Cloud environments that use these scripts must install Bun in their setup script.
+The repo root is also the plugin root, and Claude Code installs the npm dependencies a plugin root's `package.json` and lockfile list. So the root `package.json` lists none, and the workspaces' npm root is `packages/` ([ADR 0005](docs/adr/0005-dev-workspaces-live-under-packages.md)). A root `npm install` or `npm ci` carries through to `packages/`. Add or update a dependency there: `npm install <pkg> --prefix packages --workspace visual-grilling`, or `npm update --prefix packages`.
+
+The vendored pstack scripts run on Bun. `npm run test:bun` finds every `skills/*/scripts/package.json` with a test script and runs it; the Release workflow does the same on Ubuntu for pull requests into `main`. Cloud environments come with Bun preinstalled, though its package fetching can fail through the session's proxy.
+
+Pull requests into `dev` run [`ci.yml`](.github/workflows/ci.yml) on Ubuntu: `npm test`, `npm run vendor -- check` and `npm run test:bun`, the same commands as above. Its check is named `ci (dev)`. The Release workflow adds the three-OS `npm run test:all` on pull requests into `main`.
 
 Work on `dev`, not `main`. Never commit the `npm run try` output: `dist/` is gitignored, and only a release commits it. After the first release `dist/` is tracked, so a try build shows up as changes to it; discard them with `git restore skills/visual-grilling/dist`. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.
 
@@ -226,7 +231,7 @@ npm run vendor -- sync --overwrite                       # restore files that di
 
 Every merge to `main` is a release ([ADR 0003](docs/adr/0003-every-merge-to-main-is-a-release.md)). Only the [Release workflow](.github/workflows/release.yml) commits `skills/visual-grilling/dist/` ([ADR 0002](docs/adr/0002-installs-pinned-to-release-tags.md)). There is no CHANGELOG; the notes go on the GitHub Release.
 
-1. Land changes on `dev`. Run `npm update` within the pinned majors from time to time, with `npm test`.
+1. Land changes on `dev`. Run `npm update --prefix packages` within the pinned majors from time to time, with `npm test`.
 2. Open a pull request from `dev` into `main`. Its description becomes the release notes. Label it `release:minor` or `release:major` for more than a patch bump.
 3. Wait for the `npm test` checks (Ubuntu, macOS and Windows at Node 22.22.2; browser tests on Ubuntu only), make sure `main` hasn't moved since they ran, and merge with a merge commit.
 
