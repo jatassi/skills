@@ -29,18 +29,21 @@ const REPO = 'acme/widgets';
 let n = 0;
 const realGit = spawnSync(WIN ? 'where' : 'which', ['git'], { encoding: 'utf8' }).stdout.split(/\r?\n/)[0].trim();
 
-// A bin directory holding a gh that runs the fake, plus git.
+// A bin directory holding git and a gh that runs the fake. POSIX only: Windows
+// can't spawn a .cmd shim without a shell, so there the scorer reaches the fake
+// through TRUST_LADDER_GH_SCRIPT (see run) and PATH just carries git.
 function bin() {
   const dir = join(scratch, `bin-${n++}`);
   mkdirSync(dir);
+  if (WIN) return [dir, dirname(realGit)].join(delimiter);
   const shim = (name, body) => {
-    const p = join(dir, WIN ? `${name}.cmd` : name);
-    writeFileSync(p, WIN ? `@echo off\r\n${body}\r\n` : `#!/bin/sh\n${body}\n`);
+    const p = join(dir, name);
+    writeFileSync(p, `#!/bin/sh\n${body}\n`);
     chmodSync(p, 0o755);
   };
-  if (!WIN) shim('git', `exec "${realGit}" "$@"`);
-  shim('gh', WIN ? `"${process.execPath}" "${FAKE_GH}" %*` : `exec "${process.execPath}" "${FAKE_GH}" "$@"`);
-  return WIN ? [dir, dirname(realGit)].join(delimiter) : dir;
+  shim('git', `exec "${realGit}" "$@"`);
+  shim('gh', `exec "${process.execPath}" "${FAKE_GH}" "$@"`);
+  return dir;
 }
 
 function run(args, { fixture, env = {} }) {
@@ -50,6 +53,9 @@ function run(args, { fixture, env = {} }) {
   writeFileSync(log, '');
   const base = { PATH: bin(), HOME: scratch, USERPROFILE: scratch, FAKE_GH: fixturePath, FAKE_GH_LOG: log };
   for (const k of ['SystemRoot', 'PATHEXT', 'TEMP', 'TMP']) if (process.env[k]) base[k] = process.env[k];
+  // On Windows the scorer runs the fake through its script seam; POSIX keeps
+  // the real-PATH shim, so that path stays exercised.
+  if (WIN) base.TRUST_LADDER_GH_SCRIPT = FAKE_GH;
   const r = spawnSync(process.execPath, [CLI, ...args], { env: { ...base, ...env }, encoding: 'utf8' });
   const calls = readFileSync(log, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
   return { status: r.status, stdout: r.stdout, stderr: r.stderr, calls };

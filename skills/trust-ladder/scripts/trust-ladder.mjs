@@ -150,8 +150,13 @@ function gatedSince(repo, docPath, areas, now) {
 
 // ---------------------------------------------------------------- GitHub
 
+// TRUST_LADDER_GH_SCRIPT is a test seam: run that script under this node in
+// place of `gh`. Windows can't spawn a `gh.cmd` shim without a shell, and a
+// shell would mangle the `--search merged:>=DATE` arguments.
 function gh(repo, args) {
-  const r = spawnSync('gh', args, { cwd: repo, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  const script = process.env.TRUST_LADDER_GH_SCRIPT;
+  const [cmd, argv] = script ? [process.execPath, [script, ...args]] : ['gh', args];
+  const r = spawnSync(cmd, argv, { cwd: repo, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
   if (r.error) throw new Error(`gh: ${r.error.message}`);
   if (r.status !== 0) throw new Error(`gh ${args.join(' ')} failed: ${r.stderr.trim()}`);
   return JSON.parse(r.stdout);
