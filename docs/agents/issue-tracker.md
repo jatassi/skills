@@ -13,6 +13,8 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
+In a Claude Code cloud session these commands fail on GraphQL; use the REST forms under [Cloud threads](#cloud-threads-rest-through-gh-api) instead.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
@@ -24,6 +26,27 @@ When set to `yes`, PRs run through the same labels and states as issues, using t
 - **Comment / label / close**: `gh pr comment`, `gh pr edit --add-label`/`--remove-label`, `gh pr close`.
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and fall back to `gh issue view 42`.
+
+## Cloud threads: REST through `gh api`
+
+In a Claude Code cloud session, GitHub traffic goes through Anthropic's GitHub proxy. It serves only a pinned set of GraphQL operations and rejects the rest with a 403 that says `This GraphQL query is not enabled for this session`. That holds whatever token the environment carries: a `GH_TOKEN` you set gets the same 403. Most `gh issue` and `gh pr` commands, `gh repo view` and `gh api graphql` use GraphQL and fail there. REST through `gh api` works for the repositories attached to the session. `gh auth status` calls the token invalid because `GH_TOKEN` holds the placeholder `proxy-injected`, which the proxy swaps for the real credential on the way out, so ignore that report.
+
+When a command fails with that 403, use these REST forms for the rest of the thread. Put each body in a file and pass it with `-F body=@<file>`, never inline in the command. The issues endpoints serve pull requests too, so comment, label and assignee calls take a PR number as well.
+
+- **Create an issue**: `gh api repos/jatassi/skills/issues --method POST -f title="..." -F body=@body.md -f 'labels[]=<label>' --jq .number`
+- **Read an issue**: `gh api repos/jatassi/skills/issues/<n> --jq '{title, state, body, labels: [.labels[].name]}'`, then `gh api repos/jatassi/skills/issues/<n>/comments --paginate --jq '.[].body'`
+- **List issues**: `gh api 'repos/jatassi/skills/issues?state=open&labels=<label>&per_page=100' --paginate --jq '.[] | select(.pull_request | not) | {number, title, labels: [.labels[].name]}'`. The `select` drops pull requests.
+- **Comment**: `gh api repos/jatassi/skills/issues/<n>/comments --method POST -F body=@comment.md`
+- **Add / remove a label**: `gh api repos/jatassi/skills/issues/<n>/labels --method POST -f 'labels[]=<label>'` / `gh api repos/jatassi/skills/issues/<n>/labels/<label> --method DELETE`
+- **Create a missing label**: `gh api repos/jatassi/skills/labels --method POST -f name=<label> -f color=<hex>`
+- **Claim**: `gh api repos/jatassi/skills/issues/<n>/assignees --method POST -f 'assignees[]=<login>'`, with your login from `gh api user --jq .login`
+- **Close**: post the closing comment, then `gh api repos/jatassi/skills/issues/<n> --method PATCH -f state=closed -f state_reason=completed`
+- **Open a PR**: `gh api repos/jatassi/skills/pulls --method POST -f title="..." -f head=<branch> -f base=<base> -F body=@body.md --jq .number`, with `-F draft=true` for a draft. Add its labels with the label call.
+- **Edit a PR**: `gh api repos/jatassi/skills/pulls/<n> --method PATCH -F body=@body.md`, or `-f title="..."`, or `-f state=closed` to close it.
+- **Read a PR**: `gh api repos/jatassi/skills/pulls/<n> --jq '{state, merged, draft, mergeable, mergeable_state, head: .head.sha, labels: [.labels[].name]}'`. Add `-H 'Accept: application/vnd.github.diff'` for the diff. Conversation comments come from the issue comments call, review comments from `repos/jatassi/skills/pulls/<n>/comments`, reviews from `repos/jatassi/skills/pulls/<n>/reviews`.
+- **Checks at a commit**: `gh api repos/jatassi/skills/commits/<sha>/check-runs --jq '.check_runs[] | {name, status, conclusion}'` and `gh api repos/jatassi/skills/commits/<sha>/status --jq .state`
+
+A cloud thread can't do what has no REST form: resolve a review thread, arm auto-merge, touch Projects v2, or attach media with `--attach`, which rides on GraphQL-backed commands. A PR opened from a cloud thread puts its evidence inline as text (see the **pr** skill).
 
 ## When a skill says "publish to the issue tracker"
 

@@ -32,7 +32,20 @@ The base branch is the one the brief names, else the repo's default branch. One-
    ```
 
    `--attach` needs gh 2.99 or later (`gh --version`). It uploads each file and rewrites a body reference such as `![after](./after.png)` to the uploaded asset, so put the references where they belong in Evidence. Use `gh pr edit <n> --attach ...` to add media later. If a label is missing in the repo, create it with `gh label create <name>` and say so in your report.
+
+   In a cloud thread, where `gh pr create` fails with `This GraphQL query is not enabled for this session`, follow [Cloud threads](#cloud-threads) instead.
 10. **After new commits.** Every push moves the head SHA, so the verdict goes stale unless the patch-id is unchanged (`docs/agents/verification.md`): set the Verdict line back to `pending`, remove the tier label, and re-run the verifier.
+
+## Cloud threads
+
+In a Claude Code cloud session, GitHub's proxy rejects most GraphQL, so `gh pr create`, `gh pr edit`, `gh pr view` and `gh pr comment` fail there, and a token set on the environment doesn't change that. Open and maintain the PR through REST instead; `docs/agents/issue-tracker.md` lists the full set under Cloud threads.
+
+- **Create**: `gh api repos/<owner>/<repo>/pulls --method POST -f title="<type(scope): subject>" -f head=<branch> -f base=<base> -F body=@body.md --jq .number`.
+- **Labels**: `gh api repos/<owner>/<repo>/issues/<n>/labels --method POST -f 'labels[]=<tier>' [-f 'labels[]=door:one-way']`; remove one with `--method DELETE` on `.../labels/<label>`. Create a missing label with `gh api repos/<owner>/<repo>/labels --method POST -f name=<label> -f color=<hex>`.
+- **Edit**: `gh api repos/<owner>/<repo>/pulls/<n> --method PATCH -F body=@body.md` for the verdict line or the decision-log link, `-f title="..."` for the title. Close a prototype PR with `-f state=closed`.
+- **Comments**: post with `gh api repos/<owner>/<repo>/issues/<n>/comments --method POST -F body=@comment.md`, and read them with `gh api repos/<owner>/<repo>/issues/<n>/comments --paginate`.
+
+There is no `--attach` in a cloud thread. Put text evidence (test output, a CLI's before and after) inline in Evidence as fenced blocks. For a visual change, capture what you can as text and write `Media: not attached (cloud thread)` under Evidence, so a local thread or the chef can add it later with `gh pr edit <n> --attach`. A prototype PR is its screencasts, so leave opening one to a local thread.
 
 ## Template
 
