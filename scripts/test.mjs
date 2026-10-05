@@ -4,13 +4,16 @@
 // untracked), so an agent touching one skill doesn't pay for the whole
 // visual-grilling suite. `npm run test:all` (and CI) runs every workspace.
 //
+// The workspaces' npm root is packages/, not the repo root, which is also the
+// plugin root (docs/adr/0005-dev-workspaces-live-under-packages.md).
 // A workspace at packages/<name> owns packages/<name>/** and skills/<name>/**,
 // plus any path prefixes listed in its package.json "testPaths" (for a
 // workspace whose tests cover files outside those two folders).
 //
-// Root package.json and package-lock.json count as shared tooling, which runs
-// every workspace, unless the change only adds workspaces: then just the new
-// ones run. A change to this runner always runs every workspace.
+// packages/package.json and packages/package-lock.json count as shared
+// tooling, which runs every workspace, unless the change only adds workspaces:
+// then just the new ones run. A change to this runner or to the root's own
+// npm files always runs every workspace.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
@@ -29,8 +32,15 @@ if (unknown.length) {
   process.exit(help ? 0 : 2);
 }
 
-const rootPkg = JSON.parse(readFileSync('package.json', 'utf8'));
-const workspaces = rootPkg.workspaces ?? [];
+const WS_ROOT = 'packages';
+const WS_PKG = `${WS_ROOT}/package.json`;
+const WS_LOCK = `${WS_ROOT}/package-lock.json`;
+const ALWAYS_ALL = ['scripts/test.mjs', 'scripts/install-dev.mjs', 'package.json', 'package-lock.json'];
+
+const wsPkg = JSON.parse(readFileSync(WS_PKG, 'utf8'));
+// Workspace names as packages/package.json lists them, relative to packages/.
+const workspaces = wsPkg.workspaces ?? [];
+const label = (ws) => `${WS_ROOT}/${ws}`;
 
 function git(...args) {
   return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 28 });
@@ -71,20 +81,20 @@ const without = (obj, key) => {
   return rest;
 };
 
-// The workspaces a root package.json / package-lock.json change adds, or null
-// when the change does anything else (which makes it shared tooling).
+// The workspaces a packages/package.json / package-lock.json change adds, or
+// null when the change does anything else (which makes it shared tooling).
 function addedWorkspaces(base, changed) {
-  const oldPkg = atBase(base, 'package.json');
+  const oldPkg = atBase(base, WS_PKG);
   if (!oldPkg) return null;
   const oldWs = oldPkg.workspaces ?? [];
-  if (changed.has('package.json')) {
-    if (!same(without(oldPkg, 'workspaces'), without(rootPkg, 'workspaces'))) return null;
+  if (changed.has(WS_PKG)) {
+    if (!same(without(oldPkg, 'workspaces'), without(wsPkg, 'workspaces'))) return null;
     if (oldWs.some((ws) => !workspaces.includes(ws))) return null;
   }
   const added = workspaces.filter((ws) => !oldWs.includes(ws));
-  if (changed.has('package-lock.json')) {
-    const oldLock = atBase(base, 'package-lock.json');
-    const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
+  if (changed.has(WS_LOCK)) {
+    const oldLock = atBase(base, WS_LOCK);
+    const lock = JSON.parse(readFileSync(WS_LOCK, 'utf8'));
     if (!oldLock || !same(without(oldLock, 'packages'), without(lock, 'packages'))) return null;
     const pkgs = lock.packages ?? {};
     // The root entry may change only in its workspaces list, and every other
@@ -103,16 +113,17 @@ function selectWorkspaces() {
   const base = mergeBase();
   if (!base) return { picked: workspaces, why: `no merge-base with ${BASES.join(' or ')}` };
   const changed = changedFiles(base);
-  if (changed.has('scripts/test.mjs')) return { picked: workspaces, why: 'the test runner changed' };
+  const tooling = ALWAYS_ALL.find((f) => changed.has(f));
+  if (tooling) return { picked: workspaces, why: `${tooling} changed` };
   let added = [];
-  if (changed.has('package.json') || changed.has('package-lock.json')) {
+  if (changed.has(WS_PKG) || changed.has(WS_LOCK)) {
     added = addedWorkspaces(base, changed);
-    if (!added) return { picked: workspaces, why: 'root package.json or package-lock.json changed beyond adding workspaces' };
+    if (!added) return { picked: workspaces, why: `${WS_PKG} or ${WS_LOCK} changed beyond adding workspaces` };
   }
   const picked = workspaces.filter((ws) => {
     if (added.includes(ws)) return true;
-    const extra = JSON.parse(readFileSync(join(ws, 'package.json'), 'utf8')).testPaths ?? [];
-    const owned = [`${ws}/`, `skills/${basename(ws)}/`, ...extra];
+    const extra = JSON.parse(readFileSync(join(WS_ROOT, ws, 'package.json'), 'utf8')).testPaths ?? [];
+    const owned = [`${label(ws)}/`, `skills/${basename(ws)}/`, ...extra];
     return [...changed].some((f) => owned.some((p) => f.startsWith(p)));
   });
   return { picked, why: 'changed since merge-base with dev' };
@@ -120,11 +131,11 @@ function selectWorkspaces() {
 
 const { picked, why } = selectWorkspaces();
 const skipped = workspaces.filter((ws) => !picked.includes(ws));
-console.log(`test: running [${picked.join(', ') || 'none'}] (${why})`);
-if (skipped.length) console.log(`test: skipping [${skipped.join(', ')}]: unchanged, nothing to re-test`);
+console.log(`test: running [${picked.map(label).join(', ') || 'none'}] (${why})`);
+if (skipped.length) console.log(`test: skipping [${skipped.map(label).join(', ')}]: unchanged, nothing to re-test`);
 if (flags.includes('--dry-run')) process.exit(0);
 
 for (const ws of picked) {
-  const r = spawnSync('npm', ['test', '--workspace', ws], { stdio: 'inherit', shell: process.platform === 'win32' });
+  const r = spawnSync('npm', ['test', '--workspace', ws], { cwd: WS_ROOT, stdio: 'inherit', shell: process.platform === 'win32' });
   if (r.status !== 0) process.exit(r.status ?? 1);
 }

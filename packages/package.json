@@ -1,0 +1,10 @@
+{
+  "name": "milliways-dev",
+  "private": true,
+  "workspaces": [
+    "visual-grilling",
+    "setup-milliways",
+    "vendor",
+    "trust-ladder"
+  ]
+}
