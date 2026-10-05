@@ -43,7 +43,7 @@ The GraphQL-only operations the kitchen touches are resolving a review thread, a
 
 ## Side finding
 
-The installed-tools table says Bun is pre-installed "but has known proxy compatibility issues" for package fetching ([Cloud environments, Installed tools](https://code.claude.com/docs/en/cloud-environments#installed-tools)). `templates/verification.md`'s Cloud environments section tells kitchens to install Bun in the setup script. That may be redundant. Not acted on here.
+The installed-tools table says Bun is pre-installed "but has known proxy compatibility issues" for package fetching ([Cloud environments, Installed tools](https://code.claude.com/docs/en/cloud-environments#installed-tools)). `templates/verification.md`'s Cloud environments section told kitchens to install Bun in their setup script, which is redundant. It now says Bun is preinstalled, and it keeps the proxy caveat, because each vendored script's first run calls `bun install`. The README and `docs/agents/verification.md` match it. Whether that first `bun install` fails through the proxy is **unverified**.
 
 ## Applied in
 
