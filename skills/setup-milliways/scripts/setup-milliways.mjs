@@ -252,7 +252,10 @@ function render(key, d) {
     case 'index':
       return fill('index.md', { rows: DOCS.map(indexRow).join('\n') });
     case 'issue-tracker':
-      return fill('issue-tracker.md', { repo: d.github ? `\`${d.github}\`` : 'this repo' });
+      return fill('issue-tracker.md', {
+        repo: d.github ? `\`${d.github}\`` : 'this repo',
+        slug: d.github ?? '<owner>/<repo>',
+      });
     case 'models':
       return fill('models.md', {
         harness: d.harness.name + (d.harness.cloud ? ' (cloud)' : ''),

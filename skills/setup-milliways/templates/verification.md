@@ -62,4 +62,4 @@ Verifier lanes report `PASS`, `PASS+NOTES` or `FAIL` (a swarm worker's `ISSUES` 
 
 ## Cloud environments
 
-The kitchen's vendored scripts (`watch-pr`, `check-plan`, `worktree-audit`) run on Bun. A cloud environment that uses them must install Bun in its setup script, for example `curl -fsSL https://bun.sh/install | bash`, since cloud threads start without it.
+The kitchen's vendored scripts (`watch-pr`, `check-plan`, `worktree-audit`) run on Bun. Anthropic-hosted cloud environments come with Bun preinstalled, so the setup script doesn't need to install it ([Installed tools](https://code.claude.com/docs/en/cloud-environments#installed-tools)). One caveat: the docs say Bun's package fetching doesn't work correctly through the session's security proxy, and a script's first run fetches its dependency (`commander`) with `bun install`, so that first run may fail in a cloud thread. `watch-pr` doesn't run in cloud threads anyway: GitHub's proxy blocks its GraphQL query, and Babysit reads PR state through REST there.

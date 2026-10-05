@@ -65,7 +65,7 @@ The Projects kit in [`skills/setup-milliways/projects/`](skills/setup-milliways/
    - [`garden-sweep`](skills/setup-milliways/projects/routines/garden-sweep.md), nightly: files a `garden` issue for each banned pattern that landed.
    - [`garden-cluster`](skills/setup-milliways/projects/routines/garden-cluster.md), weekly: groups open `garden` issues and runs `correct` on each cluster.
    - [`upstream-sync`](skills/setup-milliways/projects/routines/upstream-sync.md), weekly: opens a pull request that moves the vendored upstreams. It is for this repo only.
-4. If threads use the vendored `watch-pr`, `check-plan` or `worktree-audit` scripts, install Bun in the cloud environment's setup script (`curl -fsSL https://bun.sh/install | bash`). Cloud threads start without it.
+4. The vendored `watch-pr`, `check-plan` and `worktree-audit` scripts run on Bun, which cloud environments come with preinstalled. Bun's package fetching can fail through the cloud session's proxy, so a script's first run, which installs its dependency, may fail there (see the Cloud environments section of `docs/agents/verification.md`).
 
 ### The trust ladder and the merge gate
 
@@ -201,7 +201,7 @@ npm run try                       # build into skills/visual-grilling/dist/, the
 
 `npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing root `package.json` or the lockfile runs everything, unless the change only adds a workspace, which then runs alone. `--dry-run` prints the pick without running it.
 
-The vendored pstack scripts run on Bun. `npm run test:bun` finds every `skills/*/scripts/package.json` with a test script and runs it; the Release workflow does the same on Ubuntu for pull requests into `main`. Cloud environments that use these scripts must install Bun in their setup script.
+The vendored pstack scripts run on Bun. `npm run test:bun` finds every `skills/*/scripts/package.json` with a test script and runs it; the Release workflow does the same on Ubuntu for pull requests into `main`. Cloud environments come with Bun preinstalled, though its package fetching can fail through the session's proxy.
 
 Pull requests into `dev` run [`ci.yml`](.github/workflows/ci.yml) on Ubuntu: `npm test`, `npm run vendor -- check` and `npm run test:bun`, the same commands as above. Its check is named `ci (dev)`. The Release workflow adds the three-OS `npm run test:all` on pull requests into `main`.
 
