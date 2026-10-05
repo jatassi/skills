@@ -1,7 +1,6 @@
 ---
 name: reflect
-description: Spawn three parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect.
-disable-model-invocation: true
+description: Spawn three parallel review subagents over the active transcript, surface learnings, and route each to a concrete edit on an existing skill. Use when the user says reflect, or when a make-it-so playbook's Reflect step calls for the full pass.
 ---
 
 # Reflect
@@ -10,7 +9,7 @@ Mine the current conversation for durable learnings, then route them into skill 
 
 ## When to invoke
 
-Invoke when the user says "reflect" or "/reflect". Skip when the conversation is trivial, off-topic, or already covered by an existing skill the parent followed correctly. One-offs are not learnings.
+Invoke when the user says "reflect" or "/reflect", or when a make-it-so playbook's Reflect step runs the full pass (a long thread, or the chef asked). Skip when the conversation is trivial, off-topic, or already covered by an existing skill the parent followed correctly. One-offs are not learnings.
 
 ## Process
 
@@ -50,9 +49,9 @@ Sanity-check the synthesizer's Accepted list. For any item that would be enforce
 
 ### 5. Apply
 
-Before applying any Accepted edit, present the synthesizer's full Accepted/Rejected/Backlog output to the user and wait for explicit approval. The user picks which subset to apply and may redirect routings. Skill changes affect every future agent in the org. Do not auto-apply.
+Before applying any Accepted edit, present the synthesizer's full Accepted/Rejected/Backlog output to the user and wait for explicit approval. The user picks which subset to apply and may redirect routings. Skill changes affect every future agent in the org. Do not auto-apply. When a playbook's Reflect step ran this pass and the chef isn't in the thread, don't wait. Put the Accepted list in the reply as an open gate for the chef, apply none of it, and go on with the Backlog.
 
-Backlog items file to whatever devex / backlog tracker your team uses automatically. Only the Accepted list waits for approval.
+File each Backlog item as a `garden` issue per `docs/agents/garden.md`, unless an open one already covers it, without waiting for approval. In a repo without that document, list them in the summary instead. Only the Accepted list waits for approval.
 
 For each approved Accepted item, follow the Routing field exactly:
 
@@ -69,5 +68,5 @@ Short list, no preamble:
 
 - Edits applied: `<skill path>`. What changed, one line each.
 - New skills created: `<skill path>`. One line each (rare).
-- Backlog filed to the devex tracker: `<issue title>` (`<tags>`). One line each.
+- Backlog filed as `garden` issues: `<issue title>` (`<link>`). One line each.
 - Dropped: one line per rejected finding + reason from the synthesizer.
