@@ -14,7 +14,7 @@ You may have no shell. Do every GitHub read (the ledger, each drain, merge-gate 
 - the conversation's own GitHub helper, if it has one;
 - a short read-only thread whose brief names the exact reads and forbids any write.
 
-The helper may reach GitHub only through its REST API, not `gh`. Then read PRs, issues, comments, labels and check runs from the matching REST endpoints. Batch a drain's reads into one helper call or one thread, never one per PR.
+Cloud sessions reach GitHub through REST, not most `gh` commands. For the commands, follow `docs/agents/AGENTS.md` to the issue tracker document's "Cloud threads: REST through `gh api`" section, and cite it in read-only briefs. Batch a drain's reads into one helper call or one thread, never one per PR.
 
 ### Own the program, never the code
 
