@@ -1,8 +1,79 @@
 # milliways
 
-Agent skills, packaged both as a [Claude Code plugin](https://code.claude.com/docs/en/plugins) and as an [Agent Plugin](https://agent-plugins.org/specification).
+milliways is the kitchen: one plugin you carry from codebase to codebase. It routes every non-trivial task to a playbook written for that situation, vendors [pstack](https://github.com/cursor/plugins/tree/main/pstack) and [Matt Pocock's skills](https://github.com/mattpocock/skills) as the playbooks' steps, and ships what a Claude Project needs to run agents in the cloud and merge their work on a trust ladder. The vocabulary (kitchen, chef, rung, gate, door, garden) is defined in [`GLOSSARY.md`](GLOSSARY.md).
+
+It is packaged as a [Claude Code plugin](https://code.claude.com/docs/en/plugins), as an [Agent Plugin](https://agent-plugins.org/specification) and for [skills.sh](https://skills.sh). The `AGENTS.md` entry point works in any harness that reads `AGENTS.md`; Projects, routines and pull-request attachments are Claude Code and GitHub features.
+
+## Install
+
+### Claude Code
+
+```
+/plugin marketplace add jatassi/skills
+/plugin install milliways@jatassi
+```
+
+Skills are namespaced `milliways:`, so `visual-grilling` runs as `milliways:visual-grilling`. The plugin used to be called `jatassi-skills`; if you have that installed, uninstall it (`/plugin uninstall jatassi-skills@jatassi`) and install `milliways` in its place.
+
+The marketplace pins the plugin to the latest release tag, so Claude Code installs exactly the build that release tested, not whatever is on `main`.
+
+### skills.sh
+
+```
+npx skills add jatassi/skills
+```
+
+This installs every skill in the repo into any agent the [`skills` CLI](https://skills.sh) supports. Update later with `npx skills update`.
+
+### Agent Plugins clients
+
+Point your client at this repository; the manifest is [`plugin.json`](plugin.json) at the root.
+
+skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a release, so they get the same build as Claude Code. The exception is the few minutes while a release is building, when the skill text on `main` can be newer than the `visual-grilling` build.
+
+## How a kitchen works
+
+A **kitchen** is a repo whose root `AGENTS.md` carries exactly one line:
+
+```
+Start every non-trivial task with the `make-it-so` skill. Kitchen config: `docs/agents/AGENTS.md`.
+```
+
+That line is the entry point. [`make-it-so`](skills/make-it-so/SKILL.md), the router, classifies the task and copies the matching playbook's steps into the thread's todo list. Its routing rule sends a question that running something can answer to a prototype, a one-way door or a question of taste to grilling (visual-grilling first), and work bigger than one context to wayfinder. Every playbook ends with a reflect step that files `garden` issues for anything the thread had to work around.
+
+Everything else the kitchen needs lives in `docs/agents/`, behind its own `AGENTS.md` index: the issue tracker, triage labels, domain docs, the model-role table, verification, autonomy and garden. This repo is a kitchen itself, so [`docs/agents/`](docs/agents) shows the full set.
+
+### Set up a repo
+
+Install the plugin, then run `/setup-milliways` at the repo's root (`/milliways:setup-milliways` in Claude Code). It detects your harness and the model families you can reach, shows you what it will write, and asks before it changes anything. It then:
+
+- writes the `docs/agents` documents and their index, and the one root `AGENTS.md` line;
+- writes a model-role table you can edit, naming models by tier only (haiku, sonnet, opus, fable);
+- creates the GitHub labels: triage, `wayfinder:*`, `garden`, `door:one-way`, `prototype` and the five verifier tiers;
+- offers to fold any `CLAUDE.md` into `AGENTS.md`, and renames a `CONTEXT.md` glossary to `GLOSSARY.md`.
+
+It never overwrites a file, so re-running it only adds what a later milliways brings.
+
+### Run it from a Claude Project
+
+The Projects kit in [`skills/setup-milliways/projects/`](skills/setup-milliways/projects) runs the kitchen from a Claude Project. Cloud threads see only what is committed to the repo or added as a plugin, nothing from `~/.claude`, so the kit is plain files you paste into the project:
+
+1. Create a Claude Project with the kitchen repo as its only repository, and add milliways under **Project settings > Plugins**.
+2. Paste [`coordinator-brief.md`](skills/setup-milliways/projects/coordinator-brief.md) into the project instructions, and set its first standing order to the branch pull requests target. It makes the project conversation a coordinator that writes briefs and starts threads, never edits code, and keeps the verification ledger in GitHub.
+3. Create the four routines in [`routines/`](skills/setup-milliways/projects/routines) from the project's **Routines** tab:
+   - [`risk-digest`](skills/setup-milliways/projects/routines/risk-digest.md), daily: ranks yesterday's merges by risk and moves the trust ladder.
+   - [`garden-sweep`](skills/setup-milliways/projects/routines/garden-sweep.md), nightly: files a `garden` issue for each banned pattern that landed.
+   - [`garden-cluster`](skills/setup-milliways/projects/routines/garden-cluster.md), weekly: groups open `garden` issues and runs `correct` on each cluster.
+   - [`upstream-sync`](skills/setup-milliways/projects/routines/upstream-sync.md), weekly: opens a pull request that moves the vendored upstreams. It is for this repo only.
+4. If threads use the vendored `watch-pr`, `check-plan` or `worktree-audit` scripts, install Bun in the cloud environment's setup script (`curl -fsSL https://bun.sh/install | bash`). Cloud threads start without it.
+
+### The trust ladder and the merge gate
+
+Trust is earned per area. [`docs/agents/autonomy.md`](docs/agents/autonomy.md) declares areas as path globs, each on a rung: at `chef` you merge every pull request; at `gated` a thread merges its own once the gate holds (CI is green, a fresh verifier passes at the head SHA with live evidence, and the door is two-way). Ten settled clean merges in a row (each past its seven-day clean window) make a promotion due, which the risk digest proposes as a pull request you merge; any unclean merge in a gated area demotes it straight back to you. A one-way door waits for you at every rung. The [`trust-ladder`](skills/trust-ladder/SKILL.md) scorer computes the streaks, promotions and demotions from merged pull requests.
 
 ## Skills
+
+### First-party
 
 | Skill | What it does |
 | --- | --- |
@@ -79,51 +150,40 @@ Vendored from [mattpocock/skills](https://github.com/mattpocock/skills), its Eng
 | [`wizard`](skills/wizard/SKILL.md) | Generate an interactive bash wizard for steps only a human can do. |
 | [`writing-for-agents`](skills/writing-for-agents/SKILL.md) | How to write skills, `AGENTS.md` and any document an agent reads. |
 
-Vendored skills are pinned to an upstream commit and changed only by the rewrites in [`vendor/substitutions.json`](vendor/substitutions.json) and the forks declared in [`vendor/forks.json`](vendor/forks.json) ([ADR 0004](docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md)). Upstream licences are in [`LICENSES/`](LICENSES) and attributions in [`NOTICE`](NOTICE).
+## Vendoring and attribution
 
-## Install
+The pstack and Matt Pocock skills are vendored, not forked by hand. [ADR 0004](docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md) records why and has the full rules.
 
-### Claude Code
+- **Pinned upstreams.** [`vendor/upstream.json`](vendor/upstream.json) pins each upstream (cursor/plugins and mattpocock/skills) to one commit and lists the paths it includes, so what ships is exactly what was reviewed.
+- **Substitutions.** [`vendor/substitutions.json`](vendor/substitutions.json) holds the mechanical rewrites applied on every sync: Cursor tool and agent names to Claude Code's, `.cursor/skills` to `.claude/skills`, bare agent names to `milliways:` agent types, and so on.
+- **Declared forks.** Every other divergence is listed in [`vendor/forks.json`](vendor/forks.json) with its kind (`policy` or `port-feature`) and the reason for it.
+- **The sync check.** `npm run vendor -- check` fails on any vendored file that is neither its pinned upstream after the substitutions nor a declared fork. It runs in the vendor workspace's tests and in the Release workflow. The weekly upstream-sync routine moves the pins and opens a pull request for review.
 
-```
-/plugin marketplace add jatassi/skills
-/plugin install milliways@jatassi
-```
-
-Skills are namespaced `milliways:`, so `visual-grilling` runs as `milliways:visual-grilling`. The plugin used to be called `jatassi-skills`; if you have that installed, uninstall it (`/plugin uninstall jatassi-skills@jatassi`) and install `milliways` in its place.
-
-The marketplace pins the plugin to the latest release tag, so Claude Code installs exactly the build that release tested, not whatever is on `main`.
-
-### skills.sh
-
-```
-npx skills add jatassi/skills
-```
-
-This installs every skill in the repo into any agent the [`skills` CLI](https://skills.sh) supports. Update later with `npx skills update`.
-
-### Agent Plugins clients
-
-Point your client at this repository; the manifest is [`plugin.json`](plugin.json) at the root.
-
-skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a release, so they get the same build as Claude Code. The exception is the few minutes while a release is building, when the skill text on `main` can be newer than the `visual-grilling` build.
+Upstream licences are vendored verbatim in [`LICENSES/`](LICENSES), and [`NOTICE`](NOTICE) carries the MIT attributions for cursor/plugins and mattpocock/skills.
 
 ## Layout
 
 ```
 .
+├── AGENTS.md                    # the one make-it-so line: this repo is a kitchen
+├── GLOSSARY.md                  # the domain language, kitchen terms included
 ├── plugin.json                  # Agent Plugins manifest
 ├── .claude-plugin/
 │   ├── plugin.json              # Claude Code plugin manifest
 │   └── marketplace.json         # Claude Code marketplace (this repo = one plugin)
 ├── .github/workflows/           # release.yml, the only workflow: tests pull requests, releases merges to main
 ├── skills/                      # Shared by both formats; vendored skills sit beside our own
-│   └── <skill>/SKILL.md
+│   ├── <skill>/SKILL.md
+│   └── setup-milliways/projects/ # the Projects kit: coordinator brief and routine prompts
 ├── agents/                      # Claude Code subagents (vendored from pstack), dispatched as milliways:<name>
+├── docs/
+│   ├── agents/                  # this kitchen's config, behind its AGENTS.md index
+│   └── adr/                     # architecture decision records
 ├── vendor/                      # upstream.json, substitutions.json, forks.json, checks.json
 ├── LICENSES/                    # upstream licences, vendored verbatim
 ├── NOTICE                       # upstream attributions
-└── packages/                    # dev-only workspaces: visual-grilling's source, the vendor CLI
+├── scripts/                     # test.mjs (changed-workspace test runner), test-bun.mjs
+└── packages/                    # dev-only workspaces: visual-grilling's source, the vendor CLI, setup-milliways' and trust-ladder's tests
 ```
 
 ## Development
