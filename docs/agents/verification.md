@@ -19,6 +19,8 @@ The ledger lives in GitHub, never in memory or a transcript. It holds one verdic
 - a comment that starts `ledger: <tier> at <head SHA>` and names the patch-id, the lanes run and the evidence;
 - the tier as the pull request's only tier label. Replace the label when a new verdict lands.
 
+A `ledger: merged on the chef's request` comment records a merge, not a verdict (Reading the ledger).
+
 The verdict is bound to the head SHA and the patch-id, so a rebase can't carry a stale pass. "Was this verified?" is answered by the ledger and by nothing else.
 
 ## Tiers
@@ -48,7 +50,7 @@ Verifier lanes report `PASS`, `PASS+NOTES` or `FAIL` (a swarm worker's `ISSUES` 
 - **`verifier-blocked` is not a pass.** Run a fresh verifier once the environment heals.
 - **`verifier-failed` gets a fix**, not a re-verify of the same head.
 - **A verifier overrides the worker.** A worker may self-report a tier. A verifier's verdict on the same pull request and head SHA replaces it.
-- **The chef's explicit merge is the chef's own.** When the chef names a pull request in the thread and says to merge or ship it, the thread merges it whatever its tier. The merge gate and Shipping's verified-only rule don't apply to it. The thread records the merge in a ledger comment that starts `ledger: merged on the chef's request at <head SHA>` and names the pull request's actual tier, the tier of its current verdict or `no verdict`. That comment is not a verdict, so the tier label stays as it is. Every other merge goes through the merge gate in make-it-so's `playbooks/autopilot-full.md` step 5, and a closed gate stops the pull request at merge-ready for the chef.
+- **The chef's explicit merge is the chef's own.** When the chef names a pull request in the thread and says to merge, land or ship it, the thread merges it whatever its tier. The merge gate and Shipping's verified-only rule don't apply to it. The thread records the merge in a ledger comment that starts `ledger: merged on the chef's request at <head SHA>` and names the pull request's actual tier, the tier of its current verdict or `no verdict`. That comment is not a verdict, so the tier label stays as it is. Every other merge goes through the merge gate in make-it-so's `playbooks/autopilot-full.md` step 5, and a closed gate stops the pull request at merge-ready for the chef.
 
 ## Cloud environments
 

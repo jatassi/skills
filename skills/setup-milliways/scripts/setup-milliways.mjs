@@ -59,7 +59,7 @@ const KITCHEN_LABELS = [
   ['wayfinder:task', 'c5def5', 'Wayfinder ticket: task'],
   ['garden', '0e8a16', 'A workaround, banned pattern or repeated mistake to correct'],
   ['door:one-way', 'b60205', 'Irreversible change: always waits for the chef'],
-  ['prototype', 'fbca04', 'Throwaway prototype pull request, closed unmerged after the pick'],
+  ['prototype', 'fbca04', 'Throwaway prototype pull request, or a ticket waiting on its pick'],
   ['live-ui-verified', '0e8a16', 'Verifier passed at the head SHA with live evidence from the running app'],
   ['unit-test-verified', '7bcf8f', 'Verifier passed at the head SHA on tests, without live evidence'],
   ['type-check-only', 'fef2c0', 'Verifier checked types only at the head SHA'],

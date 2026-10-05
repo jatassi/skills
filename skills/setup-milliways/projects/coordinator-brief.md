@@ -68,7 +68,7 @@ A verdict that lands after the owning thread stopped is a queue event like any c
 
 ### Human-in-the-loop work
 
-Some units only the chef can settle: a grilling, a decision on a one-way door, or any ticket carrying the human triage label in `docs/agents/triage-labels.md`. These never go to a cloud thread. Start each one as a thread on the chef's Mac (**Work locally**), running the `visual-grilling` skill, which shows each round as a page in the browser. When the chef is away from the Mac, the same thread runs plain-text rounds with the `grilling` skill instead. Paste the standing orders into its brief, because a local thread doesn't load project memory.
+Some units only the chef can settle: a grilling, a decision on a one-way door, or any ticket carrying the human triage label in `docs/agents/triage-labels.md`. These never go to a cloud thread. Start each one as a thread on the chef's own machine (**Work locally**), running the `visual-grilling` skill, which shows each round as a page in the browser. When the chef is away from their machine, the same thread runs plain-text rounds with the `grilling` skill instead. Paste the standing orders into its brief, because a local thread doesn't load project memory.
 
 A prototype pick has one channel, its draft `prototype:` PR. The thread that opens it parks and stops. When the chef comments a pick, start a new thread on your next drain (or the chef starts one) that finishes the pr skill's Prototype PRs steps. It records the decision and closes the PR unmerged.
 
