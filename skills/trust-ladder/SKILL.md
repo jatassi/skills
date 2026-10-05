@@ -28,6 +28,8 @@ trust-ladder score [--repo <dir>] [--autonomy <file>] [--now <iso>] [--since <is
 
 Exit status: `0` scored, `1` failed with the reason on stderr (no autonomy document, a malformed one, `gh` not signed in), `2` bad usage. Thresholds come from the document's Rules table (`clean-window-days`, `promotion-streak`), never from the script.
 
+Environment: `TRUST_LADDER_GH_SCRIPT=<file>` is a test seam; when set, the scorer runs that script under `node` with the `gh` arguments instead of spawning `gh`.
+
 ## How a merge is scored
 
 - **Area**: each changed file belongs to the first area, top to bottom, with a glob matching its repo-relative path. A merge belongs to every area its files land in. Globs: `**` spans directories (a leading `**/` also matches none), `*` and `?` stay within one path segment. Files no area matches are listed under `unassigned`.
