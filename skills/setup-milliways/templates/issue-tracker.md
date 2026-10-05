@@ -29,7 +29,7 @@ GitHub shares one number space across issues and PRs, so a bare `#42` may be eit
 
 ## Cloud threads: REST through `gh api`
 
-In a Claude Code cloud session, GitHub traffic goes through Anthropic's GitHub proxy. It serves only a pinned set of GraphQL operations and rejects the rest with a 403 that says `This GraphQL query is not enabled for this session`. That holds whatever token the environment carries: a `GH_TOKEN` you set gets the same 403. Most `gh issue` and `gh pr` commands, `gh repo view` and `gh api graphql` use GraphQL and fail there. REST through `gh api` works for the repositories attached to the session. `gh auth status` calls the token invalid because `GH_TOKEN` holds the placeholder `proxy-injected`, which the proxy swaps for the real credential on the way out, so ignore that report.
+In a Claude Code cloud session, GitHub traffic goes through Anthropic's GitHub proxy. It serves only a pinned set of GraphQL operations and rejects the rest with a 403 that says `This GraphQL query is not enabled for this session`. A `GH_TOKEN` you set gets the same 403, since the rule holds whatever token the environment carries. Most `gh issue` and `gh pr` commands, `gh repo view` and `gh api graphql` use GraphQL and fail there. REST through `gh api` works for the repositories attached to the session. `gh auth status` calls the token invalid because `GH_TOKEN` holds the placeholder `proxy-injected`, which the proxy swaps for the real credential on the way out, so ignore that report.
 
 When a command fails with that 403, use these REST forms for the rest of the thread. Put each body in a file and pass it with `-F body=@<file>`, never inline in the command. The issues endpoints serve pull requests too, so comment, label and assignee calls take a PR number as well.
 
@@ -43,10 +43,10 @@ When a command fails with that 403, use these REST forms for the rest of the thr
 - **Close**: post the closing comment, then `gh api repos/{{slug}}/issues/<n> --method PATCH -f state=closed -f state_reason=completed`
 - **Open a PR**: `gh api repos/{{slug}}/pulls --method POST -f title="..." -f head=<branch> -f base=<base> -F body=@body.md --jq .number`, with `-F draft=true` for a draft. Add its labels with the label call.
 - **Edit a PR**: `gh api repos/{{slug}}/pulls/<n> --method PATCH -F body=@body.md`, or `-f title="..."`, or `-f state=closed` to close it.
-- **Read a PR**: `gh api repos/{{slug}}/pulls/<n> --jq '{state, merged, draft, mergeable, mergeable_state, head: .head.sha, labels: [.labels[].name]}'`. Add `-H 'Accept: application/vnd.github.diff'` for the diff. Conversation comments come from the issue comments call, review comments from `repos/{{slug}}/pulls/<n>/comments`, reviews from `repos/{{slug}}/pulls/<n>/reviews`.
+- **Read a PR**: `gh api repos/{{slug}}/pulls/<n> --jq '{state, merged, draft, mergeable, mergeable_state, head: .head.sha, labels: [.labels[].name]}'`. For the diff, drop `--jq` and add `-H 'Accept: application/vnd.github.diff'`. Conversation comments come from the issue comments call, review comments from `repos/{{slug}}/pulls/<n>/comments`, reviews from `repos/{{slug}}/pulls/<n>/reviews`.
 - **Checks at a commit**: `gh api repos/{{slug}}/commits/<sha>/check-runs --jq '.check_runs[] | {name, status, conclusion}'` and `gh api repos/{{slug}}/commits/<sha>/status --jq .state`
 
-A cloud thread can't do what has no REST form: resolve a review thread, arm auto-merge, touch Projects v2, or attach media with `--attach`, which rides on GraphQL-backed commands. A PR opened from a cloud thread puts its evidence inline as text (see the **pr** skill).
+A cloud thread can't do what has no REST form: resolve a review thread, arm auto-merge, touch Projects v2, or attach media, since every command that takes `--attach` uses GraphQL. A PR opened from a cloud thread puts its evidence inline as text (see the **pr** skill).
 
 ## When a skill says "publish to the issue tracker"
 

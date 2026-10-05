@@ -45,7 +45,7 @@ In a Claude Code cloud session, GitHub's proxy rejects most GraphQL, so `gh pr c
 - **Edit**: `gh api repos/<owner>/<repo>/pulls/<n> --method PATCH -F body=@body.md` for the verdict line or the decision-log link, `-f title="..."` for the title. Close a prototype PR with `-f state=closed`.
 - **Comments**: post with `gh api repos/<owner>/<repo>/issues/<n>/comments --method POST -F body=@comment.md`, and read them with `gh api repos/<owner>/<repo>/issues/<n>/comments --paginate`.
 
-There is no `--attach` in a cloud thread. Put text evidence (test output, a CLI's before and after) inline in Evidence as fenced blocks. For a visual change, capture what you can as text and write `Media: not attached (cloud thread)` under Evidence, so a local thread or the chef can add it later with `gh pr edit <n> --attach`. A prototype PR is its screencasts, so leave opening one to a local thread.
+There is no `--attach` in a cloud thread. Put text evidence (test output, a CLI's before and after) inline in Evidence as fenced blocks. For a visual change, capture what you can as text and write `Media: not attached (cloud thread)` under Evidence, so a local thread or the chef can add it later with `gh pr edit <n> --attach`. A prototype PR is nothing without its screencasts, so leave opening one to a local thread. A cloud thread that resumes on the chef's pick reads the PR's comments, comments on the ticket and closes both through the same REST forms.
 
 ## Template
 
