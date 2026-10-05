@@ -11,7 +11,7 @@
       "source": {
         "source": "github",
         "repo": "jatassi/skills",
-        "ref": "v1.0.5"
+        "ref": "v2.0.0"
       },
       "description": "The kitchen in one plugin: a router that binds each task to a playbook, vendored pstack and Matt Pocock skills, and the setup, Projects kit and trust ladder that let agents ship verified pull requests."
     }

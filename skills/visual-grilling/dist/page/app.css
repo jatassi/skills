@@ -1272,6 +1272,19 @@ textarea[readonly] {
   font-weight: 600;
 }
 
+.tree-note {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: -4px 6px 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.tree.stale ul {
+  opacity: 0.5;
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
