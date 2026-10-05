@@ -5,11 +5,12 @@
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26"
   },
+  "testPaths": ["skills/grilling/"],
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
     "build": "node build.mjs --out .test-dist",
     "test": "tsc --noEmit -p . && node build.mjs --out .test-dist && vitest run",
-    "try": "node build.mjs --out ../../skills/visual-grilling/dist"
+    "try": "node build.mjs --out ../../skills/grilling/dist"
   },
   "devDependencies": {
     "@mermaid-js/layout-elk": "^1.0.0",

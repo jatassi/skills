@@ -4,7 +4,7 @@
 # Ubuntu only, at the minimum Node: the change-scoped tests (npm test), the
 # vendor sync check and pstack's Bun scripts. The three-OS matrix and the full
 # npm run test:all stay with release.yml on pull requests into main. Nothing
-# here builds or commits skills/visual-grilling/dist/: only a release does.
+# here builds or commits skills/grilling/dist/: only a release does.
 
 name: CI
 
