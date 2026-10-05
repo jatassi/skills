@@ -6,35 +6,24 @@ disable-model-invocation: true
 
 You have been provided a spec. This spec should have tickets associated with it, describing how to implement the spec.
 
-Find the issue tracker through the kitchen config index, `docs/agents/AGENTS.md`: open the document its table lists for it and follow it. If the index is missing, tell the user to run `/setup-milliways`.
+Find the issue tracker and the triage label vocabulary through the kitchen config index, `docs/agents/AGENTS.md`: open the documents its table lists for them and follow them. If the index is missing, tell the user to run `/setup-milliways`.
 
-The goal is the entire spec implemented on a single **integration branch**, with every ticket resolved the way the issue tracker closes work.
+This is the hand-off step of make-it-so's Spec and tickets playbook (`<milliways>/skills/make-it-so/playbooks/spec-and-tickets.md`, where `<milliways>` is the milliways plugin root, two folders above this skill's base directory, which Claude Code names when it loads this skill). Each agent ticket runs make-it-so in its own thread, which binds it to the playbook its work calls for (Feature for new behavior, Bug fix for a bug, and so on), and lands as its own PR through Opening a PR, written with the **pr** skill. There is no integration branch, and no PR is stacked on another.
 
-The tickets are not a list of steps. They are a **task graph** with blocking relationships between them. This means there is always a **frontier** of tickets which are ready to be grabbed.
+The tickets are not a list of steps. They are a **task graph** with blocking relationships between them. This means there is always a **frontier** of tickets which are ready to be grabbed: open, labelled for an agent, and with every blocker closed.
 
-Communication to and from subagents should be sparse. Communicate primarily through **context pointers**: to the spec, tickets, research notes, and previous commits. Don't duplicate information already available via pointers.
-
-**Implementer subagents** should be run in the background where possible for maximum concurrency.
+Communication to and from the threads should be sparse. Communicate primarily through **context pointers**: to the spec, tickets, research notes, and previous commits. Don't duplicate information already available via pointers.
 
 ## Steps
 
-1. Read the spec and tickets to understand the task graph.
+1. Read the spec and tickets to understand the task graph. Sort each ticket by its triage label: agent tickets are yours to start, human tickets are listed for the chef and never started here.
 
-2. (optional) Use an **exploration subagent** to conduct any exploration required by the tickets - relevant codebase files or external documentation. Ensure the exploration subagent can save files - it should save its markdown notes in a directory outside the repo, accessible by all future subagents. This lets **implementer subagents** focus on implementation rather than exploration.
+2. For each ticket on the frontier, start one thread: a background subagent (`subagent_type: "milliways:poteto-agent"`, `isolation: "worktree"`, model per the `code` role in `docs/agents/models.md`), briefed with pointers to the spec and its ticket and told to run make-it-so (`<milliways>/skills/make-it-so/SKILL.md`) on that ticket alone, so the router binds it to the matching playbook. Its branch starts from the latest trunk. The playbook ends with Opening a PR, so the ticket lands as one PR whose body closes it.
 
-3. Create the integration branch. If the issue tracker closes work through PRs, or the user asks for one, open a draft PR after the first merge in step 5 (a branch with no commits ahead of main can't open one), marked as closing the spec and tickets.
+3. Run the frontier's threads in parallel. A ticket whose blockers are still open waits: dependent work branches from trunk only after its blockers' PRs merge.
 
-4. Use **implementer subagents** to implement each ticket, each in its own worktree on its own branch. Each implementer subagent:
-   - confirms its worktree is based on the integration branch before starting, and resets onto it if not;
-   - calls the Skill tool with `tdd` to build the ticket;
-   - merges the integration branch tip into its own branch before reporting done
+4. As each thread reports, review its PR yourself, then re-read the frontier. Start a thread for each newly unblocked agent ticket.
 
-5. Once an **implementer subagent** completes, merge its work to the integration branch with a **merger subagent**.
+5. Merging follows make-it-so's Autonomy section. The chef merges each PR, unless the merge gate in Autopilot-full step 5 (`<milliways>/skills/make-it-so/playbooks/autopilot-full.md`) holds at its head SHA, in which case you merge it through the gate. Otherwise leave it at merge-ready. When every started thread has reported and the frontier holds no agent ticket left to start, stop and report.
 
-6. If this changes the **frontier** of available tickets, kick off more **implementer subagents** to work on the new tickets. This allows for maximum concurrency.
-
-7. Once all tickets are complete, call the Skill tool with `code-review` on the integration branch. Fix all issues raised by the code review in a single **implementer subagent**.
-
-8. If a draft PR exists, mark it ready for review. Otherwise, resolve each ticket the way the issue tracker closes work, and report the integration branch.
-
-9. Clean up all **implementer subagent** worktrees.
+**Reply:** each started ticket with its PR and verdict, the tickets still blocked and the PR each waits on, and the human tickets left for the chef. Run `/implement-spec` again after the next merges to carry on from the new frontier.
