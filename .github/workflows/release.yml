@@ -12,8 +12,8 @@
 # checks the build against that bundle, bumps both plugin manifests (patch, or
 # the pull request's release:minor or release:major label), pins the
 # marketplace entry to the new tag (an https url source, per ADR 0002's
-# amendment), commits, tags that commit vX.Y.Z, pushes
-# both, creates a GitHub Release, and fast-forwards dev to the release commit.
+# amendment), commits, tags that commit vX.Y.Z, pushes both, creates a GitHub
+# Release, and fast-forwards dev to the release commit.
 #
 # Dispatching it by hand on main tests and releases main as it is: the way to
 # retry a release that failed after its merge.

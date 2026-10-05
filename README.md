@@ -192,12 +192,12 @@ Upstream licences are vendored verbatim in [`LICENSES/`](LICENSES), and [`NOTICE
 `visual-grilling`'s CLI, server and round page are built from the TypeScript workspace in `packages/visual-grilling/`, outside the shipped skill folder. `setup-milliways`'s CLI ships as plain Node in `skills/setup-milliways/scripts/`, and its tests live in `packages/setup-milliways/`; `trust-ladder`'s scorer is the same, in `skills/trust-ladder/scripts/` with tests in `packages/trust-ladder/`.
 
 ```
-npm install                       # installs the dev workspaces in packages/
+npm install                              # installs the dev workspaces in packages/
 npm run playwright -- install chromium   # once, for the round page tests
-npm test                          # test only the workspaces changed since the merge-base with dev
-npm run test:all                  # every workspace: visual-grilling type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
-npm run test:bun                  # pstack's vendored Bun scripts and their upstream tests; needs Bun, not part of npm test
-npm run try                       # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
+npm test                                 # test only the workspaces changed since the merge-base with dev
+npm run test:all                         # every workspace: visual-grilling type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
+npm run test:bun                         # pstack's vendored Bun scripts and their upstream tests; needs Bun, not part of npm test
+npm run try                              # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
 ```
 
 `npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing `packages/package.json` or its lockfile runs everything, unless the change only adds a workspace, which then runs alone. Changing the root `package.json` or `package-lock.json` always runs everything. `--dry-run` prints the pick without running it.

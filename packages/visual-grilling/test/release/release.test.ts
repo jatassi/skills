@@ -81,9 +81,7 @@ describe('manifests', () => {
     const marketplace = JSON.parse(read('.claude-plugin/marketplace.json'));
     expect(marketplace.plugins).toHaveLength(1);
     expect(marketplace.plugins[0].name).toBe('milliways');
-    // An https url, not a github source: Claude Code clones a github source
-    // over SSH whenever SSH looks configured, and an SSH key GitHub refuses
-    // then fails the install (issue #113). A public https clone needs no key.
+    // An https url, not a github source: see ADR 0002's amendment.
     expect(marketplace.plugins[0].source).toEqual({
       source: 'url',
       url: 'https://github.com/jatassi/skills.git',

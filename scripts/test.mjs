@@ -40,7 +40,7 @@ const ALWAYS_ALL = ['scripts/test.mjs', 'scripts/install-dev.mjs', 'package.json
 const wsPkg = JSON.parse(readFileSync(WS_PKG, 'utf8'));
 // Workspace names as packages/package.json lists them, relative to packages/.
 const workspaces = wsPkg.workspaces ?? [];
-const label = (ws) => `${WS_ROOT}/${ws}`;
+const wsDir = (ws) => `${WS_ROOT}/${ws}`;
 
 function git(...args) {
   return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 28 });
@@ -123,7 +123,7 @@ function selectWorkspaces() {
   const picked = workspaces.filter((ws) => {
     if (added.includes(ws)) return true;
     const extra = JSON.parse(readFileSync(join(WS_ROOT, ws, 'package.json'), 'utf8')).testPaths ?? [];
-    const owned = [`${label(ws)}/`, `skills/${basename(ws)}/`, ...extra];
+    const owned = [`${wsDir(ws)}/`, `skills/${basename(ws)}/`, ...extra];
     return [...changed].some((f) => owned.some((p) => f.startsWith(p)));
   });
   return { picked, why: 'changed since merge-base with dev' };
@@ -131,8 +131,8 @@ function selectWorkspaces() {
 
 const { picked, why } = selectWorkspaces();
 const skipped = workspaces.filter((ws) => !picked.includes(ws));
-console.log(`test: running [${picked.map(label).join(', ') || 'none'}] (${why})`);
-if (skipped.length) console.log(`test: skipping [${skipped.map(label).join(', ')}]: unchanged, nothing to re-test`);
+console.log(`test: running [${picked.map(wsDir).join(', ') || 'none'}] (${why})`);
+if (skipped.length) console.log(`test: skipping [${skipped.map(wsDir).join(', ')}]: unchanged, nothing to re-test`);
 if (flags.includes('--dry-run')) process.exit(0);
 
 for (const ws of picked) {
