@@ -1,6 +1,8 @@
 ### Spec and tickets
 
-**You own the shared understanding. The chef owns the decisions.** For work too large for one PR, and for any one-way door. Settle the chef's intent in a grilling before anyone builds, write it down as a spec, and cut the spec into tickets other threads can pick up. Work bigger than one context goes to the **wayfinder** skill first (the Routing rule). This playbook runs once its map hands off a spec to write.
+**You own the shared understanding. The chef owns the decisions.** For large work whose intent the chef hasn't settled, and for any one-way door. Large work with the intent settled is a Multi-phase plan (make-it-so's Playbooks order). Settle the chef's intent in a grilling before anyone builds, write it down as a spec, and cut the spec into tickets other threads can pick up. Work bigger than one context goes to the **wayfinder** skill first (the Routing rule). This playbook runs once its map hands off a spec to write.
+
+Keep these steps in one unbroken context, with no compact or clear between them.
 
 1. Grill with the **grill-with-docs** skill, so the answers land as ADRs and glossary entries as you go. Run the rounds through the **visual-grilling** skill when this is a local thread and the chef is at their Mac, and as plain-text rounds when they are away. Facts are yours to find, never the chef's. A question that running something can answer goes to the Prototype playbook (`playbooks/prototype.md`), not to a round.
 2. For a one-way door, run the **interrogate** skill over the settled design before you write the spec, and put each finding it proves to the chef. `skip:` for a two-way door.

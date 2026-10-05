@@ -2,6 +2,8 @@
 
 This project runs a milliways kitchen: a repo whose root AGENTS.md sends non-trivial work to the `make-it-so` skill, with its config in `docs/agents/`. The chef is the human who owns this project. These instructions reach the project conversation and every thread it starts. **Coordinator** binds the project conversation, **Threads** binds every thread, and **Standing orders** bind both.
 
+In this project these instructions replace make-it-so's Orchestrate playbook. The project conversation follows them and does not route through make-it-so. Threads do.
+
 ## Coordinator
 
 ### Own the program, never the code
@@ -22,7 +24,8 @@ ACCEPTANCE   checkable criteria, one per line
 VERIFY       exact commands or the verify skill path, plus known gotchas
 TIMEBOX      rough cap on runtime; on expiry, report partial findings and stop
 FORBIDDEN    no stacked PRs, no force-push to shared branches, no fixes outside
-             scope, no merge unless the merge gate holds, plus unit-specific bans
+             scope, no merge unless the merge gate holds or the chef asks,
+             plus unit-specific bans
 REPORT       status, branch, head SHA, PR, verdict and ledger tier, what you
              actually ran, deviations, fallback lines, follow-ups, garden issues
 STANDING     the standing orders, pasted verbatim
@@ -38,45 +41,34 @@ The standing orders are a numbered list, one constraint per line. Keep them in a
 
 A thread finishing is a queue event, not an interrupt. When a thread reports, note it (thread, unit, status, PR, head SHA) and finish what you were doing first. Never deep-review a report or a diff inline. A completion that needs review becomes a verifier thread.
 
-Drain the queue at these points: the end of a critical section (writing a brief, a conflict decision, recording a gate), before every report to the chef, and whenever the chef writes. Each drain classifies every pending completion as landed, needs-verify, failed, stuck or noise. It reads the ledger, starts the next threads in one turn, and ends with three lines: counts by state, what changed, and the open gates.
+Drain the queue at these points: the end of a critical section (writing a brief, a conflict decision, recording a gate), before every report to the chef, and whenever the chef writes. Each drain classifies every pending completion as landed, needs-verify, failed, stuck or noise. It reads the ledger, checks each open `prototype:` pull request for the chef's pick, starts the next threads in one turn, and ends with three lines: counts by state, what changed, and the open gates.
 
 You have no clock. You wake when a thread reports or the chef writes, and nothing else wakes you. Don't arm `/loop` ticks. Every time you wake, audit the program instead:
 - Judge liveness by side effects only: pushed commits, PR and check changes, and ledger comments, read from GitHub and the Overview pane. Never message a thread just to ask how it's going.
 - A thread that errored, or that ran past its timebox with no side effect, is stuck. Stop it and start a replacement with a smaller scope. After two retries, abandon the unit and replan around it.
 - A thread that reports hours late is reconciled against the current PRs and ledger before you accept anything it says.
 
-Scheduled work runs as this project's routines, not as ticks: the daily risk digest, the nightly garden sweep, the weekly garden clustering and, for the milliways repo itself, the weekly upstream sync. Their prompts ship in the milliways plugin under `skills/setup-milliways/projects/routines/`.
+Scheduled work runs as this project's routines, not as ticks: the daily risk digest (which also runs the post-merge sweep), the nightly garden sweep, the weekly garden clustering and, for the milliways repo itself, the weekly upstream sync. Their prompts ship in the milliways plugin under `skills/setup-milliways/projects/routines/`.
 
 ### The verification ledger
 
-The ledger lives in GitHub, never in memory or a transcript. It holds one verdict per PR number and head SHA, at one tier: `live-ui-verified`, `unit-test-verified`, `type-check-only`, `verifier-blocked` or `verifier-failed`. A verdict is two things on the PR:
-- a comment that starts `ledger: <tier> at <head SHA>` and names the patch-id, the lanes run and the evidence;
-- the tier as the PR's only tier label.
-
-The PR's CI checks are inputs to a verdict, never a verdict on their own.
-
-Read the ledger by these rules:
-- **CI green is an input, never a verdict.** The live lane, which drives the running app on the surface the change touches, is the floor of every pass, per `docs/agents/verification.md`. Behavioural work needs better than `type-check-only`.
-- **Check the head before you trust a verdict.** Compare it with `gh pr view <n> --json headRefOid`. A new head SHA voids the verdict unless its patch-id is unchanged.
-- **`verifier-blocked` is not a pass.** Start a fresh verifier once the environment heals.
-- **`verifier-failed` gets a fix thread**, not a re-verify.
-- **A verifier overrides the worker.** A worker may self-report its tier. A verifier thread, fresh and never the worker, on the `verifier` role in `docs/agents/models.md`, overrides it on the same PR and head SHA.
-
-"Was this verified?" is answered by the ledger, and by nothing else.
+The ledger lives in GitHub, keyed by PR number and head SHA. `docs/agents/verification.md` is its one full statement: the `ledger: <tier> at <head SHA>` comment and the tier label, the five tiers, how lane reports map to a tier, and how to read it. Read it before you judge a verdict. Only `live-ui-verified` passes the merge gate, CI green is never a verdict, and "was this verified?" is answered by the ledger and by nothing else.
 
 ### Merging
 
-Threads watch their own pull requests and push fixes for CI failures and review comments. A PR merges only through the merge gate in make-it-so's autopilot-full playbook:
+A thread started from one of your briefs owns its PR. It runs make-it-so's Babysit playbook in `drive` mode to merge-ready, pushing fixes for CI failures and review comments, and merges only through the merge gate in make-it-so's autopilot-full playbook:
 - every area it touches is `gated` in `docs/agents/autonomy.md`;
 - CI is green at the head;
-- a fresh verifier passed at the head SHA with live evidence;
+- a fresh verifier's verdict at the head SHA is `live-ui-verified`;
 - the door is two-way.
 
-When the gate holds, tell the PR's owning thread to merge. Otherwise the PR waits for the chef. Nothing the chef or you say opens a closed gate, and a one-way door waits for the chef in every area, at every rung.
+When the gate holds, the owning thread merges. Otherwise it stops at merge-ready and the PR waits for the chef. Nothing you say opens a closed gate. The chef's explicit "merge this PR" to a thread is the chef's own merge, and the thread records it in the ledger comment. A one-way door waits for the chef in every area, at every rung.
 
 ### Human-in-the-loop work
 
-Some units only the chef can settle: a grilling, a prototype pick, a decision on a one-way door, or any ticket carrying the human triage label in `docs/agents/triage-labels.md`. These never go to a cloud thread. Start each one as a thread on the chef's Mac (**Work locally**), running the `visual-grilling` skill, which shows each round as a page in the browser. When the chef is away from the Mac, the same thread runs plain-text rounds with the `grilling` skill instead. Paste the standing orders into its brief, because a local thread doesn't load project memory.
+Some units only the chef can settle: a grilling, a decision on a one-way door, or any ticket carrying the human triage label in `docs/agents/triage-labels.md`. These never go to a cloud thread. Start each one as a thread on the chef's Mac (**Work locally**), running the `visual-grilling` skill, which shows each round as a page in the browser. When the chef is away from the Mac, the same thread runs plain-text rounds with the `grilling` skill instead. Paste the standing orders into its brief, because a local thread doesn't load project memory.
+
+A prototype pick has one channel, its draft `prototype:` PR. The thread that opens it parks and stops. When the chef comments a pick, start a new thread on your next drain (or the chef starts one) that finishes the pr skill's Prototype PRs steps: it records the decision and closes the PR unmerged.
 
 Park every human gate where it survives this conversation. Comment the question, the options and your default on its issue or PR, list it under open gates in every report, and route other work around it.
 
@@ -107,15 +99,16 @@ Take every number from GitHub, not from memory.
 - **Stop when something is missing.** If you can't reach something you need, such as a repository, a secret, a tool or a connector, say exactly what in your first report and stop. Don't mock, substitute or guess.
 - **Models.** Run subagents on the roles in `docs/agents/models.md`. A role whose model isn't available falls back to your own model, with its `fallback:` line in your report.
 - **Pull requests.** Follow the `pr` skill: a conventional-commit title, one concern, never stacked, and the base branch from the standing orders. Push after every verifiable unit and open the PR early, because work that lives only in your sandbox isn't done.
-- **Verdicts.** When you verify, write the ledger comment and the tier label as above. Merge only when the merge gate holds.
+- **Own your PR.** Run make-it-so's Babysit playbook in `drive` mode to merge-ready. Merge only when the merge gate holds, or when the chef explicitly tells you to (Merging).
+- **Verdicts.** When you verify, record the verdict per `docs/agents/verification.md`.
 - **Reflect last.** List what you had to work around, and file a `garden` issue for each one, per `docs/agents/garden.md`. Then send your report in the REPORT shape.
 
 ## Standing orders
 
 1. PRs branch from and target the repository's default branch, unless this line names another.
-2. One concern per PR. No stacked PRs, no force-push to a shared branch, and no rebase by a worker.
+2. One concern per PR. No stacked PRs and no force-push to a shared branch. A thread rebases only its own PR's branch.
 3. Name models by tier (haiku, sonnet, opus, fable), never by version.
 4. The verification ledger lives in GitHub, keyed by PR and head SHA. CI green is never a verdict.
-5. Nothing merges unless the merge gate holds. One-way doors wait for the chef.
+5. A thread owns the PR it opens and runs make-it-so's Babysit playbook in `drive` mode to merge-ready. Nothing merges unless the merge gate holds or the chef explicitly asks. One-way doors wait for the chef.
 6. If you can't reach something you need, report exactly what and stop.
 7. Human-in-the-loop work runs as a local thread with visual-grilling, with plain-text grilling as the fallback.

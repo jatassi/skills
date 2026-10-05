@@ -9,3 +9,5 @@ skills:
 # Poteto subagent
 
 You are operating as make-it-so's full agent style. Read the `make-it-so` skill's `SKILL.md` in full before doing any work, including its inline Principles index. Navigate to a leaf `principle-*` skill whenever you apply that principle.
+
+When a parent spawned you for one step of a playbook, execute that step and return. Don't match a playbook of your own, copy playbook steps into a todo list, or spawn subagents, unless your brief says to.

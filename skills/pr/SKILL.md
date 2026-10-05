@@ -11,7 +11,7 @@ metadata:
 
 A pull request carries one concern, targets the base branch directly, and is never stacked on another PR. Its body is a briefing a reviewer reads in under a minute, from a phone. A prototype PR follows [Prototype PRs](#prototype-prs) instead of the steps below.
 
-The base branch is the one the brief names, else the repo's default branch. One-way doors live in `docs/agents/autonomy.md` under `## One-way doors` (its `### Paths` and `### Changes`), and the verifier's ledger tiers in `docs/agents/verification.md`.
+The base branch is the one the brief names, else the repo's default branch. One-way doors live in `docs/agents/autonomy.md` under `## One-way doors` (its `### Paths` and `### Changes`). `docs/agents/verification.md` is the one full statement of the verification ledger: the ledger comment, the tier label and the five tiers.
 
 ## Steps
 
@@ -22,7 +22,7 @@ The base branch is the one the brief names, else the repo's default branch. One-
 5. **Scope.** One line: what this PR deliberately leaves out, so the reviewer does not review for it.
 6. **Evidence.** Name the test that was red before the change and is green after it, with both runs' output. When the change shows on a surface (a UI, a CLI's output), capture before and after; see [Evidence](#evidence).
 7. **Merge danger.** A PR that touches a one-way door path or makes a one-way door change is one-way: label it `door:one-way`, and it waits for the chef's merge at every rung. Run the **blast-radius** skill on the diff and keep its one fact the change is safe because of, with how far it was proven. Write the `Blast radius:` line as the first mention of blast radius in the body.
-8. **Verdict and decision log.** Put the verifier's verdict at the head SHA in the body, with a link to its ledger comment, and apply its tier as a label. Link the decision log the **show-me-your-work** skill kept for this work (start one if there is none): the committed file, or, when the log stays local, a PR comment holding it in a `tsv` block, posted right after opening and linked with `gh pr edit`. No verdict yet means `Verdict: pending` and no tier label; update both when the verdict lands.
+8. **Verdict and decision log.** Put the verifier's verdict at the head SHA in the body, with a link to its ledger comment, and apply its tier as the label per `docs/agents/verification.md`. Link the decision log the **show-me-your-work** skill kept for this work (start one if there is none): the committed file, or, when the log stays local, a PR comment holding it in a `tsv` block, posted right after opening and linked with `gh pr edit`. No verdict yet means `Verdict: pending` and no tier label; update both when the verdict lands.
 9. **Open it.** Fill the [template](#template) and open the PR with media attached:
 
    ```bash
@@ -32,7 +32,7 @@ The base branch is the one the brief names, else the repo's default branch. One-
    ```
 
    `--attach` needs gh 2.99 or later (`gh --version`). It uploads each file and rewrites a body reference such as `![after](./after.png)` to the uploaded asset, so put the references where they belong in Evidence. Use `gh pr edit <n> --attach ...` to add media later. If a label is missing in the repo, create it with `gh label create <name>` and say so in your report.
-10. **After new commits.** Every push moves the head SHA, so the verdict goes stale: set the Verdict line back to `pending`, remove the tier label, and re-run the verifier. Keep one tier label on the PR at a time.
+10. **After new commits.** Every push moves the head SHA, so the verdict goes stale unless the patch-id is unchanged (`docs/agents/verification.md`): set the Verdict line back to `pending`, remove the tier label, and re-run the verifier.
 
 ## Template
 
@@ -74,7 +74,7 @@ The `Fix-forward:` line goes only on a fix-forward PR, one that repairs an earli
 
 ## Sections
 
-Skip all preambles and keep prose brief. Use the user's domain language from `GLOSSARY.md`.
+Skip all preambles and keep prose brief. Use the user's domain language from the project's glossary. Find where the glossary and ADRs live through the kitchen config index, `docs/agents/AGENTS.md`: open the document its table lists for the domain and follow it. Without one, look for `GLOSSARY.md` at the repo root and ADRs in `docs/adr/`.
 
 ### Summary
 
@@ -222,8 +222,8 @@ A prototype PR asks the chef to pick between variants of a UI. Nothing in it mer
    ```
 
 2. **One screencast per variant**, recorded with the **control-ui** skill (Playwright `recordVideo`, one run per `?variant=`), under the video limit in [Evidence](#evidence). Reference each one under its variant's line in the body.
-3. **Wait for the chef's pick**, a comment on the PR (`gh pr view <n> --comments`). A reply that picks no variant, or asks for changes, gets a new round of variants on the same PR.
-4. **Record the decision and close it unmerged.** Post the decision (the variant picked, the chef's reasons in their words, the branch and its head SHA as the reference spec for the build) as a comment on the ticket, then close the PR with the same text:
+3. **Don't wait for the pick.** The thread that opens the PR posts its URL, parks the pick and stops. The chef's pick, a comment on the PR (`gh pr view <n> --comments`), resumes as a new thread, started by the Projects coordinator on its next drain or by the chef, and that thread runs step 4. A reply that picks no variant, or asks for changes, gets a new round of variants on the same PR from that thread.
+4. **Record the decision and close it unmerged.** The thread the pick started posts the decision (the variant picked, the chef's reasons in their words, the branch and its head SHA as the reference spec for the build) as a comment on the ticket, then close the PR with the same text:
 
    ```bash
    gh issue comment <ticket> --body-file decision.md
