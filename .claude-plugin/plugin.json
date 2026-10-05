@@ -1,6 +1,6 @@
 {
   "name": "milliways",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The kitchen in one plugin: a router that binds each task to a playbook, vendored pstack and Matt Pocock skills, and the setup, Projects kit and trust ladder that let agents ship verified pull requests.",
   "author": {
     "name": "Jackson Atassi",
