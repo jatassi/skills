@@ -57,6 +57,8 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ### 4. Spawn both sub-agents in parallel
 
+Spawn each with `isolation: "worktree"`, so each reviews from its own checkout. A reviewer that proves a finding red-before (checking out the fixed point's version of a file, running a test against it) does it in that worktree, never in the shared checkout.
+
 **Standards sub-agent prompt** should include:
 
 - The full diff command and commit list.
