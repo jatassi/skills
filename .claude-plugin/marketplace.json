@@ -9,8 +9,8 @@
     {
       "name": "milliways",
       "source": {
-        "source": "github",
-        "repo": "jatassi/skills",
+        "source": "url",
+        "url": "https://github.com/jatassi/skills.git",
         "ref": "v2.0.0"
       },
       "description": "The kitchen in one plugin: a router that binds each task to a playbook, vendored pstack and Matt Pocock skills, and the setup, Projects kit and trust ladder that let agents ship verified pull requests."

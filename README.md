@@ -182,8 +182,9 @@ Upstream licences are vendored verbatim in [`LICENSES/`](LICENSES), and [`NOTICE
 ├── vendor/                      # upstream.json, substitutions.json, forks.json, checks.json
 ├── LICENSES/                    # upstream licences, vendored verbatim
 ├── NOTICE                       # upstream attributions
-├── scripts/                     # test.mjs (changed-workspace test runner), test-bun.mjs
-└── packages/                    # dev-only workspaces: visual-grilling's source, the vendor CLI, setup-milliways' and trust-ladder's tests
+├── package.json                 # dev scripts only; lists no dependencies, since this root is also the plugin root
+├── scripts/                     # test.mjs (changed-workspace test runner), test-bun.mjs, install-dev.mjs
+└── packages/                    # the dev workspaces' npm root: visual-grilling's source, the vendor CLI, setup-milliways' and trust-ladder's tests
 ```
 
 ## Development
@@ -191,15 +192,17 @@ Upstream licences are vendored verbatim in [`LICENSES/`](LICENSES), and [`NOTICE
 `visual-grilling`'s CLI, server and round page are built from the TypeScript workspace in `packages/visual-grilling/`, outside the shipped skill folder. `setup-milliways`'s CLI ships as plain Node in `skills/setup-milliways/scripts/`, and its tests live in `packages/setup-milliways/`; `trust-ladder`'s scorer is the same, in `skills/trust-ladder/scripts/` with tests in `packages/trust-ladder/`.
 
 ```
-npm install
-npx playwright install chromium   # once, for the round page tests
-npm test                          # test only the workspaces changed since the merge-base with dev
-npm run test:all                  # every workspace: visual-grilling type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
-npm run test:bun                  # pstack's vendored Bun scripts and their upstream tests; needs Bun, not part of npm test
-npm run try                       # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
+npm install                              # installs the dev workspaces in packages/
+npm run playwright -- install chromium   # once, for the round page tests
+npm test                                 # test only the workspaces changed since the merge-base with dev
+npm run test:all                         # every workspace: visual-grilling type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
+npm run test:bun                         # pstack's vendored Bun scripts and their upstream tests; needs Bun, not part of npm test
+npm run try                              # build into skills/visual-grilling/dist/, then: claude --plugin-dir .
 ```
 
-`npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing root `package.json` or the lockfile runs everything, unless the change only adds a workspace, which then runs alone. `--dry-run` prints the pick without running it.
+`npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing `packages/package.json` or its lockfile runs everything, unless the change only adds a workspace, which then runs alone. Changing the root `package.json` or `package-lock.json` always runs everything. `--dry-run` prints the pick without running it.
+
+The repo root is also the plugin root, and Claude Code installs the npm dependencies a plugin root's `package.json` and lockfile list. So the root `package.json` lists none, and the workspaces' npm root is `packages/` ([ADR 0005](docs/adr/0005-dev-workspaces-live-under-packages.md)). A root `npm install` or `npm ci` carries through to `packages/`. Add or update a dependency there: `npm install <pkg> --prefix packages --workspace visual-grilling`, or `npm update --prefix packages`.
 
 The vendored pstack scripts run on Bun. `npm run test:bun` finds every `skills/*/scripts/package.json` with a test script and runs it; the Release workflow does the same on Ubuntu for pull requests into `main`. Cloud environments come with Bun preinstalled, though its package fetching can fail through the session's proxy.
 
@@ -228,7 +231,7 @@ npm run vendor -- sync --overwrite                       # restore files that di
 
 Every merge to `main` is a release ([ADR 0003](docs/adr/0003-every-merge-to-main-is-a-release.md)). Only the [Release workflow](.github/workflows/release.yml) commits `skills/visual-grilling/dist/` ([ADR 0002](docs/adr/0002-installs-pinned-to-release-tags.md)). There is no CHANGELOG; the notes go on the GitHub Release.
 
-1. Land changes on `dev`. Run `npm update` within the pinned majors from time to time, with `npm test`.
+1. Land changes on `dev`. Run `npm update --prefix packages` within the pinned majors from time to time, with `npm test`.
 2. Open a pull request from `dev` into `main`. Its description becomes the release notes. Label it `release:minor` or `release:major` for more than a patch bump.
 3. Wait for the `npm test` checks (Ubuntu, macOS and Windows at Node 22.22.2; browser tests on Ubuntu only), make sure `main` hasn't moved since they ran, and merge with a merge commit.
 
