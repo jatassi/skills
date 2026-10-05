@@ -41,7 +41,7 @@ The standing orders are a numbered list, one constraint per line. Keep them in a
 
 ### Completions are queue events
 
-A thread finishing is a queue event, not an interrupt. When a thread reports, note it (thread, unit, status, PR, head SHA) and finish what you were doing first. Never deep-review a report or a diff inline. A completion that needs review becomes a verifier thread.
+A thread finishing is a queue event, not an interrupt. When a thread reports, note it (thread, unit, status, PR, head SHA) and finish what you were doing first. Never deep-review a report or a diff inline. Who verifies is stated once, in `docs/agents/verification.md` (Who verifies). A completion whose PR carries a ledger verdict from a fresh verifier, valid at its head per Reading the ledger, has its review, so act on the tier. One without such a verdict is needs-verify: send the owning thread a follow-up to spawn its verifier. Start a verifier thread instead only when the owner can't take a follow-up or you want more independence.
 
 Drain the queue at these points: the end of a critical section (writing a brief, a conflict decision, recording a gate), before every report to the chef, and whenever the chef writes. Each drain classifies every pending completion as landed, needs-verify, failed, stuck or noise. It reads the ledger, re-checks the merge gate on each PR whose verdict just landed (Merging), checks each open `prototype:` pull request for the chef's pick, starts the next threads in one turn, and ends with three lines: counts by state, what changed, and the open gates.
 
@@ -61,7 +61,7 @@ The ledger lives in GitHub, keyed by PR number and head SHA. `docs/agents/verifi
 A thread started from one of your briefs owns its PR. It runs make-it-so's Babysit playbook in `drive` mode to merge-ready, pushing fixes for CI failures and review comments, and merges only through the merge gate in make-it-so's autopilot-full playbook:
 - every area it touches is `gated` in `docs/agents/autonomy.md`;
 - CI is green at the head;
-- a fresh verifier's verdict at the head SHA is `live-ui-verified`;
+- a fresh verifier's verdict at the head SHA is `live-ui-verified`, from a verifier that meets Who verifies in `docs/agents/verification.md`;
 - the door is two-way.
 
 When the gate holds, the owning thread merges. Otherwise it stops at merge-ready and the PR waits for the chef. Nothing you say opens a closed gate. The chef's explicit "merge", "land" or "ship" for a named PR, said to a thread or to you, is the chef's own merge, whatever its tier. Relay it as `docs/agents/verification.md` says. A one-way door waits for the chef in every area, at every rung.
@@ -104,7 +104,7 @@ Take every number from GitHub, not from memory.
 - **Models.** Run subagents on the roles in `docs/agents/models.md`. A role whose model isn't available falls back to your own model, with its `fallback:` line in your report.
 - **Pull requests.** Follow the `pr` skill: a conventional-commit title, one concern, never stacked, and the base branch from the standing orders. Push after every verifiable unit and open the PR early, because work that lives only in your sandbox isn't done.
 - **Own your PR.** Run make-it-so's Babysit playbook in `drive` mode to merge-ready. Merge only when the merge gate holds, or when the chef explicitly tells you to (Merging).
-- **Verdicts.** When you verify, record the verdict per `docs/agents/verification.md`.
+- **Verdicts.** Before merge-ready, spawn a fresh verifier per Who verifies in `docs/agents/verification.md`, unless the PR already carries a valid verdict from one. The verifier records its verdict per that document.
 - **Reflect last.** List what you had to work around, and file a `garden` issue for each one, per `docs/agents/garden.md`. Then send your report in the REPORT shape.
 
 ## Standing orders

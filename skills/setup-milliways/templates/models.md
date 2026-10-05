@@ -11,7 +11,7 @@ Detected families: {{families}}
 | ---- | ----- | ------ | ------ |
 {{roles}}
 
-The verifier is always a fresh subagent: never the agent that wrote the change, and never resumed from an earlier round.
+Who verifies is stated in `docs/agents/verification.md`.
 
 fable has no default role. To promote it for this kitchen, put `fable` in a role's Model cell.
 
