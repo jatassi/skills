@@ -98,7 +98,7 @@ jobs:
       # pstack's scripts are vendored verbatim on Bun, with their upstream
       # tests; a sync that breaks one fails the pull request. The tests use
       # fakes (no gh, git or network), so Linux is enough: the scripts run in
-      # Linux cloud environments and on the chef's Mac. Found by glob so the
+      # Linux cloud environments and on the chef's machine. Found by glob so the
       # skill folder can be renamed.
       - uses: oven-sh/setup-bun@v2
         if: runner.os == 'Linux'

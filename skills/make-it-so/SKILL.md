@@ -14,10 +14,10 @@ The Principles section below grounds every trigger. In your reply, name each pri
 **Routing rule.** Before you ask the chef anything or start to build, check the task against these, in order:
 
 - **Running something can answer it** (behavior, timing, layout, output, perf) → prototype. Run the Prototype playbook (`playbooks/prototype.md`), which builds with the **prototype** skill, and let the result decide.
-- **A one-way door, or a call of taste, intent or domain words only the chef holds** → grill. Use the **visual-grilling** skill first. When the chef is away from their Mac, run plain-text rounds with the **grilling** skill. When the answers should land as ADRs and glossary entries, run the **grill-with-docs** skill through the same channel. A one-way door is any change on the One-way doors list in `docs/agents/autonomy.md`.
+- **A one-way door, or a call of taste, intent or domain words only the chef holds** → grill. Use the **visual-grilling** skill first. When the chef is away from their machine, run plain-text rounds with the **grilling** skill. When the answers should land as ADRs and glossary entries, run the **grill-with-docs** skill through the same channel. A one-way door is any change on the One-way doors list in `docs/agents/autonomy.md`.
 - **Bigger than one context** (more than one agent session can hold) → the **wayfinder** skill. Chart it as a map of decision tickets before anyone writes code.
 
-Human-in-the-loop work (a grilling, a ticket labelled for a human per `docs/agents/triage-labels.md`) runs as a local Projects thread on the chef's Mac, using visual-grilling, with plain-text rounds as the fallback when the chef is away. A cloud thread never waits on it. It parks the question with its default and keeps going. A prototype pick has one channel, the draft `prototype:` PR that the Prototype playbook opens.
+Human-in-the-loop work (a grilling, a ticket labelled for a human per `docs/agents/triage-labels.md`) runs as a local Projects thread on the chef's machine, using visual-grilling, with plain-text rounds as the fallback when the chef is away. A cloud thread never waits on it. It parks the question with its default and keeps going. A prototype pick has one channel, the draft `prototype:` PR that the Prototype playbook opens.
 
 Remaining triggers:
 
@@ -41,7 +41,7 @@ Remaining triggers:
 - Shipping UI / IDE / CLI → the matching control skill. milliways ships `control-cli` (CLIs and TUIs) and `control-ui` (browser / Electron / web UIs). For bug fixes, reproduce first on the same surface yourself. Hand to the user only under the narrow Bug fix step 1 exception.
 - Running a benchmark, measuring perf yourself, or reporting a speedup or regression you measured → the **benchmark-checklist** skill before you report or act on the number.
 - Any PR-status request → the **Babysit** playbook (`playbooks/babysit.md`). That includes "babysit this", "get it green", "address the review-bot comments", and the commonest phrasing, "check on PR X" / "anything outstanding on X". Never triggered by merely opening a PR. Declare its mode before polling. The playbook's step 1 owns the request-to-mode mapping. Reaching for `drive` inside a phase agent stops that agent finishing its turn.
-- Asked to land or ship a green PR, or a queue of independent PRs → the **Shipping** playbook (`playbooks/shipping.md`). Green is not safe. Nothing gets armed before an independent per-PR verdict, and nothing merges unless the merge gate holds or the chef asked to merge that PR.
+- Asked to land or ship a green PR, or a queue of independent PRs → the **Shipping** playbook (`playbooks/shipping.md`). Green is not safe. A PR the chef named and told you to merge, land or ship is the chef's own merge, whatever its tier (`docs/agents/verification.md`). For every other PR, nothing gets armed before an independent per-PR verdict, and nothing merges unless the merge gate holds.
 - The automated PR-review bot or the agentic security review commented → skeptical posture. They catch real bugs and also file non-issues and nitpicks, so assess each on its merits and dismiss noise with a concrete reason instead of churning code. Triage fix / dismiss / ask per `references/bugbot-triage.md`.
 - Broken skill mid-task → fix it in its own PR. Don't block. Don't silently work around it. Anything you do work around gets a `garden` issue in the playbook's Reflect step.
 - Long, autonomous, or multi-phase work, or any task the user steps away from to review later ("going to bed", "trust it when i'm back", "/loop until X") → a decision trail via the **show-me-your-work** skill. Commit it when stakes need an auditable record. Keep it local otherwise.
@@ -95,7 +95,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 **Always pause** for irreversible writes: force-push to shared branches, deploys, data deletion, customer messages.
 
-**Merges follow the trust ladder.** The chef merges every PR unless the merge gate in Autopilot-full step 5 (`playbooks/autopilot-full.md`) holds. A one-way door always waits for the chef, in every area, at every rung. The chef's explicit "merge this PR" or "ship this PR" in the thread is the chef's own merge. Merge that PR and record the request in its ledger comment per `docs/agents/verification.md`. Any other merge, Shipping's and Babysit's included, goes through the merge gate, and a closed gate stops at merge-ready for the chef.
+**Merges follow the trust ladder.** The chef merges every PR unless the merge gate in Autopilot-full step 5 (`playbooks/autopilot-full.md`) holds. The chef's explicit "merge this PR" or "ship this PR" in the thread is the chef's own merge, per `docs/agents/verification.md`. Every other merge, Shipping's and Babysit's included, goes through the gate. A one-way door always waits for the chef, in every area, at every rung.
 
 **Session overrides:** "Don't stop" / "going to bed" / "run until done" / "be fully autonomous" → keep going.
 
@@ -139,7 +139,7 @@ The Routing rule comes first. For large work, take the first of these that fits:
 
 1. Bigger than one context → the **wayfinder** skill. Each spec its map hands off runs Spec and tickets.
 2. The chef's intent unsettled, or a one-way door → the Spec and tickets playbook.
-3. Several PRs with the intent settled → the Multi-phase plan playbook, run by Autopilot-full. In a Claude Project the plan lives as GitHub tickets, not a local file.
+3. Several PRs with the intent settled → the Multi-phase plan playbook, run by Autopilot-full. In a Claude Project the finished plan is published as GitHub tickets, and its parent issue is the plan.
 4. One PR's worth of cross-cutting work (a migration across many call sites, an ambitious multi-part change) with no playbook fit → the **figure-it-out** skill, which designs a bespoke, rigorous playbook for the task.
 5. A checkable predicate to loop on until it holds → the Autonomous run playbook.
 

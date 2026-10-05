@@ -41,7 +41,7 @@ The standing orders are a numbered list, one constraint per line. Keep them in a
 
 A thread finishing is a queue event, not an interrupt. When a thread reports, note it (thread, unit, status, PR, head SHA) and finish what you were doing first. Never deep-review a report or a diff inline. A completion that needs review becomes a verifier thread.
 
-Drain the queue at these points: the end of a critical section (writing a brief, a conflict decision, recording a gate), before every report to the chef, and whenever the chef writes. Each drain classifies every pending completion as landed, needs-verify, failed, stuck or noise. It reads the ledger, checks each open `prototype:` pull request for the chef's pick, starts the next threads in one turn, and ends with three lines: counts by state, what changed, and the open gates.
+Drain the queue at these points: the end of a critical section (writing a brief, a conflict decision, recording a gate), before every report to the chef, and whenever the chef writes. Each drain classifies every pending completion as landed, needs-verify, failed, stuck or noise. It reads the ledger, re-checks the merge gate on each PR whose verdict just landed (Merging), checks each open `prototype:` pull request for the chef's pick, starts the next threads in one turn, and ends with three lines: counts by state, what changed, and the open gates.
 
 You have no clock. You wake when a thread reports or the chef writes, and nothing else wakes you. Don't arm `/loop` ticks. Every time you wake, audit the program instead:
 - Judge liveness by side effects only: pushed commits, PR and check changes, and ledger comments, read from GitHub and the Overview pane. Never message a thread just to ask how it's going.
@@ -62,11 +62,13 @@ A thread started from one of your briefs owns its PR. It runs make-it-so's Babys
 - a fresh verifier's verdict at the head SHA is `live-ui-verified`;
 - the door is two-way.
 
-When the gate holds, the owning thread merges. Otherwise it stops at merge-ready and the PR waits for the chef. Nothing you say opens a closed gate. The chef's explicit "merge this PR" to a thread is the chef's own merge, and the thread records it in the ledger comment. A one-way door waits for the chef in every area, at every rung.
+When the gate holds, the owning thread merges. Otherwise it stops at merge-ready and the PR waits for the chef. Nothing you say opens a closed gate. The chef's explicit "merge this PR" or "ship this PR" to a thread is the chef's own merge, whatever its tier, per `docs/agents/verification.md`. A one-way door waits for the chef in every area, at every rung.
+
+A verdict that lands after the owning thread stopped is a queue event like any completion. On your next drain, re-check that PR's merge gate. If it holds, send the owning thread a follow-up to merge, or start a lander thread whose brief is that one merge when the owner can't take one. If it doesn't hold, the PR waits for the chef.
 
 ### Human-in-the-loop work
 
-Some units only the chef can settle: a grilling, a decision on a one-way door, or any ticket carrying the human triage label in `docs/agents/triage-labels.md`. These never go to a cloud thread. Start each one as a thread on the chef's Mac (**Work locally**), running the `visual-grilling` skill, which shows each round as a page in the browser. When the chef is away from the Mac, the same thread runs plain-text rounds with the `grilling` skill instead. Paste the standing orders into its brief, because a local thread doesn't load project memory.
+Some units only the chef can settle: a grilling, a decision on a one-way door, or any ticket carrying the human triage label in `docs/agents/triage-labels.md`. These never go to a cloud thread. Start each one as a thread on the chef's own machine (**Work locally**), running the `visual-grilling` skill, which shows each round as a page in the browser. When the chef is away from their machine, the same thread runs plain-text rounds with the `grilling` skill instead. Paste the standing orders into its brief, because a local thread doesn't load project memory.
 
 A prototype pick has one channel, its draft `prototype:` PR. The thread that opens it parks and stops. When the chef comments a pick, start a new thread on your next drain (or the chef starts one) that finishes the pr skill's Prototype PRs steps. It records the decision and closes the PR unmerged.
 
