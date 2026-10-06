@@ -84,7 +84,7 @@ Trust is earned per area. [`docs/agents/autonomy.md`](docs/agents/autonomy.md) d
 
 ### From pstack
 
-Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack), with the four [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) skills it depends on, ported from Cursor to Claude Code. Model roles come from the `docs/agents/models.md` that `setup-milliways` writes. Its two agents, `poteto-agent` and `comment-sicko`, are in [`agents/`](agents) and dispatch as `milliways:<name>`. Left out: `bro` (Matt's `wait-what` covers it), `setup-pstack` (replaced by `setup-milliways`), `make-bot-ui` and the Benny automations (Cursor-only), and the `orch` CLI (the orchestrate ledger lives in GitHub). The skills `make-it-so`'s playbooks call are model-invocable here, unlike upstream.
+Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack), with the four [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) skills it depends on, ported from Cursor to Claude Code. Model roles come from the `docs/agents/models.md` that `setup-milliways` writes. Its two agents, `sous-chef` and `comment-sicko`, are in [`agents/`](agents) and dispatch as `milliways:<name>`. Left out: `bro` (Matt's `wait-what` covers it), `setup-pstack` (replaced by `setup-milliways`), `make-bot-ui` and the Benny automations (Cursor-only), and the `orch` CLI (the orchestrate ledger lives in GitHub). The skills `make-it-so`'s playbooks call are model-invocable here, unlike upstream.
 
 | Skill | What it does |
 | --- | --- |

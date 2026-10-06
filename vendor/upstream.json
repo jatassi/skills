@@ -16,7 +16,8 @@
           "path": "cursor-team-kit/LICENSE",
           "verbatim": true
         },
-        "agents": "pstack/agents",
+        "agents/comment-sicko.md": "pstack/agents/comment-sicko.md",
+        "agents/sous-chef.md": "pstack/agents/poteto-agent.md",
         "skills/architect": "pstack/skills/architect",
         "skills/arena": "pstack/skills/arena",
         "skills/automate-me": "pstack/skills/automate-me",

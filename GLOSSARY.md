@@ -30,6 +30,8 @@
 
 **Chef**: the human who owns a kitchen. The chef makes the decisions only a human can (one-way doors, taste, intent, domain words), merges what the gate doesn't, and samples merged work afterwards.
 
+**Sous-chef**: `milliways:sous-chef`, the subagent a playbook step is delegated to. It preloads the router and executes the one step its brief names, never matching a playbook of its own. Upstream pstack calls it `poteto-agent`.
+
 **Router**: `make-it-so`, the entry point every non-trivial task starts with. It classifies the task, retrieves the playbook for that situation, and binds the thread to that playbook's steps.
 
 **Playbook**: the written steps for one kind of task (feature, bug fix, opening a pull request, large or one-way-door work), copied verbatim into a thread's todo list by the router. Every playbook ends with a reflect step that files garden issues.

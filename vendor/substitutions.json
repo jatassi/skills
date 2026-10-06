@@ -180,8 +180,8 @@
     },
     {
       "pattern": "Spawn a fresh `poteto-agent`",
-      "replacement": "Spawn a fresh `milliways:poteto-agent`",
-      "files": "^agents/poteto-agent\\.md$",
+      "replacement": "Spawn a fresh `milliways:sous-chef`",
+      "files": "^agents/sous-chef\\.md$",
       "why": "Plugin agents register under the plugin namespace; a bare name fails to dispatch."
     },
     {
@@ -559,6 +559,11 @@
       "regex": "\\bpoteto-mode\\b",
       "replacement": "make-it-so",
       "why": "Declared rename: pstack's poteto-mode router ships as make-it-so (local folder skills/make-it-so), so every reference to it follows (/poteto-mode, its playbook paths, figure-it-out and automate-me). Verbatim scripts keep upstream's name. Runs last, after every rule that matches upstream's wording."
+    },
+    {
+      "regex": "\\bpoteto-agent\\b",
+      "replacement": "sous-chef",
+      "why": "Declared rename: pstack's poteto-agent ships as sous-chef (local file agents/sous-chef.md), the kitchen's word for the agent that works the chef's playbooks, so every reference to it follows and it dispatches as milliways:sous-chef. Runs last, after every rule that matches upstream's wording."
     }
   ]
 }
