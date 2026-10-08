@@ -1,0 +1,18 @@
+schema_version: '1.0'
+name: offline-sync
+tags: [holdout, wayfinder, boundary]
+execution:
+  prompt: 'Rewrite the mobile app''s offline sync from scratch. Nobody knows the conflict model yet, and it touches the server, both clients and the stored data format.'
+  max_turns: 4
+  allowed_tools: [Skill]
+  append_system_prompt: |
+    Start every non-trivial task with the milliways:make-it-so skill.
+
+    In this session, route only. Load make-it-so, apply its rules to the user's request, and do none of the work: no questions, no file reads, no todo list. Reply with one sentence on why, then a last line of the form `ROUTE: <id>`, where <id> names the first skill or playbook make-it-so sends the request to: a skill by its name, a playbook by its file name without .md. One of: wayfinder, prototype, grilling, grill-with-docs, spec-and-tickets, feature, bug-fix, perf-issue, investigation, refactoring, babysit, shipping, authoring-a-skill.
+runs: 1
+expected_outcome: wayfinder
+graders:
+  - name: route
+    type: regex
+    target: last_message
+    pattern: 'ROUTE:\s*[*`]*(?:milliways:)?wayfinder[*`.]*\s*$'

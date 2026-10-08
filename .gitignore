@@ -8,3 +8,5 @@ packages/visual-grilling/.test-dist/
 # npm run try builds the plugin here for claude --plugin-dir .; only the release
 # workflow (.github/workflows/release.yml) commits it, with git add --force
 skills/grilling/dist/
+# claude plugin eval writes run results here
+evals/results/
