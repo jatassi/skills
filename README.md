@@ -182,6 +182,7 @@ Upstream licences are vendored verbatim in [`LICENSES/`](LICENSES), and [`NOTICE
 ├── LICENSES/                    # upstream licences, vendored verbatim
 ├── NOTICE                       # upstream attributions
 ├── package.json                 # dev scripts only; lists no dependencies, since this root is also the plugin root
+├── evals/make-it-so-routing/    # labelled requests that check where make-it-so routes each one (claude plugin eval)
 ├── scripts/                     # test.mjs (changed-workspace test runner), test-bun.mjs, install-dev.mjs
 └── packages/                    # the dev workspaces' npm root: the grilling browser channel's source, the vendor CLI, setup-milliways' and trust-ladder's tests
 ```
@@ -198,6 +199,15 @@ npm run test:all                         # every workspace: visual-grilling (the
 npm run test:bun                         # pstack's vendored Bun scripts and their upstream tests; needs Bun, not part of npm test
 npm run try                              # build into skills/grilling/dist/, then: claude --plugin-dir .
 ```
+
+The routing eval runs one model session per case, so it costs money and stays out of `npm test`. Run it after editing make-it-so's routing rule:
+
+```
+claude plugin eval . --tag tune --ablation none --keep-temp --no-publish --model opus --json /tmp/route.json
+node evals/make-it-so-routing/score.mjs /tmp/route.json   # score per split, and each misroute
+```
+
+Keep an edit only when it raises the `tune` score without lowering `holdout` (`--tag holdout`). To add a case, edit the list in `evals/make-it-so-routing/build.mjs` and run it.
 
 `npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing `packages/package.json` or its lockfile runs everything, unless the change only adds a workspace, which then runs alone. Changing the root `package.json` or `package-lock.json` always runs everything. `--dry-run` prints the pick without running it.
 
