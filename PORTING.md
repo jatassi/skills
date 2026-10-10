@@ -43,8 +43,8 @@ Then run `git apply --3way pstack.patch` and `git apply --3way kit.patch` in thi
 | `readonly: true` (Ask mode) | `general-purpose` with a read-only brief (the Agent tool has no readonly flag) |
 | "agent mode (readonly strips MCP)" | never a read-only built-in type (`Explore`, `Plan`) for a delegate that edits, never a custom agent whose `tools` allowlist drops MCP |
 | `resume` an agent | `SendMessage` to its ID or name |
-| `environment: "cloud"` | `isolation: "remote"`, with `isolation: "worktree"` where remote isn't available |
-| `cloud_base_branch` | the brief names the pushed branch |
+| `environment: "cloud"` | `create_session` (Claude Code Remote) from a cloud session or Project thread, with the brief as `prompt`. A local session can't start cloud sessions, so it runs the worker as a background `Agent` with `isolation: "worktree"` |
+| `cloud_base_branch` | `create_session`'s `source_revision`, or the brief names the pushed branch for a local worker |
 | agent `is_background: true` | `background: true` |
 | `AskQuestion` | `AskUserQuestion` |
 | model slug `claude-opus-5-5-xhigh` (judgment, prose, hardest work) | `model: "opus"`, `effort: "high"` |
@@ -104,7 +104,7 @@ Apply these verbatim to new upstream text that needs them.
 
 - Origin has no Claude analog. Stacks land through `gh` only.
 - Claude Code Review is Team and Enterprise. Other plans use the `claude-code-action` review workflow in its place, and `review-bot-triage.md` triages its comments the same way. watch-pr recognizes only Claude Code Review, though. An action review's comments carry no 🔴, 🟡, or 🟣 marker, so they report `isReviewBot: false`. Its check is named after the workflow job, so a pending one doesn't set `reviewAutomationRunning` unless the job's name contains `review automation` or `claude code review`.
-- `isolation: "remote"` appears in the Agent tool's SDK schema, but no Claude Code page documents it, so a session may not offer it. The worktree fallback covers sessions without it.
+- A local session can't start a cloud session programmatically. `claude --cloud "<task>"` is rejected in non-interactive runs, and `create_session` exists only inside cloud sessions. So a local root runs its workers as worktree subagents on this computer, and work that must outlive the laptop needs its root in a cloud session or Project thread. The Agent tool's `isolation: "remote"` is not used, since it does not reliably start a cloud session.
 - Routines start a fresh cloud session per fire. Cursor's webhook could wake the same bot conversation.
 - The guide's illustrations show robots whose heads echo Cursor's cube logo. They are upstream art and stay as they are.
 - pstack needs Claude Code 2.1.292 or later (the Agent tool's `effort` parameter).

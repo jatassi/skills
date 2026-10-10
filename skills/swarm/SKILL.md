@@ -27,9 +27,9 @@ Open a todolist (a checklist in your reply when the session has no task tools) w
 
 ## Phase B: Fan out
 
-Spawn all N workers in one message with `subagent_type: general-purpose`, `isolation: "remote"`, `run_in_background: true`, and the step 4 model and effort, left unset for `inherit-parent`. Where remote isn't available, use `isolation: "worktree"` so parallel workers still don't share a checkout. Omit `isolation: "remote"` only when the worker needs access to something on the user's computer, and add `isolation: "worktree"` when it writes.
+Spawn all N workers in one message. From a cloud session or Project thread, start each as a cloud session with `create_session` (Claude Code Remote), with the brief as `prompt`, the repo as `source_url`, and the step 4 model as `model`, and end each brief by telling the worker to send its report to this session with `send_message`. A local session can't start cloud sessions, so there spawn each worker as an `Agent` with `subagent_type: general-purpose`, `isolation: "worktree"`, `run_in_background: true`, and the step 4 model and effort, left unset for `inherit-parent`. Run a worker without a worktree only when it needs access to something on the user's computer and writes nothing.
 
-When a worker must start from a non-default pushed branch, name that branch in its brief and have the worker check it out first.
+When a worker must start from a non-default pushed branch, pass it as `create_session`'s `source_revision`, or name it in a local worker's brief and have the worker check it out first.
 
 Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence. A worker that can prove a defect reports `ISSUES` and lists every issue it can prove, not only the first.
 
@@ -37,7 +37,7 @@ If a worker drops out, proceed with N-1 and note it.
 
 ## Phase C: Aggregate
 
-Read the terminal results. Drop a result that does not record the SHAs and method its brief names, and respawn that worker once. After a second miss, record a gap. A gap does not count as a pass. For coverage, every required slice needs a result. For a race, apply the selection rule declared up front. Use first pass, rank all, or best-of. Do not paste raw worker dumps.
+Read the terminal results (a cloud worker's arrive as its `send_message` report, and `get_session` and `list_events` show one that never reported). Drop a result that does not record the SHAs and method its brief names, and respawn that worker once. After a second miss, record a gap. A gap does not count as a pass. For coverage, every required slice needs a result. For a race, apply the selection rule declared up front. Use first pass, rank all, or best-of. Do not paste raw worker dumps.
 
 Keep a compact result table, one-line evidenced issues, and explicit gaps or dropouts.
 
