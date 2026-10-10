@@ -6,10 +6,9 @@
 	"author": {
 		"name": "Lauren Tan"
 	},
-	"homepage": "https://github.com/cursor/plugins/tree/main/pstack",
-	"repository": "https://github.com/cursor/plugins",
+	"homepage": "https://github.com/jatassi/skills",
+	"repository": "https://github.com/jatassi/skills",
 	"license": "MIT",
-	"logo": "assets/logo.png",
 	"keywords": [
 		"pstack",
 		"poteto-mode",
@@ -18,14 +17,5 @@
 		"agent-style",
 		"subagents",
 		"unslop"
-	],
-	"category": "developer-tools",
-	"tags": [
-		"workflow",
-		"principles",
-		"review",
-		"planning"
-	],
-	"skills": "./skills/",
-	"agents": "./agents/"
+	]
 }
