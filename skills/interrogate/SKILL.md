@@ -37,15 +37,15 @@ Launch all reviewers in a single message using the Agent tool. Use the `interrog
 
 | Subagent | Default model |
 |----------|---------------|
-| Reviewer A | `opus xhigh` |
-| Reviewer B | `sonnet xhigh` |
+| Reviewer A | `opus high` |
+| Reviewer B | `opus medium` |
 
 For each reviewer:
 - `subagent_type`: `general-purpose`
 - `model` and `effort`: the configured `interrogate reviewers` entry, or the table default with no configured line. For an `inherit-parent` entry, omit `model` and `effort` so that reviewer runs on the parent model.
 - a read-only brief (no edits, no state-changing commands)
 
-If the Agent tool rejects a configured entry, run that reviewer on the table default of its family and say so. Families are the aliases: `opus`, `sonnet`, `haiku`, `fable`. If its family has no table default, use Reviewer A's default. If it rejects a table default, pick the same model at the highest effort it accepts below the default's, spawn with it, and open a separate PR to update the default table. Do not block the review on the rejection. Never treat an `inherit-parent` entry as rejected or apply either fallback to it.
+If the Agent tool rejects a configured entry, run that reviewer on the first table default of its family and say so. Families are the aliases: `opus`, `sonnet`, `haiku`, `fable`. If its family has no table default, use Reviewer A's default. If it rejects a table default, pick the same model at the highest effort it accepts below the default's, spawn with it, and open a separate PR to update the default table. Do not block the review on the rejection. Never treat an `inherit-parent` entry as rejected or apply either fallback to it.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent

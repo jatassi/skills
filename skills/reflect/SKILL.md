@@ -38,15 +38,15 @@ Each reviewer and the synthesizer name a role line in `~/.claude/rules/pstack-mo
 
 | Lens | Role line | Default `model` and `effort` | Prompt template |
 |---|---|---|---|
-| Judgment | `reflect judgment, divergent, synthesizer` | `opus xhigh` | `references/judgment-reviewer.md` |
-| Tooling | `reflect tooling` | `sonnet xhigh` | `references/tooling-reviewer.md` |
-| Divergent | `reflect judgment, divergent, synthesizer` | `opus xhigh` | `references/divergent-reviewer.md` |
+| Judgment | `reflect judgment, divergent, synthesizer` | `opus high` | `references/judgment-reviewer.md` |
+| Tooling | `reflect tooling` | `opus medium` | `references/tooling-reviewer.md` |
+| Divergent | `reflect judgment, divergent, synthesizer` | `opus high` | `references/divergent-reviewer.md` |
 
 Pass each template verbatim, substituting the transcript path or digest where marked. Reviewers return findings in the `Agent` response body.
 
 ### 3. Synthesize
 
-One `Agent` call, `subagent_type: general-purpose` (never a read-only built-in type such as `Explore` or `Plan`), with `model` and `effort` from the `reflect judgment, divergent, synthesizer` line (default `opus xhigh`). The synthesizer's quality check includes spot-verifying citations, which can require MCP access. Never use a custom agent whose `tools` allowlist drops MCP. Use `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list.
+One `Agent` call, `subagent_type: general-purpose` (never a read-only built-in type such as `Explore` or `Plan`), with `model` and `effort` from the `reflect judgment, divergent, synthesizer` line (default `opus high`). The synthesizer's quality check includes spot-verifying citations, which can require MCP access. Never use a custom agent whose `tools` allowlist drops MCP. Use `references/synthesizer.md` verbatim, with each reviewer's full output inlined where marked. The synthesizer returns a structured Accepted / Rejected / Backlog list.
 
 ### 4. Structural enforcement check
 

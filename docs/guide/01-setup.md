@@ -26,7 +26,7 @@ Run:
 
 [`/setup-pstack`](../../skills/setup-pstack/SKILL.md) detects the models you have access to, asks for a reasoning budget, shows you each role (code delegates, judgment, the review panels), and asks what you want. Answer the questions. It writes `~/.claude/rules/pstack-models.md`, a small rule every pstack skill reads. Cloud sessions, including a Project's cloud threads, don't read `~/.claude`, so setup also offers to put the same lines in a repository's `.claude/rules/pstack-models.md` or in Project instructions.
 
-The defaults run at `xhigh` reasoning, the same as the `large` budget. `unlimited` lifts each model to its highest tier, up to `max`. Opus and Sonnet both go to `max`. `medium` and `small` lower the reasoning and spend fewer tokens.
+The defaults run Opus at `high` reasoning for judgment and `medium` for code, so no budget matches them exactly. Answer "defaults" to keep them. A budget sets every role to one level. `unlimited` lifts each model to its highest tier, up to `max`. `large` sets `xhigh`. `medium` and `small` lower the reasoning and spend fewer tokens.
 
 You only override what you care about. A role with no line in the rule keeps the skill's default. To restore a default, delete that role's line. A rerun of `/setup-pstack` keeps any role whose model differs from the default. When a default changes, a rule written before the change still pins the old default, so delete those role lines, or delete the file, then run `/setup-pstack` again.
 

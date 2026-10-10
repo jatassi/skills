@@ -47,10 +47,10 @@ Then run `git apply --3way pstack.patch` and `git apply --3way kit.patch` in thi
 | `cloud_base_branch` | the brief names the pushed branch |
 | agent `is_background: true` | `background: true` |
 | `AskQuestion` | `AskUserQuestion` |
-| model slug `claude-opus-5-5-xhigh` | `model: "opus"`, `effort: "xhigh"` |
-| model slug `grok-4.7-xhigh-fast` | `model: "sonnet"`, `effort: "xhigh"` |
+| model slug `claude-opus-5-5-xhigh` (judgment, prose, hardest work) | `model: "opus"`, `effort: "high"` |
+| model slug `grok-4.7-xhigh-fast` (code roles) | `model: "opus"`, `effort: "medium"` |
 | `inherit-parent` / `auto` | `inherit-parent` kept (omit `model` and `effort`), `auto` (Cursor Auto) dropped |
-| "different model family" | "different model" (opus vs sonnet) |
+| "different model family" | "different model" (with the defaults, the same model at a different effort) |
 | `~/.cursor/rules/pstack-models.mdc` (`alwaysApply: true`) | `~/.claude/rules/pstack-models.md` (a user rule with no `paths` loads every session) |
 | `~/.cursor/projects/<slug>/agent-transcripts/` | `~/.claude/projects/<slug>/<session-id>.jsonl`, with the slug being the working directory with every non-alphanumeric character turned into `-` |
 | "the system prompt names the transcripts directory" | derive it from the working directory |
@@ -91,7 +91,7 @@ Apply these verbatim to new upstream text that needs them.
 
 ## Decisions
 
-- **Models.** Every role runs on a Claude model. Code roles (Cursor's fast Grok slot) default to `sonnet xhigh`, and the hardest work, prose, judgment, and the panels' first seat default to `opus xhigh`. Panels stay panels. Arena, architect, and interrogate run one opus and one sonnet entry, so "a different model" still means something. `/setup-pstack` changes any role.
+- **Models.** Every role runs on Opus 5.5. Code roles (Cursor's fast Grok slot) default to `opus medium`, and the hardest work, prose, judgment, and the panels' first seat default to `opus high`. Panels stay panels. Arena, architect, and interrogate run one `opus high` and one `opus medium` entry, so their reviewers differ by effort and fresh context rather than by model. No budget matches these mixed defaults, so `/setup-pstack` offers "defaults" alongside its four budgets, and changes any role.
 - **`disable-model-invocation` stays.** It means the same thing in both harnesses. The skill is user-only and its description stays out of context. In Claude Code it also makes the Skill tool refuse the skill, so skills that route to other pstack skills carry the routing note telling Claude to read the sibling SKILL.md instead. The one exception is `maintain-verification-skill`, which upstream's guide runs on a schedule. Claude Code won't run a `disable-model-invocation` skill from a scheduled task.
 - **Task tools.** Playbooks open a todo list. Claude Code's task tools are off by default on Opus and Sonnet 5.5 in local sessions, so the router and the phase-driven skills fall back to a checklist in the reply, and the README says how to turn them on (`CLAUDE_CODE_ENABLE_TODO_TOOLS=1`).
 - **Cloud sessions and plugins.** A cloud session doesn't install the plugins a repo enables. On Pro and Max, pstack reaches cloud work as a thread of a Project with pstack in Project settings > Plugins. The project conversation itself loads no plugins, so users start thread work with `/poteto-mode`, or put "before every task, read pstack's poteto-mode SKILL.md in full and follow it" in the Project instructions. Projects aren't on Team or Enterprise yet. There an Owner installs pstack for every cloud session through server-managed settings (`extraKnownMarketplaces` + `enabledPlugins`).
