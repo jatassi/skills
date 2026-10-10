@@ -1,6 +1,7 @@
 ---
 name: why
 description: "Use for 'why does X work this way', 'why we picked Y', design rationale, regressions, postmortems, or data-backed thresholds. Discovers available MCPs and queries each evidence category (source control, issue tracker, long-form docs, real-time chat, infrastructure observability, error tracking, product analytics warehouse) in parallel, then returns a cited read on decisions and tradeoffs. Use how for runtime behavior."
+disable-model-invocation: true
 ---
 
 # Why
@@ -9,7 +10,7 @@ Investigate the motivation and intent behind code.
 
 Companion to the `how` skill. `how` answers what the code does and how it works. `why` answers what forces led to its shape.
 
-Each spawn below names a role line in the kitchen's models document (`docs/agents/models.md`) and a default. Set `model` to that line's value, or to the default if the document or the line is missing. Leave `model` unset when the value is `inherit`. If the Agent tool rejects the value, use the default and say so. If that model isn't available in this thread, follow the models document's Fallback section: run on the parent's model and report its `fallback:` line.
+Each spawn below names a role line in `~/.claude/rules/pstack-models.md` (in a cloud session, the same lines in the repo's `.claude/rules/pstack-models.md` or the Project instructions) and a default. Set `model` and `effort` to that line's value, or to the default if the rule or the line is missing. Leave `model` and `effort` unset when the value is `inherit-parent`. If the Agent tool rejects that model or effort, use the default and say so. If it rejects the default, use the same model at the highest effort it accepts below the default's.
 
 ## Operating Posture
 
@@ -19,7 +20,7 @@ Operate as a **careful, cautious, and precise investigator**. Be honest about wh
 
 Parse what the user is asking. The **target** is usually a chunk of code, a pattern, a feature, or a named design decision. The **question** is usually a design rationale, a tradeoff, a motivating edge case, an external constraint, dead code, or a broad history sweep.
 
-If the target is vague ("why do we do it this way?" with no clear referent), make your best guess from conversation context (open files, recent edits, cursor location, what was just discussed). State your interpretation briefly so the user can redirect if you're off, then proceed.
+If the target is vague ("why do we do it this way?" with no clear referent), make your best guess from conversation context (open files, recent edits, selected text, what was just discussed). State your interpretation briefly so the user can redirect if you're off, then proceed.
 
 ## Step 2. Establish the Code Anchor
 
@@ -60,7 +61,7 @@ Capture this as seed context (file paths, symbols, commits, PR numbers, linked t
 
 ### Discovery
 
-Before spawning investigators, list the MCP servers available in this session. Their tools are named `mcp__<server>__<tool>`, and each server's instructions describe it. Tools that are deferred still count: search for them by server name before you decide a category has no MCP.
+Before spawning investigators, list the available MCPs in this session. Use the MCP tool names (`mcp__<server>__<tool>`, deferred tools included) and server instructions in your context when present. Otherwise run `claude mcp list` for the configured MCP servers.
 
 Map each available MCP to one evidence category:
 
@@ -72,16 +73,16 @@ Map each available MCP to one evidence category:
 6. Error / exception tracking
 7. Product analytics warehouse
 
-Source control is always available through git and `gh`. For the other six, classify using the MCP name, server instructions, tool names, and resource descriptors. If an MCP could fit more than one category, choose the one matching its primary evidence. Record ambiguous cases in the coverage map.
+Source control is always available through git and `gh`. For the other six, classify using the MCP name, server instructions, tool names, and resource listings. If an MCP could fit more than one category, choose the one matching its primary evidence. Record ambiguous cases in the coverage map.
 
 Aim for a complete **coverage map**, not a minimal one. Document the null, don't skip the search.
 
 Launch all matching investigators in a single message so they run concurrently. Don't ask one agent to cover multiple MCPs.
 
 Subagent config (each):
-- `subagent_type`: `general-purpose`
-- `model`: the `why investigators` line, default `sonnet`
-- tools: leave them all, so it keeps MCP access. Don't swap in a read-only agent type. Without MCP access, an MCP-backed investigator can't search at all. Investigators still shouldn't write anything.
+- `subagent_type`: `general-purpose`, never a read-only built-in type such as `Explore` or `Plan`
+- `model` and `effort`: the `why investigators` line, default `opus medium`
+- **Do not use a custom agent whose `tools` allowlist drops MCP.** That disables MCP-backed investigators entirely. Investigators still shouldn't write anything.
 
 Each investigator gets:
 1. The base prompt from `references/investigator-prompt.md`
@@ -123,9 +124,9 @@ If your scope assessment suggests a single-commit trivial target where the PR de
 
 Spawn one synthesizer subagent:
 
-- `subagent_type`: `general-purpose`
-- `model`: the `why synthesizer` line, default `opus`
-- tools: leave them all, so it keeps MCP access. Don't swap in a read-only agent type. The synthesizer's quality check spot-verifies citations, which can require MCP access.
+- `subagent_type`: `general-purpose`, never a read-only built-in type such as `Explore` or `Plan`
+- `model` and `effort`: the `why synthesizer` line, default `opus high`
+- Do not use a custom agent whose `tools` allowlist drops MCP. The synthesizer's quality check spot-verifies citations, which can require MCP access. Dropping MCP defeats that.
 
 The synthesizer gets:
 1. The investigator findings, including any null results and any categories skipped with justification

@@ -1,6 +1,6 @@
 ---
 name: automate-me
-description: "Use for \"automate me\", \"create/update/refresh my -mode skill\", \"turn/capture my preferences or working style into a skill\", or wanting agents to follow how the user works. Drafts or revises a personal -mode skill via writing-for-agents + unslop, optionally pulling fresh evidence from recent transcripts."
+description: "Use for \"automate me\", \"create/update/refresh my -mode skill\", \"turn/capture my preferences or working style into a skill\", or wanting agents to follow how the user works. Drafts or revises a personal -mode skill via skill-creator + unslop, optionally pulling fresh evidence from recent transcripts."
 disable-model-invocation: true
 ---
 
@@ -8,7 +8,9 @@ disable-model-invocation: true
 
 A guided flow for turning the user's working conventions into a skill agents will follow. The output is one `-mode` skill tailored to them (e.g. `jay-mode`, `priya-mode`).
 
-This skill orchestrates three others: an inline mining pass (see step 1), the `writing-for-agents` skill (authoring), and the **unslop** skill (prose discipline). It sequences them. It doesn't replace them.
+This skill orchestrates three others: an inline mining pass (see step 1), Anthropic's `skill-creator` skill (authoring), and the **unslop** skill (prose discipline). It sequences them. It doesn't replace them. If `skill-creator` isn't installed, install it with `/plugin install skill-creator@claude-plugins-official`.
+
+pstack's skills live beside this one, at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md`. Most set `disable-model-invocation: true`, so Claude Code refuses them through the Skill tool. Don't call it for them. To run one, read its SKILL.md in full.
 
 ## Flow
 
@@ -26,7 +28,7 @@ Update mode changes the rest of the flow:
 
 ### 1. Mine their history
 
-Locate the active workspace's transcripts before fanning out. This project's transcripts are in `~/.claude/projects/<project>/`, where `<project>` is the working directory's absolute path with every character other than a letter or digit turned into `-`. Use only that path. Don't glob across `~/.claude/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects. A cloud thread holds only its own transcript. There, skip the mining, say so, and lean on step 2.
+Locate the current project's transcripts before fanning out. They live in `~/.claude/projects/<slug>/`, one `<session-id>.jsonl` file per session. `<slug>` is the working directory's absolute path with every character other than a letter or digit turned into `-`, so `/Users/you/proj` becomes `-Users-you-proj`. Sessions run in the repo's worktrees (`<repo>/.claude/worktrees/<name>`) live in the main checkout's `<slug>--claude-worktrees-<name>` folders, and they count too. Use only those paths, never a bare `<slug>*` prefix, which also matches sibling repos. Don't glob across `~/.claude/projects/*/`. That crosses workspace boundaries and reads private chats from unrelated projects.
 
 Survey recent agent conversations within that scope for recurring patterns. Run multiple parallel subagents across slices of history (e.g. last 2-4 weeks, split into 3 slices so each has enough material). Each slice mining subagent reads transcripts from the workspace-scoped path the parent provides, looks for the signals below, and returns a short structured list of patterns it saw with evidence pointers. Default signals worth hunting:
 
@@ -43,7 +45,7 @@ Cross-check across slices before elevating a signal. Patterns seen in 2+ slices 
 
 Mining misses intent that hasn't come up yet. Use the `AskUserQuestion` tool (structured multi-choice) rather than asking the user to type from scratch.
 
-Shape: one to four questions with 2-4 options each (the tool's limits; it adds an Other option itself), `multiSelect: true` for category questions. Start broad ("Which areas matter most?"), then follow up on selected areas with specific options. After the structured rounds, one free-form chat question catches anything the options missed.
+Shape: one or two questions with 4 options each, `multiSelect: true` for category questions. Start broad ("Which areas matter most?"), then follow up on selected areas with specific options. After the structured rounds, one free-form chat question catches anything the options missed.
 
 Don't dump 20 questions.
 
@@ -60,21 +62,21 @@ Group the combined signals into sections. Common ones (use only what applies):
 - **Process**: git worktrees, commits, PRs, review/merge tooling.
 - **Skills**: skill-authoring habits, fix-the-skill-first, proposing new skills.
 
-The **make-it-so** skill shows the shape. Read it for granularity. Don't copy its content. The user's rules are not the same as make-it-so's.
+The **poteto-mode** skill shows the shape. Read it for granularity. Don't copy its content. The user's rules are not the same as poteto-mode's.
 
 ### 4. Draft the skill
 
-Use the `writing-for-agents` skill to author the skill. Placement:
+Use Anthropic's `skill-creator` skill to author the skill. Placement:
 
-- Path: keep an existing mode skill where it is. For a new mode, use `.claude/skills/<handle>-mode/SKILL.md` in the project (or `~/.claude/skills/<handle>-mode/` if the user prefers a personal skill). Claude Code registers a skill only one level under `skills/`, so don't nest it in a category directory.
+- Path: preserve an existing mode skill's location. For a new mode, default to `.claude/skills/<handle>-mode/SKILL.md` in the project (or `~/.claude/skills/<handle>-mode/` if the user prefers a personal skill).
 - Handle: the user's first name or chosen identifier.
 - Frontmatter `description`: trigger on their name + `/<handle>-mode` + "work in their style", not on generic keywords like "write code" or "review PR".
-- Frontmatter formatting: follow the frontmatter rules in `writing-for-agents`' SKILL-MECHANICS.md. Keep `description` as one YAML scalar. Quote it or use `description: >-` with indented continuation lines when punctuation or wrapping requires it.
+- Frontmatter formatting: follow `skill-creator`'s YAML rules. Keep `description` as one YAML scalar. Quote it or use `description: >-` with indented continuation lines when punctuation or wrapping requires it.
 - Frontmatter `disable-model-invocation: true` by default. Opt out only if the user explicitly wants their mode to apply on every turn.
 
 ### 5. Iterate on prose
 
-Apply the **unslop** skill and `writing-for-agents`'s writing guidelines to every line.
+Apply the **unslop** skill and `skill-creator`'s writing guidelines to every line.
 
 Show the draft to the user and take feedback. Expect multiple iterations. Cut ruthlessly. A mode skill is not a manual.
 
@@ -93,12 +95,12 @@ Work in a worktree off main. Commit and open a PR. Don't push to main directly.
 
 ## Evaluation
 
-A `-mode` skill is subjective output. A test/iterate benchmark loop isn't useful here. Vibe-check with the user: does it read like them? Did it miss anything? Then ship.
+A `-mode` skill is subjective output. A `skill-creator`-style test/iterate benchmark loop isn't useful here. Vibe-check with the user: does it read like them? Did it miss anything? Then ship.
 
 Run a description-optimization loop only if the skill's trigger accuracy turns out to be a problem in practice.
 
 ## When not to use
 
-- User wants a task-specific skill (not working conventions): `writing-for-agents` alone, no mining required.
+- User wants a task-specific skill (not working conventions): `skill-creator` alone, no mining required.
 - User wants to capture one narrow workflow (e.g. "how I write commit messages"). That's a regular skill, not a mode skill.
 

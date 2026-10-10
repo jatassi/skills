@@ -1,19 +1,22 @@
 {
-  "name": "jatassi",
-  "description": "Jackson Atassi's agent skills.",
-  "owner": {
-    "name": "Jackson Atassi",
-    "url": "https://github.com/jatassi"
-  },
-  "plugins": [
-    {
-      "name": "milliways",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/jatassi/skills.git",
-        "ref": "v2.1.0"
-      },
-      "description": "The kitchen in one plugin: a router that binds each task to a playbook, vendored pstack and Matt Pocock skills, and the setup, Projects kit and trust ladder that let agents ship verified pull requests."
-    }
-  ]
+	"name": "jatassi",
+	"description": "poteto's pstack.",
+	"owner": {
+		"name": "Jackson Atassi",
+		"url": "https://github.com/jatassi"
+	},
+	"plugins": [
+		{
+			"name": "pstack",
+			"source": "./",
+			"description": "if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.",
+			"category": "developer-tools",
+			"tags": [
+				"workflow",
+				"principles",
+				"review",
+				"planning"
+			]
+		}
+	]
 }

@@ -13,7 +13,7 @@ Use local browser automation to verify UI behavior with evidence. First reuse th
 - Verifying visual or accessibility changes with screenshots and snapshots.
 - Checking local web, IDE, or Electron behavior before shipping.
 - Capturing console logs, network logs, CPU profiles, traces, or heap snapshots.
-- Creating before/after evidence for a verification pass.
+- Creating before/after evidence for Claude Code's bundled `/verify` skill, or the project's `verify-<app>` skill from `/create-verification-skill`.
 
 ## Setup Pattern
 

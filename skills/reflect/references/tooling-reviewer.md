@@ -32,9 +32,9 @@ Scan for:
 
 Findings must point to skills, tools, or MCPs invoked in this transcript. Speculative routings to skills the parent never opened do not count. To check whether a skill was used, scan the transcript for:
 
-- `Read` tool calls against any `SKILL.md` file (workspace `.claude/skills/`, user-level `~/.claude/skills/`, or plugin-installed paths under `~/.claude/plugins/`)
+- `Skill` tool calls, `/<name>` skill commands, and `Read` tool calls against any `SKILL.md` file (project `.claude/skills/`, user-level `~/.claude/skills/`, or plugin-installed paths under `~/.claude/plugins/`)
 - `Agent` prompts that name a skill path
-- Tool calls (Shell, Grep, MCP, etc.) that match a skill's documented commands
+- Tool calls (Bash, Grep, MCP, etc.) that match a skill's documented commands
 
 Two valid finding shapes:
 
@@ -46,7 +46,7 @@ If a skill was neither invoked nor a missed-trigger candidate, drop it.
 List each durable learning you find. For each:
 - Principle: one sentence naming the convention or technical fact. Concrete enough that a future agent recognizes when it applies.
 - Evidence: the exact moment in the transcript (turn number or short quote, including the command or flag).
-- Routing: most relevant existing skill (give the `SKILL.md` path as it appears in the transcript), OR `tune description: <skill path>` when the skill should have triggered but didn't, OR "new skill: <kebab-name>".
+- Routing: most relevant existing skill (give the `SKILL.md` path as it appears in the transcript, or the skill's base directory plus `/SKILL.md` when it loaded through the `Skill` tool or a `/<name>` command), OR `tune description: <skill path>` when the skill should have triggered but didn't, OR "new skill: <kebab-name>".
 
 Skip trivial things (typos, retries). Skip anything already obvious from the existing skill the parent followed. Skip implementation details that drift: specific SHAs, current file paths, version numbers, exact byte counts. Convention generalizes. Pinned details don't.
 

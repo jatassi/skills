@@ -1,15 +1,20 @@
 ---
 name: architect
 description: "Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for /architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape."
+disable-model-invocation: true
 ---
 
 # Architect
 
 Design before implementing. Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives, then fill in code against the chosen sketch. If implementation proves the sketch wrong, throw it out and redesign.
 
+pstack's skills live beside this one, at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md`. Most set `disable-model-invocation: true`, so Claude Code refuses them through the Skill tool. Don't call it for them. To run one, read its SKILL.md in full.
+
+For a principle skill named **`<x>`**, `<name>` is `principle-<x>`.
+
 ## Start
 
-Open a todolist with one entry per phase before starting.
+Open a todolist (a checklist in your reply when the session has no task tools) with one entry per phase before starting.
 
 1. Ground
 2. Sketch
@@ -29,7 +34,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 Run the **arena** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt. Each candidate produces a design package shaped per `references/rationale-template.md`.
 
-Take the runners from the `architect runners` line in the kitchen's models document (`docs/agents/models.md`), in place of the `arena runners` line. If the document or that line is missing, use `opus`, `opus`, `opus`. Alias and rejected entries follow the runner rules in the **arena** skill's Phase A.
+Take the runners from the `architect runners` line in `~/.claude/rules/pstack-models.md` (in a cloud session, the same lines in the repo's `.claude/rules/pstack-models.md` or the Project instructions), in place of the `arena runners` line. If the rule or that line is missing, use `opus high` twice. `inherit-parent` and rejected entries follow the runner rules in the **arena** skill's Phase A.
 
 Design it twice. Require at least two structurally distinct candidates before synthesis, even when the first looks sufficient. This is the **exhaust-the-design-space** principle skill made concrete. Whole-shape alternatives, not point fixes inside one shape.
 

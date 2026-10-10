@@ -1,11 +1,12 @@
 ---
 name: interrogate
 description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Multiple LLM reviewers challenge changes from independent angles."
+disable-model-invocation: true
 ---
 
 # Interrogate
 
-Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from model diversity, not assigned personas.
+Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from different models, or independent runs of one model, not assigned personas.
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
@@ -32,20 +33,19 @@ Write one clear paragraph. If you're unsure about the intent, ask the user befor
 
 ## Step 3, Spawn Reviewers
 
-Launch all reviewers in a single message using the Agent tool. Use the `interrogate reviewers` line in `docs/agents/models.md`, one reviewer per entry, extending or shrinking the Reviewer A/B/C labels below to the configured entry count. If the document or that line is missing, use the table defaults.
+Launch all reviewers in a single message using the Agent tool. Use the `interrogate reviewers` line in `~/.claude/rules/pstack-models.md` (in a cloud session, the same lines in the repo's `.claude/rules/pstack-models.md` or the Project instructions), one reviewer per entry, extending or shrinking the Reviewer A/B labels below to the configured entry count. If the rule or that line is missing, use the table defaults.
 
 | Subagent | Default model |
 |----------|---------------|
-| Reviewer A | `opus` |
-| Reviewer B | `opus` |
-| Reviewer C | `opus` |
+| Reviewer A | `opus high` |
+| Reviewer B | `opus high` |
 
 For each reviewer:
 - `subagent_type`: `general-purpose`
-- `model`: the configured `interrogate reviewers` entry, or the table default with no configured line. For an `inherit` entry, omit `model` so that reviewer runs on the parent model.
-- read-only: say so in its prompt (the `Agent` tool has no read-only flag)
+- `model` and `effort`: the configured `interrogate reviewers` entry, or the table default with no configured line. For an `inherit-parent` entry, omit `model` and `effort` so that reviewer runs on the parent model.
+- a read-only brief (no edits, no state-changing commands)
 
-Each entry is a tier or `<cli>:<tier>`, per the models document's Model values. A `<cli>:<tier>` reviewer is a subagent that drives that CLI non-interactively with the filled template and returns its output verbatim. When an entry isn't available in this thread, follow the document's Fallback section: run that reviewer on the parent's model, and put its `fallback:` line in the Reviewers list. Do not block the review on it.
+If the Agent tool rejects a configured entry, run that reviewer on the first table default of its family and say so. Families are the aliases: `opus`, `sonnet`, `haiku`, `fable`. If its family has no table default, use Reviewer A's default. If it rejects a table default, pick the same model at the highest effort it accepts below the default's, spawn with it, and open a separate PR to update the default table. Do not block the review on the rejection. Never treat an `inherit-parent` entry as rejected or apply either fallback to it.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 1. The stated intent

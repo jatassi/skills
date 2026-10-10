@@ -1,6 +1,0 @@
-# Vendored files must stay byte for byte their derived upstream form
-# (npm run vendor -- check), so git never converts their line endings, even
-# with core.autocrlf on. See docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md.
-skills/** -text
-agents/** -text
-LICENSES/** -text

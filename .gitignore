@@ -1,10 +1,3 @@
-.DS_Store
-# Local agent workspace (third-party skills, maintainer skills, symlinks into skills/)
-.agents/
-.claude/
 node_modules/
-# npm test builds the bundle here
-packages/visual-grilling/.test-dist/
-# npm run try builds the plugin here for claude --plugin-dir .; only the release
-# workflow (.github/workflows/release.yml) commits it, with git add --force
-skills/grilling/dist/
+.DS_Store
+*.log

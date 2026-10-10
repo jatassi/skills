@@ -1,13 +1,14 @@
 ---
 name: how
 description: "Use for \"how does X work\", code walkthroughs before changing something, and placement / ownership / layering questions (\"where should this live\", \"which package owns this\", \"is this the right layer\"). Explains subsystem architecture, runtime flow, onboarding mental models. Use why for motivation."
+disable-model-invocation: true
 ---
 
 # How
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
-Each spawn below names a role line in the kitchen's models document (`docs/agents/models.md`) and a default. Set `model` to that line's value, or to the default if the document or the line is missing. Leave `model` unset when the value is `inherit`. If the Agent tool rejects the value, use the default and say so. If that model isn't available in this thread, follow the models document's Fallback section: run on the parent's model and report its `fallback:` line.
+Each spawn below names a role line in `~/.claude/rules/pstack-models.md` (in a cloud session, the same lines in the repo's `.claude/rules/pstack-models.md` or the Project instructions) and a default. Set `model` and `effort` to that line's value, or to the default if the rule or the line is missing. Leave `model` and `effort` unset when the value is `inherit-parent`. If the Agent tool rejects that model or effort, use the default and say so. If it rejects the default, use the same model at the highest effort it accepts below the default's.
 
 ## Step 1. Assess Complexity
 
@@ -23,28 +24,28 @@ When in doubt, take the simple path.
 Decompose the question into 2 to 4 exploration angles, each a distinct slice of the subsystem. Spawn all explorers in a single message:
 
 - `subagent_type`: `general-purpose`
-- `model`: the `how explorer` line, default `sonnet`
-- read-only: say so in its prompt (the `Agent` tool has no read-only flag)
+- `model` and `effort`: the `how explorer` line, default `opus medium`
+- a read-only brief (no edits, no state-changing commands)
 
 Each explorer gets the prompt in `references/explorer-prompt.md` with its angle filled in. Then go to Step 3.
 
 ## Step 2b. Direct Explain (simple questions)
 
-Spawn one `Agent` subagent that explores and explains in one pass:
+Spawn one Agent subagent that explores and explains in one pass:
 
 - `subagent_type`: `general-purpose`
-- `model`: the `how explainer` line, default `opus`
-- read-only: say so in its prompt (the `Agent` tool has no read-only flag)
+- `model` and `effort`: the `how explainer` line, default `opus high`
+- a read-only brief (no edits, no state-changing commands)
 
 Build its prompt from `references/explainer-prompt.md` without the explorer-findings section. Go to Step 4.
 
 ## Step 3. Synthesize (complex questions only)
 
-Once all explorers have returned, spawn one `Agent` subagent to synthesize their findings into one explanation:
+Once all explorers have returned, spawn one Agent subagent to synthesize their findings into one explanation:
 
 - `subagent_type`: `general-purpose`
-- `model`: the `how explainer` line, default `opus`
-- read-only: say so in its prompt (the `Agent` tool has no read-only flag)
+- `model` and `effort`: the `how explainer` line, default `opus high`
+- a read-only brief (no edits, no state-changing commands)
 
 Build its prompt from `references/explainer-prompt.md` with every explorer's findings filled in.
 

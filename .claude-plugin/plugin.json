@@ -1,13 +1,21 @@
 {
-  "name": "milliways",
-  "version": "2.1.0",
-  "description": "The kitchen in one plugin: a router that binds each task to a playbook, vendored pstack and Matt Pocock skills, and the setup, Projects kit and trust ladder that let agents ship verified pull requests.",
-  "author": {
-    "name": "Jackson Atassi",
-    "url": "https://github.com/jatassi"
-  },
-  "homepage": "https://github.com/jatassi/skills",
-  "repository": "https://github.com/jatassi/skills",
-  "license": "MIT",
-  "keywords": ["skills", "planning", "grilling", "browser", "specs", "tickets", "implementation"]
+	"name": "pstack",
+	"displayName": "pstack",
+	"version": "0.15.15",
+	"description": "if you want to go fast, go deep first. pstack helps you write less, but higher quality code. rigorous agent workflows you can parallelize with confidence.",
+	"author": {
+		"name": "Lauren Tan"
+	},
+	"homepage": "https://github.com/jatassi/skills",
+	"repository": "https://github.com/jatassi/skills",
+	"license": "MIT",
+	"keywords": [
+		"pstack",
+		"poteto-mode",
+		"workflow",
+		"principles",
+		"agent-style",
+		"subagents",
+		"unslop"
+	]
 }

@@ -1,243 +1,287 @@
-# milliways
+# pstack
 
-milliways is the kitchen: one plugin you carry from codebase to codebase. It routes every non-trivial task to a playbook written for that situation, vendors [pstack](https://github.com/cursor/plugins/tree/main/pstack) and [Matt Pocock's skills](https://github.com/mattpocock/skills) as the playbooks' steps, and ships what a Claude Project needs to run agents in the cloud and merge their work on a trust ladder. The vocabulary (kitchen, chef, rung, gate, door, garden) is defined in [`GLOSSARY.md`](GLOSSARY.md).
+i'm [poteto](https://x.com/poteto). i'm not a president or ceo, but i've worked with millions of lines of code at Meta, Netflix, and Cursor. i'm also on the react core team where i help build and maintain react compiler.
 
-It is packaged as a [Claude Code plugin](https://code.claude.com/docs/en/plugins), as an [Agent Plugin](https://agent-plugins.org/specification) and for [skills.sh](https://skills.sh). The `AGENTS.md` entry point works in any harness that reads `AGENTS.md`; Projects, routines and pull-request attachments are Claude Code and GitHub features.
+there's a growing sense that ai writes too much slop code. i agree. i don't want to ship like a team of twenty slop artists. throughput without quality is not a goal i aspire to. if you want to go fast, go deep first. 
 
-## Install
+**pstack is my answer.** these are the same skills i use everyday to ship high quality code at Cursor. this turns claude code into a real engineering team. the goal is not to maximize loc, in fact it's the opposite. pstack helps you write less, but higher quality code.
 
-### Claude Code
+**pstack gives you fearless parallelism.** when you can go deep on one agent and trust it to write good, verifiable code, you can truly parallelize with confidence. start multiple agents up with `poteto-mode` and trust that they'll apply rigorous engineering principles to their work.
 
-```
+**claude code gives you the best of all worlds.** every claude model has its strengths and weaknesses. use any model with pstack. in fact, many of my skills use multi-model workflows to take advantage of each model's unique strengths.
+
+fork it. improve it. make it yours. PRs are welcome! 
+
+## install
+
+```bash
 /plugin marketplace add jatassi/skills
-/plugin install milliways@jatassi
+/plugin install pstack@jatassi
 ```
 
-Skills are namespaced `milliways:`, so `grilling` runs as `milliways:grilling`. The plugin used to be called `jatassi-skills`; if you have that installed, uninstall it (`/plugin uninstall jatassi-skills@jatassi`) and install `milliways` in its place.
+to enable pstack for everyone who works in a repository, including cloud sessions, commit this to the repository's `.claude/settings.json`:
 
-The marketplace pins the plugin to the latest release tag, so Claude Code installs exactly the build that release tested, not whatever is on `main`.
-
-### skills.sh
-
-```
-npx skills add jatassi/skills
-```
-
-This installs every skill in the repo into any agent the [`skills` CLI](https://skills.sh) supports. Update later with `npx skills update`.
-
-### Agent Plugins clients
-
-Point your client at this repository; the manifest is [`plugin.json`](plugin.json) at the root.
-
-skills.sh and Agent Plugins clients read `main`, and every merge to `main` is a release, so they get the same build as Claude Code. The exception is the few minutes while a release is building, when the skill text on `main` can be newer than the `grilling` browser build.
-
-## How a kitchen works
-
-A **kitchen** is a repo whose root `AGENTS.md` carries exactly one line:
-
-```
-Start every non-trivial task with the `make-it-so` skill. Kitchen config: `docs/agents/AGENTS.md`.
+```json
+{
+  "extraKnownMarketplaces": {
+    "jatassi": { "source": { "source": "github", "repo": "jatassi/skills" } }
+  },
+  "enabledPlugins": { "pstack@jatassi": true }
+}
 ```
 
-That line is the entry point. [`make-it-so`](skills/make-it-so/SKILL.md), the router, classifies the task and copies the matching playbook's steps into the thread's todo list. Its routing rule sends a question that running something can answer to a prototype, a one-way door or a question of taste to grilling, and work bigger than one context to wayfinder. Every playbook ends with a reflect step that files `garden` issues for anything the thread had to work around.
+pstack needs claude code v2.1.292 or later, for the agent tool's `effort` parameter.
 
-Everything else the kitchen needs lives in `docs/agents/`, behind its own `AGENTS.md` index: the issue tracker, triage labels, domain docs, the model-role table, verification, autonomy and garden. This repo is a kitchen itself, so [`docs/agents/`](docs/agents) shows the full set.
+every skill's full name carries the plugin prefix, like `/pstack:poteto-mode`. the `/` menu also finds it by its bare name, `/poteto-mode`.
 
-### Set up a repo
+playbooks open a todo list through claude code's task tools. on opus 5.5, sonnet 5.5, and other newer models, a local session leaves those tools out unless you export `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` before you start claude code. cloud and background sessions already have them.
 
-Install the plugin, then run `/setup-milliways` at the repo's root (`/milliways:setup-milliways` in Claude Code). It detects your harness and the model families you can reach, shows you what it will write, and asks before it changes anything. It then:
+## get started
 
-- writes the `docs/agents` documents and their index, and the one root `AGENTS.md` line;
-- writes a model-role table you can edit, naming models by tier only (haiku, sonnet, opus, fable);
-- creates the GitHub labels: triage, `wayfinder:*`, `garden`, `door:one-way`, `prototype` and the five verifier tiers;
-- offers to fold any `CLAUDE.md` into `AGENTS.md`, and renames a `CONTEXT.md` glossary to `GLOSSARY.md`.
+two steps:
 
-It never overwrites a file, so re-running it only adds what a later milliways brings.
+1. run [`/setup-pstack`](./skills/setup-pstack/SKILL.md), pick a reasoning budget, and choose which models you want.
+2. use [`/poteto-mode`](./skills/poteto-mode/SKILL.md) whenever you're doing anything that requires rigor.
 
-### Run it from a Claude Project
+new here? the [pstack guide](./docs/guide/README.md) walks you through a first real task, from setup and prompting through verification and overnight runs. stuck, or unsure which skill fits? ask [`/poteto-help`](./skills/poteto-help/SKILL.md).
 
-The Projects kit in [`skills/setup-milliways/projects/`](skills/setup-milliways/projects) runs the kitchen from a Claude Project. Cloud threads see only what is committed to the repo or added as a plugin, nothing from `~/.claude`, so the kit is plain files you paste into the project:
+that's it. the other skills are situational; the mode skill uses them for you as needed. out of the box the mode splits work by reasoning effort: code delegates (feature, refactoring, bug fix, perf, hillclimb) go to opus 5.5 at medium effort, while the hardest changes, prose, and judgment go to opus 5.5 at high effort. the default panel is two opus 5.5 runs at high effort. [`/setup-pstack`](./skills/setup-pstack/SKILL.md) changes any of it.
 
-1. Create a Claude Project with the kitchen repo as its only repository, and add milliways under **Project settings > Plugins**. The plugin loads into the project's new cloud threads, not into the project conversation, so the coordinator has no milliways skills and doesn't need them. If Project settings has no Plugins tab, the plugin can't reach threads; see [#107](https://github.com/jatassi/skills/issues/107).
-2. Paste [`coordinator-brief.md`](skills/setup-milliways/projects/coordinator-brief.md) into the project instructions, and set its first standing order to the branch pull requests target. It makes the project conversation a coordinator that writes briefs and starts threads, never edits code, and keeps the verification ledger in GitHub. The coordinator reads GitHub through the conversation's helper or a short read-only thread.
-3. Create the four routines in [`routines/`](skills/setup-milliways/projects/routines) from the project's **Routines** tab:
-   - [`risk-digest`](skills/setup-milliways/projects/routines/risk-digest.md), daily: ranks yesterday's merges by risk and moves the trust ladder.
-   - [`garden-sweep`](skills/setup-milliways/projects/routines/garden-sweep.md), nightly: files a `garden` issue for each banned pattern that landed.
-   - [`garden-cluster`](skills/setup-milliways/projects/routines/garden-cluster.md), weekly: groups open `garden` issues and runs `correct` on each cluster.
-   - [`upstream-sync`](skills/setup-milliways/projects/routines/upstream-sync.md), weekly: opens a pull request that moves the vendored upstreams. It is for this repo only.
-4. The vendored `watch-pr`, `check-plan` and `worktree-audit` scripts run on Bun, which cloud environments come with preinstalled. Bun's package fetching can fail through the cloud session's proxy, so a script's first run, which installs its dependency, may fail there (see the Cloud environments section of `docs/agents/verification.md`).
+## usage
 
-### The trust ladder and the merge gate
+use [`/poteto-mode`](./skills/poteto-mode/SKILL.md) at the start of a task. it reads your request, picks from a set of playbooks, and runs the other skills as the steps need them.
 
-Trust is earned per area. [`docs/agents/autonomy.md`](docs/agents/autonomy.md) declares areas as path globs, each on a rung: at `chef` you merge every pull request; at `gated` a thread merges its own once the gate holds (CI is green, a fresh verifier passes at the head SHA with live evidence, and the door is two-way). Ten settled clean merges in a row (each past its seven-day clean window) make a promotion due, which the risk digest proposes as a pull request you merge; any unclean merge in a gated area demotes it straight back to you. A one-way door waits for you at every rung. The [`trust-ladder`](skills/trust-ladder/SKILL.md) scorer computes the streaks, promotions and demotions from merged pull requests.
+### just use [`/poteto-mode`](./skills/poteto-mode/SKILL.md)
 
-## Skills
-
-### First-party
-
-| Skill | What it does |
-| --- | --- |
-| [`auto-grill`](skills/auto-grill/SKILL.md) | A relentless interview where an agent stand-in answers in your place. |
-| [`to-spec-and-tickets`](skills/to-spec-and-tickets/SKILL.md) | Run `make-it-so`'s Spec and tickets playbook: grill the work, publish a spec to the issue tracker, then cut it into blocked tickets other threads pick up. |
-| [`setup-milliways`](skills/setup-milliways/SKILL.md) | Make a repo a kitchen: the `docs/agents` config and its index, the one root `AGENTS.md` line, the GitHub labels and a model-role table detected from your harness. Safe to re-run. Also ships the [Projects kit](skills/setup-milliways/projects): the coordinator brief for a Claude Project's instructions, and the prompts for the risk-digest, garden-sweep, garden-cluster and upstream-sync routines. |
-| [`trust-ladder`](skills/trust-ladder/SKILL.md) | Score each area of a kitchen on the trust ladder from its merged pull requests: clean streaks, unclean merges, promotions and demotions due, and yesterday's merges ranked by risk, as JSON. |
-
-### From pstack
-
-Vendored from [pstack](https://github.com/cursor/plugins/tree/main/pstack), with the four [cursor-team-kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) skills it depends on, ported from Cursor to Claude Code. Model roles come from the `docs/agents/models.md` that `setup-milliways` writes. Its two agents, `poteto-agent` and `comment-sicko`, are in [`agents/`](agents) and dispatch as `milliways:<name>`. Left out: `bro` (Matt's `wait-what` covers it), `setup-pstack` (replaced by `setup-milliways`), `make-bot-ui` and the Benny automations (Cursor-only), and the `orch` CLI (the orchestrate ledger lives in GitHub). The skills `make-it-so`'s playbooks call are model-invocable here, unlike upstream.
-
-| Skill | What it does |
-| --- | --- |
-| [`make-it-so`](skills/make-it-so/SKILL.md) | The kitchen's router, pstack's `poteto-mode` renamed: it routes the task (prototype what running can answer, grill what only the chef holds, wayfinder what outgrows one context), binds the thread to a playbook, and holds it to pstack's principles and subagent defaults. The playbooks call Matt's skills where they own the job, end with a reflect step that files `garden` issues, and gate autopilot merges on the trust ladder. |
-| [`architect`](skills/architect/SKILL.md) | Sketch types, signatures and module structure before code, then stay in the loop while it is filled in. |
-| [`arena`](skills/arena/SKILL.md) | Run N candidates at the same task, pick a base and graft the best parts of the rest into it. |
-| [`automate-me`](skills/automate-me/SKILL.md) | Draft or revise your personal `-mode` skill from how you work. |
-| [`benchmark-checklist`](skills/benchmark-checklist/SKILL.md) | Vet a performance measurement before you report or act on it. |
-| [`blast-radius`](skills/blast-radius/SKILL.md) | Find what a change could break beyond the diff, and prove the fact it is safe because of. |
-| [`correct`](skills/correct/SKILL.md) | Find the mistakes agents keep repeating in a repo and make each one impossible. |
-| [`create-verification-skill`](skills/create-verification-skill/SKILL.md) | Generate a project-local skill that drives your app the way a user does. |
-| [`explain`](skills/explain/SKILL.md) | Explain a body of work plainly, built on `how` and `why`. pstack calls it `teach`. |
-| [`figure-it-out`](skills/figure-it-out/SKILL.md) | Design an auditable playbook when no narrower one fits. |
-| [`how`](skills/how/SKILL.md) | Explain how a part of the codebase works, with explorer and explainer subagents. |
-| [`interrogate`](skills/interrogate/SKILL.md) | Adversarial review of a change by several reviewers from independent angles. |
-| [`maintain-verification-skill`](skills/maintain-verification-skill/SKILL.md) | Keep a project's verification skill and feature map honest. |
-| [`no-comments`](skills/no-comments/SKILL.md) | Run the `comment-sicko` agent over a diff, fix accepted findings and encode claimed constraints. |
-| [`recall`](skills/recall/SKILL.md) | Reconstruct your recent working context from your chat history and the shared record. |
-| [`reflect`](skills/reflect/SKILL.md) | Review the session transcript with three subagents and route each learning to a skill edit. |
-| [`show-me-your-work`](skills/show-me-your-work/SKILL.md) | Keep a reviewable decision trail for long-running or unattended work. |
-| [`swarm`](skills/swarm/SKILL.md) | Fan out N parallel workers in their own worktrees, drain them and return one report. |
-| [`tdd-bug-fix`](skills/tdd-bug-fix/SKILL.md) | Fix a bug test-first when there is a cheap local test target. pstack calls it `tdd`. |
-| [`technical-writing`](skills/technical-writing/SKILL.md) | A layered technical-writing standard for docs, RFCs, readmes and PR descriptions. |
-| [`typescript-best-practices`](skills/typescript-best-practices/SKILL.md) | TypeScript best practices. |
-| [`unslop`](skills/unslop/SKILL.md) | Cut AI tells from any writing. |
-| [`why`](skills/why/SKILL.md) | Find out why something is the way it is, from every evidence source the session can reach. |
-| `principle-*` | pstack's 24 engineering principles, one leaf skill each, indexed from `make-it-so`. |
-| [`deslop`](skills/deslop/SKILL.md) | Remove AI-generated code slop. From cursor-team-kit. |
-| [`control-ui`](skills/control-ui/SKILL.md) | Build or adapt a local browser harness to drive and inspect a UI. From cursor-team-kit. |
-| [`control-cli`](skills/control-cli/SKILL.md) | Build or adapt a local harness to drive and profile a CLI or TUI. From cursor-team-kit. |
-| [`make-pr-easy-to-review`](skills/make-pr-easy-to-review/SKILL.md) | Prepare a PR for review without changing its behaviour. From cursor-team-kit. |
-
-### From Matt Pocock's skills
-
-Vendored from [mattpocock/skills](https://github.com/mattpocock/skills), its Engineering and Productivity buckets. `ask-matt` and `setup-matt-pocock-skills` are left out: `make-it-so` and `setup-milliways` replace them. Skills marked * are model-invocable here, unlike upstream, so `make-it-so`'s playbooks can call them. Skills that read the issue tracker, the triage labels or the domain docs (glossary and ADRs) find them through the `docs/agents/AGENTS.md` index that `setup-milliways` writes.
-
-| Skill | What it does |
-| --- | --- |
-| [`code-review`](skills/code-review/SKILL.md) | Review a diff on two axes, the repo's standards and the originating spec, in parallel subagents. |
-| [`codebase-design`](skills/codebase-design/SKILL.md) | Shared vocabulary for designing deep modules, seams and testable interfaces. |
-| [`diagnosing-bugs`](skills/diagnosing-bugs/SKILL.md) | A diagnosis loop for hard bugs and performance regressions. |
-| [`domain-modeling`](skills/domain-modeling/SKILL.md) | Build and sharpen the domain model: `GLOSSARY.md` terms and ADRs. |
-| [`grill-me`](skills/grill-me/SKILL.md) | A relentless interview to sharpen a plan or design. |
-| [`grill-with-docs`](skills/grill-with-docs/SKILL.md) * | A relentless interview that also writes ADRs and glossary entries as it goes. |
-| [`grilling`](skills/grilling/SKILL.md) | Grill you about a plan, a round of numbered questions at a time, as a page in the browser when it can show you one and as plain text otherwise. The browser needs Node `^22.22.2 \|\| ^24.15.0 \|\| >=26`. Adds the browser channel to upstream's skill. |
-| [`handoff`](skills/handoff/SKILL.md) | Compact the conversation into a handoff document for another agent. |
-| [`implement`](skills/implement/SKILL.md) * | Implement a piece of work from a spec or tickets, test-first, then review it. |
-| [`implement-spec`](skills/implement-spec/SKILL.md) | Hand off a spec's tickets: one `make-it-so` thread per ready ticket, each in its matching playbook and landing as its own PR, frontier by frontier. |
-| [`improve-codebase-architecture`](skills/improve-codebase-architecture/SKILL.md) | Find deepening opportunities, report them as an HTML page, then grill through the one you pick. |
-| [`pr`](skills/pr/SKILL.md) | Open a pull request with the kitchen's PR anatomy, or a draft prototype PR for the chef to pick a variant. |
-| [`prototype`](skills/prototype/SKILL.md) | Build a throwaway prototype to answer a design question. |
-| [`research`](skills/research/SKILL.md) | Investigate a question against primary sources and save the findings in the repo. |
-| [`retro`](skills/retro/SKILL.md) | Run a retrospective on a coding session. |
-| [`tdd`](skills/tdd/SKILL.md) | Test-driven development, red-green-refactor. |
-| [`teach`](skills/teach/SKILL.md) | Teach you a skill or concept across sessions, within this workspace. |
-| [`to-questionnaire`](skills/to-questionnaire/SKILL.md) | Turn a decision you can't answer alone into a questionnaire for someone else. |
-| [`to-spec`](skills/to-spec/SKILL.md) * | Turn the conversation into a spec on the issue tracker. |
-| [`to-tickets`](skills/to-tickets/SKILL.md) * | Break a plan or spec into tracer-bullet tickets with blocking edges. |
-| [`triage`](skills/triage/SKILL.md) | Move issues and external pull requests through the triage labels, and write agent-ready briefs. |
-| [`wait-what`](skills/wait-what/SKILL.md) | Re-pitch a message that didn't land. |
-| [`wayfinder`](skills/wayfinder/SKILL.md) * | Plan work bigger than one session as a map of decision tickets, and resolve them one at a time. |
-| [`wizard`](skills/wizard/SKILL.md) | Generate an interactive bash wizard for steps only a human can do. |
-| [`writing-for-agents`](skills/writing-for-agents/SKILL.md) | How to write skills, `AGENTS.md` and any document an agent reads. |
-
-## Vendoring and attribution
-
-The pstack and Matt Pocock skills are vendored, not forked by hand. [ADR 0004](docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md) records why and has the full rules.
-
-- **Pinned upstreams.** [`vendor/upstream.json`](vendor/upstream.json) pins each upstream (cursor/plugins and mattpocock/skills) to one commit and lists the paths it includes, so what ships is exactly what was reviewed.
-- **Substitutions.** [`vendor/substitutions.json`](vendor/substitutions.json) holds the mechanical rewrites applied on every sync: Cursor tool and agent names to Claude Code's, `.cursor/skills` to `.claude/skills`, bare agent names to `milliways:` agent types, and so on.
-- **Declared forks.** Every other divergence is listed in [`vendor/forks.json`](vendor/forks.json) with its kind (`policy` or `port-feature`) and the reason for it.
-- **The sync check.** `npm run vendor -- check` fails on any vendored file that is neither its pinned upstream after the substitutions nor a declared fork. It runs in the vendor workspace's tests and in the Release workflow. The weekly upstream-sync routine moves the pins and opens a pull request for review.
-
-Upstream licences are vendored verbatim in [`LICENSES/`](LICENSES), and [`NOTICE`](NOTICE) carries the MIT attributions for cursor/plugins and mattpocock/skills.
-
-## Layout
+this skill is the main shortcut. i use it whenever i need the agent to do rigorous engineering work. it comes with twenty-three playbooks:
 
 ```
-.
-├── AGENTS.md                    # the one make-it-so line: this repo is a kitchen
-├── GLOSSARY.md                  # the domain language, kitchen terms included
-├── plugin.json                  # Agent Plugins manifest
-├── .claude-plugin/
-│   ├── plugin.json              # Claude Code plugin manifest
-│   └── marketplace.json         # Claude Code marketplace (this repo = one plugin)
-├── .github/workflows/           # release.yml, the only workflow: tests pull requests, releases merges to main
-├── skills/                      # Shared by both formats; vendored skills sit beside our own
-│   ├── <skill>/SKILL.md
-│   └── setup-milliways/projects/ # the Projects kit: coordinator brief and routine prompts
-├── agents/                      # Claude Code subagents (vendored from pstack), dispatched as milliways:<name>
-├── docs/
-│   ├── agents/                  # this kitchen's config, behind its AGENTS.md index
-│   └── adr/                     # architecture decision records
-├── vendor/                      # upstream.json, substitutions.json, forks.json, checks.json
-├── LICENSES/                    # upstream licences, vendored verbatim
-├── NOTICE                       # upstream attributions
-├── package.json                 # dev scripts only; lists no dependencies, since this root is also the plugin root
-├── scripts/                     # test.mjs (changed-workspace test runner), test-bun.mjs, install-dev.mjs
-└── packages/                    # the dev workspaces' npm root: the grilling browser channel's source, the vendor CLI, setup-milliways' and trust-ladder's tests
+/poteto-mode this pr has a subtle bug where the scroll drifts every 750ms even when idle. repro
+first, then fix and verify.
 ```
 
-## Development
-
-`grilling`'s browser channel (its CLI, server and round page) is built from the TypeScript workspace in `packages/visual-grilling/`, outside the shipped skill folder. `setup-milliways`'s CLI ships as plain Node in `skills/setup-milliways/scripts/`, and its tests live in `packages/setup-milliways/`; `trust-ladder`'s scorer is the same, in `skills/trust-ladder/scripts/` with tests in `packages/trust-ladder/`.
-
 ```
-npm install                              # installs the dev workspaces in packages/
-npm run playwright -- install chromium   # once, for the round page tests
-npm test                                 # test only the workspaces changed since the merge-base with dev
-npm run test:all                         # every workspace: visual-grilling (the grilling browser channel) type-checks, builds into .test-dist and tests that; setup-milliways and trust-ladder test their CLIs
-npm run test:bun                         # pstack's vendored Bun scripts and their upstream tests; needs Bun, not part of npm test
-npm run try                              # build into skills/grilling/dist/, then: claude --plugin-dir .
+/poteto-mode i'm going to bed. land the stack even if ci flakes. i want everything merged by
+morning.
 ```
 
-`npm test` picks workspaces with [`scripts/test.mjs`](scripts/test.mjs): a workspace at `packages/<name>` runs when `packages/<name>/` or `skills/<name>/` changed, or a prefix listed in its package.json `testPaths`. Changing `packages/package.json` or its lockfile runs everything, unless the change only adds a workspace, which then runs alone. Changing the root `package.json` or `package-lock.json` always runs everything. `--dry-run` prints the pick without running it.
+<details>
+<summary>the twenty-three playbooks</summary>
 
-The repo root is also the plugin root, and Claude Code installs the npm dependencies a plugin root's `package.json` and lockfile list. So the root `package.json` lists none, and the workspaces' npm root is `packages/` ([ADR 0005](docs/adr/0005-dev-workspaces-live-under-packages.md)). A root `npm install` or `npm ci` carries through to `packages/`. Add or update a dependency there: `npm install <pkg> --prefix packages --workspace visual-grilling`, or `npm update --prefix packages`.
+| playbook | for |
+|---|---|
+| [investigation](./skills/poteto-mode/playbooks/investigation.md) | a read-only question. how does x work, why was y built this way, are we sure. |
+| [bug fix](./skills/poteto-mode/playbooks/bug-fix.md) | reproduce a defect, root-cause it, and fix with runtime evidence. |
+| [perf](./skills/poteto-mode/playbooks/perf-issue.md) | trace a measured slowness and improve it against a baseline. |
+| [hillclimb](./skills/poteto-mode/playbooks/hillclimb.md) | sustained, scientific improvement of one metric against a target, looping hypotheses with before/after measurement and one commit per accepted win. |
+| [runtime forensics](./skills/poteto-mode/playbooks/runtime-forensics.md) | diagnose a live symptom (leak, idle-cpu spin, glitch) from instrumentation. |
+| [trace forensics](./skills/poteto-mode/playbooks/trace-forensics.md) | diagnose a captured profiling artifact (cpuprofile, trace, spindump, heap snapshot). |
+| [feature](./skills/poteto-mode/playbooks/feature.md) | new or changed behavior, built from a named data shape. |
+| [refactoring](./skills/poteto-mode/playbooks/refactoring.md) | a behavior-preserving change to structure or shape. |
+| [prototype](./skills/poteto-mode/playbooks/prototype.md) | a throwaway sketch to make a design or behavioral decision cheaply, or to settle an empirical fork by observing it. |
+| [visual parity](./skills/poteto-mode/playbooks/visual-parity.md) | pixel-exact ui equivalence between two implementations. |
+| [authoring a skill](./skills/poteto-mode/playbooks/authoring-a-skill.md) | writing or editing a SKILL.md. |
+| [eval](./skills/poteto-mode/playbooks/eval.md) | test how a skill or prompt change affects agent behavior, blinded. |
+| [babysit](./skills/poteto-mode/playbooks/babysit.md) | drive a pr or a stack to merge-ready: conflicts, review threads, ci. |
+| [shipping](./skills/poteto-mode/playbooks/shipping.md) | independently verify a green stack, then land the contiguous verified run bottom-up through github. |
+| [autonomous run](./skills/poteto-mode/playbooks/autonomous-run.md) | drive a long task to completion without stopping. |
+| [orchestrate](./skills/poteto-mode/playbooks/orchestrate.md) | a standing project handed to one coordinator chat: multi-day, many stacked prs, fleets of subagents. |
+| [autopilot-full](./skills/poteto-mode/playbooks/autopilot-full.md) | run independent prs to merged with one owner per pr and a root swarm verdict on each round, from the code-ready head on. |
+| [autopilot-stack](./skills/poteto-mode/playbooks/autopilot-stack.md) | build and verify one linear base-branch stack for the operator to review and land. |
+| [session pickup](./skills/poteto-mode/playbooks/session-pickup.md) | resume or take over a prior agent's in-flight work. |
+| [pause safely](./skills/poteto-mode/playbooks/pause-safely.md) | suspend in-flight work cleanly so it can be resumed later. |
+| [multi-phase plan](./skills/poteto-mode/playbooks/multi-phase-plan.md) | work that spans phases or stacked PRs. |
+| [worktree cleanup](./skills/poteto-mode/playbooks/worktree-cleanup.md) | reclaim disk by pruning merged or abandoned worktrees and stale ios simulators, safety-gated. |
+| [opening a pr](./skills/poteto-mode/playbooks/opening-a-pr.md) | open a ready pr from small ordered commits with a conventional commits title and a briefing-style body. invoked at the end of every other playbook. |
 
-The vendored pstack scripts run on Bun. `npm run test:bun` finds every `skills/*/scripts/package.json` with a test script and runs it; the Release workflow does the same on Ubuntu for pull requests into `main`. Cloud environments come with Bun preinstalled, though its package fetching can fail through the session's proxy.
+</details>
 
-Pull requests into `dev` run [`ci.yml`](.github/workflows/ci.yml) on Ubuntu: `npm test`, `npm run vendor -- check` and `npm run test:bun`, the same commands as above. Its check is named `ci (dev)`. The Release workflow adds the three-OS `npm run test:all` on pull requests into `main`.
 
-Work on `dev`, not `main`. Never commit the `npm run try` output: `dist/` is gitignored, and only a release commits it. After the first release `dist/` is tracked, so a try build shows up as changes to it; discard them with `git restore skills/grilling/dist`. The build prints each output's size, writes `dist/THIRD_PARTY_LICENSES.md`, and fails on a bundled package whose licence is missing or not allowed.
 
-### Vendored skills
+when invoked it:
 
-The vendor CLI in `packages/vendor/` keeps vendored skills equal to their pinned upstream after the substitution table, except for declared forks. [ADR 0004](docs/adr/0004-vendoring-pinned-upstreams-with-declared-forks.md) has the file formats and the full rules.
+1. matches your task to a [playbook](./skills/poteto-mode/playbooks/) and opens a todo list whose first items are its steps, copied in verbatim.
+2. routes to the other skills as the steps fire.
+3. writes unslopped replies framed for the consumer and the maintainer.
+
+the full rules and playbooks live in [`skills/poteto-mode/SKILL.md`](./skills/poteto-mode/SKILL.md).
+
+to keep [`/poteto-mode`](./skills/poteto-mode/SKILL.md) on across turns, run `/output-style` and pick `pstack:Poteto Mode`. that makes it an [output style](https://code.claude.com/docs/en/output-styles), which claude code offers in the terminal, the desktop app, and the ide extensions (in the desktop app, set `"outputStyle": "pstack:Poteto Mode"` in `.claude/settings.local.json`). it reaches a cloud session only when the session has pstack, like a project thread with pstack under project settings > plugins. it stays in context every turn, applies itself when a playbook matches or the task needs rigor, and stays out of the way otherwise. the choice is saved for the project. plain `/poteto-mode` adds it to one message only. say so to opt out, or switch back to `Default` to turn it off.
+
+[`/poteto-mode`](./skills/poteto-mode/SKILL.md) works extremely well with claude code's `/loop` command. you can make claude code work for many hours without sacrificing rigor.
+
+## skills
+
+[`/poteto-mode`](./skills/poteto-mode/SKILL.md) runs most of these for you when a step needs them (`how`, `why`, `architect`, `arena`, `swarm`, `interrogate`, `unslop`, `no-comments`, `technical-writing`, `tdd`, and the principles). the table below is for when you want one directly:
 
 ```
-npm run vendor -- check                                  # fail on any undeclared divergence or check violation
-npm run vendor -- sync                                   # re-derive every upstream at its pin (after editing vendor/*.json)
-npm run vendor -- sync --to HEAD                         # move every pin to upstream HEAD, merging into forks
-npm run vendor -- sync --upstream <name> --to <sha>      # move one pin to one commit
-npm run vendor -- sync --overwrite                       # restore files that diverged without a declared fork
+/how do we cancel runs? do we have an n+1 when we look up every run to cancel?
 ```
 
-- **To vendor a skill**, add it under `include` in `vendor/upstream.json` and run `sync`.
-- **To change a vendored file**, prefer a rule in `vendor/substitutions.json`. When the change isn't mechanical, edit the file and declare it in `vendor/forks.json` with its `kind` (`policy` or `port-feature`) and `why`.
-- `packages/vendor`'s tests, which end with `check`, run whenever `vendor/`, `skills/`, `agents/`, `LICENSES/`, `NOTICE` or `.gitattributes` changes.
-- **After a sync**, review the diff. Resolve any `CONFLICT` it printed, and include or exclude each new upstream skill it lists for triage.
+```
+/interrogate review this pr.
+```
 
-## Releasing
+<details>
+<summary>all skills</summary>
 
-Every merge to `main` is a release ([ADR 0003](docs/adr/0003-every-merge-to-main-is-a-release.md)). Only the [Release workflow](.github/workflows/release.yml) commits `skills/grilling/dist/` ([ADR 0002](docs/adr/0002-installs-pinned-to-release-tags.md)). There is no CHANGELOG; the notes go on the GitHub Release.
+| skill | use it when |
+|---|---|
+| [`/poteto-mode`](./skills/poteto-mode/SKILL.md) | default entry point for any non-trivial task. |
+| [`/poteto-help`](./skills/poteto-help/SKILL.md) | you're new to pstack, or unsure which skill, playbook, or principle fits. finds out what you're trying to do, answers that part, and hands you a prompt to type. runs only when you type `/poteto-help`. |
+| [`/how`](./skills/how/SKILL.md) | you want a walkthrough of how a subsystem works. |
+| [`/why`](./skills/why/SKILL.md) | you want to know why something was built this way. discovers available MCPs at run time and queries each evidence category in parallel (source control, issue tracker, long-form docs, real-time chat, infra observability, error tracking, analytics warehouse). |
+| [`/recall`](./skills/recall/SKILL.md) | you're starting or resuming work and want your recent context on a topic rebuilt from your own chat history and the shared record, handed back as a tight current-state brief. |
+| [`/blast-radius`](./skills/blast-radius/SKILL.md) | you have a small-looking change and want to know what else it could break, with the one fact it's safe because of proven by running code, not asserted. |
+| [`/architect`](./skills/architect/SKILL.md) | you're about to write code that crosses a function boundary and want the caller's usage, types, and module shape settled first. |
+| [`/arena`](./skills/arena/SKILL.md) | you want N parallel attempts at the same thing, then to grab the best parts of each. |
+| [`/swarm`](./skills/swarm/SKILL.md) | you want N parallel workers across different slices or races, then one aggregated report. |
+| [`/interrogate`](./skills/interrogate/SKILL.md) | you have a diff and want different models to try to break it, including a strict code-quality lens. |
+| [`/automate-me`](./skills/automate-me/SKILL.md) | you want your own `-mode` skill, drafted from how you've actually worked. |
+| [`/make-bot-ui`](./skills/make-bot-ui/SKILL.md) | you want a page or dashboard whose buttons fire a Claude routine over its API trigger, including the API-token handoff and Tailscale. |
+| [`/setup-pstack`](./skills/setup-pstack/SKILL.md) | you want to pick which models pstack uses per role. detects your models and writes a config rule. |
+| [`/reflect`](./skills/reflect/SKILL.md) | a long task landed and you want the recipe captured as a skill edit. |
+| [`/correct`](./skills/correct/SKILL.md) | you keep correcting agents for the same mistakes. mines history for mistake classes, fixes each at the highest level that works (architecture, then types, lint, and ci, then tests, with docs last), and keeps a table pairing each rule with what enforces it. |
+| [`/teach`](./skills/teach/SKILL.md) | you want to actually understand a change or subsystem, not just have it summarized. runs how + why and weaves one plain explanation, built up diagram by diagram. |
+| [`/tdd`](./skills/tdd/SKILL.md) | you're fixing a bug and there's a cheap local test path. write the failing test first, then the fix. |
+| [`/benchmark-checklist`](./skills/benchmark-checklist/SKILL.md) | you ran a benchmark or measured a speedup or regression. vets the number (limiter, tuning, errors, repeat runs, end-to-end relevance) before you report or act on it. |
+| [`/no-comments`](./skills/no-comments/SKILL.md) | strip comments before review; spawns Comment Sicko, fixes accepted findings, offers encodings for claimed constraints. |
+| [`/typescript-best-practices`](./skills/typescript-best-practices/SKILL.md) | you're reading or editing typescript. grounds the type-system-discipline principle in syntax. |
+| [`/figure-it-out`](./skills/figure-it-out/SKILL.md) | no bundled playbook fits. designs a rigorous, auditable playbook for the task. |
+| [`/show-me-your-work`](./skills/show-me-your-work/SKILL.md) | you want a reviewable decision trail. logs decisions to a tsv you can commit. |
+| [`/create-verification-skill`](./skills/create-verification-skill/SKILL.md) | your project has no scripted way to prove app behavior. generates a project-local verify skill with a feature map, for any language or platform. |
+| [`/maintain-verification-skill`](./skills/maintain-verification-skill/SKILL.md) | your verify skill's feature map has drifted from the app. source wave + one live pass, at most one PR of proven corrections. |
+| [`/unslop`](./skills/unslop/SKILL.md) | you're cleaning up writing. removes AI tells. |
+| [`/bro`](./skills/bro/SKILL.md) | you want the last message restated in plain human language, no jargon. |
+| [`/technical-writing`](./skills/technical-writing/SKILL.md) | layered doc standard (Diátaxis + Google developer style + STE + Global English) for docs, RFCs, readmes, PR descriptions, commit messages. |
 
-1. Land changes on `dev`. Run `npm update --prefix packages` within the pinned majors from time to time, with `npm test`.
-2. Open a pull request from `dev` into `main`. Its description becomes the release notes. Label it `release:minor` or `release:major` for more than a patch bump.
-3. Wait for the `npm test` checks (Ubuntu, macOS and Windows at Node 22.22.2; browser tests on Ubuntu only), make sure `main` hasn't moved since they ran, and merge with a merge commit.
+</details>
 
-The merge's run finds the bundle the pull request tested for exactly the merged tree, builds into `dist/` and checks the build is byte-for-byte that bundle, bumps `version` in both `plugin.json` manifests, pins the marketplace entry to `vX.Y.Z`, commits that to `main`, tags it `vX.Y.Z`, creates a GitHub Release (your notes, each output's size, then GitHub's list of changes), and fast-forwards `dev` to the release commit.
+pstack also ships the `deslop` skill (`/deslop`), plus `control-cli` (for CLIs and TUIs) and `control-ui` (for browser, Electron, web).
 
-If the release fails after a merge (for example because `main` moved and the merged tree was never tested), run **Release** by hand on `main`. It tests `main` as it is and then releases it:
+
+
+### examples
+
+mostly i type [`/poteto-mode`](./skills/poteto-mode/SKILL.md) at the start of a task and let it route to a playbook. the other skills fire as the steps need them. a few i reach for directly.
+
+
+<details>
+<summary>all the examples</summary>
 
 ```
-gh workflow run release.yml --ref main -f bump=patch -f notes="$(cat notes.md)"
+bug fix:           /poteto-mode this pr has a subtle bug where the scroll drifts every 750ms even
+                   when idle. repro first, then fix and verify.
+perf:              /poteto-mode a big list takes a second or two to load even though we virtualize.
+                   run a cpu trace and tell me why.
+feature:           /poteto-mode build a small feature behind a feature flag. verify it really works.
+prototype:         /poteto-mode build two prototypes of the markdown renderer so we can compare.
+                   spawn an agent for each.
+multi-phase:       /poteto-mode open source these skills as a plugin. nothing internal leaks, work
+                   in a temp dir, show me the dependency graph first.
+overnight run:     /poteto-mode i'm going to bed. land the stack even if ci flakes. i want
+                   everything merged by morning.
+babysit:           /poteto-mode check on pr 123. anything outstanding?
+visual parity:     /poteto-mode the row spacing is too tall when this flag is on. the second image
+                   is correct. repro and fix until it matches.
+figure it out:     /poteto-mode i'm stepping away. migrate every caller from the synchronous store
+                   to the new async one, keeping behavior identical. i want to trust it was done
+                   right when i'm back.
+how:               /how do we cancel runs? do we have an n+1 when we look up every run to cancel?
+why:               /why is this feature flag not on yet?
+architect:         design this instrumentation to be high signal with no false positives. /architect
+                   this first.
+arena:             /arena take my prompt to the arena verbatim. i want to compare their proposals
+                   with yours.
+swarm:             /swarm check every package under packages/ against its check.sh. one worker per
+                   package. one report.
+interrogate:       /interrogate review this pr.
+tdd:               /tdd implement
+unslop:            can we unslop and tighten the new changes?
+reflect:           /reflect that took too long. capture what we learned so the next run doesn't
+                   repeat it.
+correct:           /correct
+show-me-your-work: /show-me-your-work keep a decision trail i can review when i'm back.
+automate-me:       /automate-me
+help:              /poteto-help which skill should i use to review this branch?
 ```
+
+</details>
+
+## the `poteto-agent` and Comment Sicko subagents
+
+pstack also ships a subagent that runs my style end to end. spawn it from a parent agent via [`subagent_type: "pstack:poteto-agent"`](./agents/poteto-agent.md). it reads `poteto-mode` in full, including its inline principles index, before doing any work. substituting `general-purpose` skips that read and drifts.
+
+[`/poteto-mode`](./skills/poteto-mode/SKILL.md) and [`subagent_type: "pstack:poteto-agent"`](./agents/poteto-agent.md) route through the same wrapper.
+
+pstack also ships [Comment Sicko](./agents/comment-sicko.md), a read-only comment reviewer available as `subagent_type: "pstack:comment-sicko"`. usually invoke it through [`/no-comments`](./skills/no-comments/SKILL.md), not directly.
+
+## principles
+
+twenty-four short skills, one principle each. `poteto-mode` indexes them inline and reads that index at task start. the standalone files are there so other skills can reference a principle by name, and so the index can point at the full rule for each.
+
+<details>
+<summary>all twenty-four principles</summary>
+
+| principle | group | rule |
+|---|---|---|
+| [laziness-protocol](./skills/principle-laziness-protocol/SKILL.md) | core | Bias toward deletion and the smallest change that solves the problem. |
+| [foundational-thinking](./skills/principle-foundational-thinking/SKILL.md) | core | Apply before writing logic: choosing core types and data structures, sequencing scaffold-vs-feature work, asking what concurrent actors share. Get the data structures right so downstream code becomes obvious. |
+| [redesign-from-first-principles](./skills/principle-redesign-from-first-principles/SKILL.md) | core | Redesign as if the requirement had been a foundational assumption from day one, instead of bolting it on. |
+| [attack-the-premise](./skills/principle-attack-the-premise/SKILL.md) | core | Apply when two or more fixes that share one premise have failed the same gate. Take a census of which actors hold the imbalance before the next fix, then question the premise instead of writing another fix that assumes it. |
+| [subtract-before-you-add](./skills/principle-subtract-before-you-add/SKILL.md) | core | Remove dead weight, redundant validators, and stub references first, then build on the simpler base. |
+| [minimize-reader-load](./skills/principle-minimize-reader-load/SKILL.md) | core | Count layers between question and answer, and hidden state in the reader's head; collapse one-caller wrappers and shrink mutable scope. |
+| [outcome-oriented-execution](./skills/principle-outcome-oriented-execution/SKILL.md) | core | Apply during planned rewrites and migrations with explicit phase boundaries. Converge on the target architecture; don't preserve smooth intermediate states with throwaway compatibility code. |
+| [experience-first](./skills/principle-experience-first/SKILL.md) | core | Choose user delight over implementation convenience; ship fewer polished features over more rough ones. |
+| [exhaust-the-design-space](./skills/principle-exhaust-the-design-space/SKILL.md) | core | Build 2-3 competing prototypes and compare side by side before committing. |
+| [build-the-lever](./skills/principle-build-the-lever/SKILL.md) | core | Apply to any non-trivial work, not just bulk work: edits, migrations, analyses, checks. Build the tool that does it or proves it (codemod, script, generator, or a skill your subagents follow) instead of working by hand. The tool is the artifact a reviewer can rerun. |
+| [model-the-domain](./skills/principle-model-the-domain/SKILL.md) | architecture | Encode the domain in a structure instead of scattered conditionals. |
+| [boundary-discipline](./skills/principle-boundary-discipline/SKILL.md) | architecture | Concentrate guards at system boundaries (CLI, config, network, external APIs); trust internal types and keep business logic in pure functions. |
+| [type-system-discipline](./skills/principle-type-system-discipline/SKILL.md) | architecture | Make illegal states unrepresentable, brand semantic primitives, parse external data at boundaries, refuse to lie to the compiler, exhaust variants, derive from authoritative schemas. |
+| [make-operations-idempotent](./skills/principle-make-operations-idempotent/SKILL.md) | architecture | Converge to the same end state regardless of partial prior runs. |
+| [migrate-callers-then-delete-legacy-apis](./skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md) | architecture | Migrate callers and delete the old API in the same wave instead of preserving compatibility layers. |
+| [separate-before-serializing-shared-state](./skills/principle-separate-before-serializing-shared-state/SKILL.md) | architecture | Eliminate the sharing first; serialize structurally only when one shared writer is a real invariant. |
+| [prove-it-works](./skills/principle-prove-it-works/SKILL.md) | verification | Apply after completing a task, before declaring done. Verify against the real artifact (run the feature, read the actual value, inspect the diff), not a proxy, self-report, or 'it compiles.'. |
+| [fix-root-causes](./skills/principle-fix-root-causes/SKILL.md) | verification | Trace each symptom to its root cause and fix it there; reproduce first, ask why until you reach it, resist nil-check guards that silence crashes. |
+| [sequence-verifiable-units](./skills/principle-sequence-verifiable-units/SKILL.md) | verification | Apply to multi-step work (sweeps, migrations, runs of similar edits) and to how you stack commits and PRs. Break work into small units that each end in a verifiable state, check each before the next, and order delivery so the sequence proves itself to a reviewer. |
+| [test-behavior-not-implementation](./skills/principle-test-behavior-not-implementation/SKILL.md) | verification | Apply when you write, change, or keep a test. Call the code the way its users do and assert the result they observe against a literal expected value. If the test would still pass when every imported function returns undefined, rewrite the assertion or delete the test. |
+| [explain-the-number](./skills/principle-explain-the-number/SKILL.md) | verification | Apply before you trust, report, or act on a number you measured: a speedup, a regression, a throughput, a latency, or an eval result. Find what limits it, and rule out that it measured something other than the work you think. |
+| [guard-the-context-window](./skills/principle-guard-the-context-window/SKILL.md) | delegation | Route bulk to subagents; keep summaries in the main thread, not raw payloads. |
+| [never-block-on-the-human](./skills/principle-never-block-on-the-human/SKILL.md) | delegation | Proceed, present the result, let the human course-correct after the fact; reserve confirmation for irreversible actions. |
+| [encode-lessons-in-structure](./skills/principle-encode-lessons-in-structure/SKILL.md) | meta | Encode the rule as a lint, metadata flag, runtime check, or script instead of more text. |
+
+</details>
+
+## not shipped here
+
+a few things `poteto-mode` references but doesn't bundle:
+
+- `skill-creator` is anthropic's skill for authoring SKILL.md files. get it with `/plugin install skill-creator@claude-plugins-official`. claude code ships a built-in `/autofix-pr`; inside `poteto-mode`, the [babysit playbook](./skills/poteto-mode/playbooks/babysit.md) supersedes it for pr-status requests.
+
+## why are there no planning skills?
+
+claude code already has a great plan mode which works great with pstack. but personally, i don't believe in planning. the best spec is code. if you do want to make a plan, [`/poteto-mode`](./skills/poteto-mode/SKILL.md) covers it, but it's not a default. 
+
+## make it yours
+
+`poteto-mode` is my style. you may not want exactly that.
+
+type [`/automate-me`](./skills/automate-me/SKILL.md). it mines your recent transcripts, drafts a `<your-name>-mode` skill from how you've actually worked, and routes through pstack underneath. you keep pstack as the base and end up with your own routing skill alongside `poteto-mode`.
+
+models are configurable too. type [`/setup-pstack`](./skills/setup-pstack/SKILL.md). it detects the models you have access to and writes a small always-applied rule mapping each role (code, judgment, the review panels) to a model. every skill reads it and falls back to sensible defaults when the rule is absent, so you override only what you want.
+
+when a default changes, a rule written before the change still pins the old default. delete those role lines, or delete the file, then run `/setup-pstack` again. a rerun keeps any role whose model differs from the default.
+
+## automations
+
+pstack also ships a dormant [benny automation pack](./automations/benny/). benny triages slack issue reports, then reproduces and fixes confirmed bugs with real ui evidence. its files are not registered as slash skills.
+
+to set it up, point claude code at [`FOR_AGENTS.md`](./automations/benny/FOR_AGENTS.md). setup copies the pack into the target repository at `.claude/automations/benny/`, enables pstack there for shared skills in local sessions, has you add pstack to the claude code project that runs the routines (on team and enterprise, an owner installs it for every cloud session through server-managed settings), and keeps user configuration outside the copied pack.
+
+## license
+
+MIT
+
+## credits
+
+ported to claude code from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan (MIT). the `deslop`, `control-cli`, and `control-ui` skills come from Cursor's `cursor-team-kit` plugin (MIT, copyright Cursor). see [`LICENSE-cursor-team-kit`](./LICENSE-cursor-team-kit). what changed in the port, and how to sync upstream, is in [`PORTING.md`](./PORTING.md).

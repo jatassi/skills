@@ -1,15 +1,20 @@
 ---
 name: figure-it-out
-description: "Design an auditable playbook when no narrower one fits: one PR's worth of cross-cutting work such as a migration across many call sites, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions via show-me-your-work. Use for /figure-it-out, 'figure it out', a migration across many call sites, or when no narrower playbook applies."
+description: "Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions via show-me-your-work. Use for /figure-it-out, 'figure it out', a large migration, or when no narrower playbook applies."
+disable-model-invocation: true
 ---
 
 # Figure it out
 
 When the task matches no playbook, design one. The deliverable before any code is the workflow itself: a sequence of phases that scales rigor to the task, runs the scientific method, and leaves a decision trail a human can audit after stepping away.
 
+pstack's skills live beside this one, at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md`. Most set `disable-model-invocation: true`, so Claude Code refuses them through the Skill tool. Don't call it for them. To run one, read its SKILL.md in full.
+
+For a principle skill named **`<x>`**, `<name>` is `principle-<x>`.
+
 ## Start
 
-Open a todolist whose first item is to read the Principles section of the **make-it-so** skill. Then add the phases below as todos, with Reflect as the last item.
+Open a todolist (a checklist in your reply when the session has no task tools) whose first item is to read the Principles section of the **poteto-mode** skill. Then add the phases below as todos.
 
 ## Phase A: Frame
 
@@ -39,7 +44,7 @@ Apply the **sequence-verifiable-units** principle skill, verifying each unit bef
 
 - Verify by inspecting the artifact, never a self-report. When something passes too easily, suspect the observation method before the system.
 - Pair delegated work with a judge. If a worker games the gate, reset and harden the contract. If the gate itself is wrong, fix the gate in its own change rather than routing around it.
-- Record each verdict in the vocabulary of `docs/agents/verification.md`, the verification ledger's one full statement. Inconclusive is not a pass. Don't hide a negative.
+- A verdict is VERIFIED, NOT VERIFIED, or INCONCLUSIVE. Inconclusive is not a pass. Don't hide a negative.
 
 ## Phase D: Keep the audit trail
 
@@ -49,10 +54,4 @@ Log the run via the **show-me-your-work** skill. figure-it-out's work is usually
 
 Check the whole against the Phase A predicate on the real product, not just the harness. Encode any recurring correction as a gate, a lint rule, a check, or a script (the **encode-lessons-in-structure** principle skill).
 
-## Phase F: Open the PR
-
-When the run ships a change, run make-it-so's Opening a PR playbook (`<milliways>/skills/make-it-so/playbooks/opening-a-pr.md`, where `<milliways>` is the milliways plugin root, two folders above this skill's base directory), which writes the PR with the **pr** skill. Record the verdict on the PR per `docs/agents/verification.md`. `skip:` when the run ships nothing.
-
-**Reply:** the playbook you designed, the rigor level and why, the decision-trail path, what's verified against the predicate, the PR link, and what's still open.
-
-**Reflect, the last step.** Keep this as the last item in the todo list, and do it before you send the reply. List what this thread had to work around: a broken or missing tool, a flaky check, a skill or doc that misled you, a lint you suppressed, a pattern you copied knowing it was wrong. File one `garden` issue for each, per `docs/agents/garden.md`, unless an open one already covers it, and name what you filed in the reply. In a repo without that document, list them in the reply instead. Run the full **reflect** skill as well when the thread was long or the chef asks for it.
+**Reply:** the playbook you designed, the rigor level and why, the decision-trail path, what's verified against the predicate, and what's still open.
