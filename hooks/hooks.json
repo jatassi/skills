@@ -1,0 +1,25 @@
+{
+	"hooks": {
+		"SessionStart": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/pstack-root.sh\" SessionStart"
+					}
+				]
+			}
+		],
+		"SubagentStart": [
+			{
+				"matcher": "^pstack:",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/pstack-root.sh\" SubagentStart"
+					}
+				]
+			}
+		]
+	}
+}

@@ -1,6 +1,6 @@
 schema_version: 1
 
-automations:
+routines:
   triage_name: "benny-triage"
   reproduce_name: "benny-reproduce"
 
@@ -12,8 +12,10 @@ slack:
   thread_post_action: "configured-slack-thread-post-action"
   file_download_action: "configured-slack-file-download-action"
   operations_edit_action: "configured-slack-edit-action"
-  prefer_cursor_actions: true
-  optional_bot_token_env: "BENNY_SLACK_BOT_TOKEN"
+  reaction_action: "configured-slack-reaction-action"
+  prefer_connector_actions: true
+  optional_bot_token_secret: "BENNY_SLACK_BOT_TOKEN"
+  triage_uses_bot_token: false
   allow_source_root_posts: false
   allow_worker_slack_writes: false
 
@@ -39,14 +41,14 @@ tracker:
   require_compensation_action: true
 
 routing:
-  map_path: ".cursor/benny/routing.md"
+  map_path: ".claude/benny/routing.md"
   owner_pings_default: false
   allow_feature_owner_ping: false
   allow_confirmed_regression_author_ping: false
 
 control:
   skill_name: "control-target-app"
-  feature_map_path: ".cursor/benny/feature-map.md"
+  feature_map_path: ".claude/benny/feature-map.md"
   environment: "safe-test-environment-placeholder"
   artifact_directory: "/tmp/benny-artifacts"
   artifact_retention_hours: 24
@@ -59,6 +61,8 @@ verdict_markers:
 
 status_emoji:
   seen: "👀"
+  triage_claimed: "compass"
+  repro_claimed: "test_tube"
   reproducing: "🔎"
   reproduced: "✅"
   could_not_reproduce: "⚪"
@@ -69,6 +73,7 @@ status_emoji:
 
 budgets:
   poll_seconds: 45
+  lookback_hours: 6
   verdict_wait_minutes: 45
   triage_follow_up_minutes: 10
   triage_total_minutes: 30
@@ -78,7 +83,7 @@ budgets:
   operations_follow_up_minutes: 45
 
 models:
-  triage: "choose-an-available-public-model-slug"
-  reproduce: "choose-an-available-public-model-slug"
-  code: "choose-an-available-public-model-slug"
-  media_review: "choose-an-available-public-model-slug"
+  triage: "choose-an-available-model-and-effort"
+  reproduce: "choose-an-available-model-and-effort"
+  code: "choose-an-available-model-and-effort"
+  media_review: "choose-an-available-model-and-effort"

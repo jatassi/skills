@@ -22,9 +22,16 @@ prs=$(mktemp)
 gh pr list --author "@me" --state all --limit 1000 \
 	--json number,state,headRefName 2>/dev/null > "$prs" || echo "[]" > "$prs"
 
-# Transcripts dir: ~/.cursor/projects/<slugified-repo-path>/agent-transcripts.
-slug=$(printf '%s' "$main_wt" | sed 's#^/##; s#/#-#g')
-transcripts="$HOME/.cursor/projects/$slug/agent-transcripts"
+# Transcripts dir: ~/.claude/projects/<slugified-repo-path>, one .jsonl per
+# session. A session started in a worktree gets that worktree's own folder, so
+# search the main checkout's exact slug, its <slug>--claude-worktrees-* folders,
+# and each worktree's own slug, never a bare prefix that also matches sibling
+# repos (proj vs proj2). Claude Code cuts a slug past 200 characters and appends
+# a hash, so cap() matches a long one on its first 200.
+slugify() { printf '%s' "$1" | sed 's#[^A-Za-z0-9]#-#g'; }
+cap() { [ ${#1} -le 200 ] && printf '%s' "$1" || printf '%s*' "${1:0:200}"; }
+slug=$(slugify "$main_wt")
+transcripts="$HOME/.claude/projects"
 now=$(date +%s)
 
 printf "SIZE\tAGE\tMERGED\tDIRTY\tREMOTE\tPR\tLAST_CHAT\tBUCKET\tWORKTREE\n"
@@ -64,7 +71,9 @@ git worktree list --porcelain | awk '/^worktree /{print $2}' | while read -r wt;
 	# followed by "/" or a quote so glint-482 does not match glint-482-r37.
 	last="-"; last_ts=0
 	if [ -d "$transcripts" ]; then
-		f=$(rg -l -e "${wt}/" -e "${wt}\"" "$transcripts" 2>/dev/null \
+		f=$(rg -l -g '*.jsonl' -e "${wt}/" -e "${wt}\"" "$transcripts/"$(cap "$slug") \
+			"$transcripts/"$(cap "$slug--claude-worktrees-")* \
+			"$transcripts/"$(cap "$(slugify "$wt")") 2>/dev/null \
 			| xargs stat -f '%m %N' 2>/dev/null | sort -rn | head -1)
 		if [ -n "$f" ]; then last_ts=$(echo "$f" | awk '{print $1}')
 			last=$(date -r "$last_ts" '+%Y-%m-%d' 2>/dev/null); fi

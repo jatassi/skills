@@ -418,3 +418,19 @@ it("uses the specified retry floor and cap", () => {
   expect(queryBackoffSeconds(1, 2)).toBe(120);
   expect(queryBackoffSeconds(60, 4)).toBe(300);
 });
+
+it("flags a pending Claude Code Review check as review automation running", async () => {
+  const snapshot = await readSnapshot({
+    reader: fakeReader({
+      fastPath: {
+        kind: "checks",
+        checks: [passingCheck(), pendingCheck("Claude Code Review")],
+      },
+    }),
+    context: context(3),
+    pendingHistory: "omit",
+    allowDraft: false,
+  });
+  if (snapshot.kind !== "open") throw new Error("expected open snapshot");
+  expect(snapshot.reviewAutomationRunning).toBe(true);
+});

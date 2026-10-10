@@ -192,7 +192,7 @@ describe("closed enum parsing", () => {
   });
 });
 
-it("annotates Bugbot threads with distinct review-pass counts", () => {
+it("annotates Claude Code Review threads with distinct review-pass counts", () => {
   const response = {
     data: {
       repository: {
@@ -205,11 +205,13 @@ it("annotates Bugbot threads with distinct review-pass counts", () => {
                 comments: {
                   nodes: [
                     {
-                      body: "RUN_ID: run-1",
+                      body: "🔴 **Important**: Token refresh races with logout, leaving stale sessions active\n\n<details>\n<summary>Why this was flagged</summary>\n\n`refreshToken` writes the session after `logout` cleared it.\n</details>",
                       createdAt: "now",
                       path: "a.ts",
                       line: 1,
-                      author: { login: "bugbot" },
+                      author: { login: "claude" },
+                      pullRequestReview: { id: "PRR_review1" },
+                      originalCommit: { oid: "3f9c2a1" },
                     },
                   ],
                 },
@@ -220,11 +222,13 @@ it("annotates Bugbot threads with distinct review-pass counts", () => {
                 comments: {
                   nodes: [
                     {
-                      body: "CURSOR_AUTOMATION_ID: run-2 severity high",
+                      body: "🟡 **Nit**: `parseExpiry` silently returns 0 on malformed input",
                       createdAt: "now",
                       path: null,
                       line: null,
-                      author: { login: "cursor" },
+                      author: { login: "claude" },
+                      pullRequestReview: { id: "PRR_review2" },
+                      originalCommit: { oid: "8d04e7b" },
                     },
                   ],
                 },
@@ -235,11 +239,13 @@ it("annotates Bugbot threads with distinct review-pass counts", () => {
                 comments: {
                   nodes: [
                     {
-                      body: "RUN_ID: run-3",
+                      body: "🟣 **Pre-existing**: `retry` never resets its backoff",
                       createdAt: "now",
                       path: null,
                       line: null,
-                      author: { login: "bugbot" },
+                      author: { login: "claude" },
+                      pullRequestReview: { id: "PRR_review3" },
+                      originalCommit: { oid: "c51b6f0" },
                     },
                   ],
                 },
@@ -252,8 +258,128 @@ it("annotates Bugbot threads with distinct review-pass counts", () => {
   };
   const threads = parseReviewThreads(response);
   expect(threads).toHaveLength(2);
-  expect(threads.map((thread) => thread.isBugbot)).toEqual([true, true]);
-  expect(threads.map((thread) => thread.bugbotReviewPasses)).toEqual([3, 3]);
+  expect(threads.map((thread) => thread.isReviewBot)).toEqual([true, true]);
+  expect(threads.map((thread) => thread.reviewBotPasses)).toEqual([3, 3]);
+});
+
+it("counts Claude Code Review passes per review, not per thread", () => {
+  const comment = (
+    login: string,
+    body: string,
+    review: string | null,
+    commit: string
+  ) => ({
+    body,
+    createdAt: "now",
+    path: "src/cache.ts",
+    line: 7,
+    author: { login },
+    pullRequestReview: review === null ? null : { id: review },
+    originalCommit: { oid: commit },
+  });
+  const thread = (id: string, first: ReturnType<typeof comment>) => ({
+    id,
+    isResolved: false,
+    comments: { nodes: [first] },
+  });
+  const response = {
+    data: {
+      repository: {
+        pullRequest: {
+          reviewThreads: {
+            nodes: [
+              thread(
+                "first-push-a",
+                comment(
+                  "claude",
+                  "🔴 **Important**: Cache key omits the locale",
+                  "PRR_push1",
+                  "head1"
+                )
+              ),
+              thread(
+                "first-push-b",
+                comment(
+                  "claude",
+                  "🟡 **Nit**: `ttl` is read twice",
+                  "PRR_push1",
+                  "head1"
+                )
+              ),
+              thread(
+                "second-push",
+                comment(
+                  "claude",
+                  "🔴 **Important**: Eviction drops pinned entries",
+                  "PRR_push2",
+                  "head2"
+                )
+              ),
+              thread(
+                "no-review",
+                comment(
+                  "claude",
+                  "🟡 **Nit**: Stale comment above `evict`",
+                  null,
+                  "head3"
+                )
+              ),
+              thread(
+                "bughunter-only",
+                comment(
+                  "claude",
+                  '**Important**: Retry loop never sleeps\n\n<!-- bughunter-severity: {"normal":1,"nit":0,"pre_existing":0} -->',
+                  "PRR_push2",
+                  "head2"
+                )
+              ),
+              thread(
+                "claude-unmarked",
+                comment(
+                  "claude",
+                  "Consider extracting the retry loop into a helper.",
+                  "PRR_unmarked",
+                  "head3"
+                )
+              ),
+              thread(
+                "claude-severity-word",
+                comment(
+                  "claude",
+                  "What severity should a flaky retry get here?",
+                  "PRR_unmarked",
+                  "head3"
+                )
+              ),
+              thread(
+                "human",
+                comment(
+                  "octocat",
+                  "🔴 Is this branch reachable?",
+                  "PRR_human",
+                  "head3"
+                )
+              ),
+            ],
+          },
+        },
+      },
+    },
+  };
+  const threads = parseReviewThreads(response);
+  expect(threads.map((thread) => thread.isReviewBot)).toEqual([
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    false,
+    false,
+  ]);
+  expect(threads.map((thread) => thread.reviewBotPasses)).toEqual([
+    3, 3, 3, 3, 3, 3, 3, 3,
+  ]);
 });
 
 describe("context and stack discovery", () => {

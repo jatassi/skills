@@ -12,6 +12,8 @@ Companion to `how` and `why`. `how` tells you what the code does. `why` tells yo
 
 Listing the callers is not the job. The agent can grep those in a second. The job is the breakage grep won't show you.
 
+pstack's skills live beside this one, at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md`. Most set `disable-model-invocation: true`, so Claude Code refuses them through the Skill tool. Don't call it for them. To run one, read its SKILL.md in full.
+
 ## Don't trust your own writeup
 
 A blast-radius writeup that sounds right is worthless. It reads as convincing whether or not it's true. So don't hand back the writeup. Find the one or two facts the whole thing depends on and prove them by running code.

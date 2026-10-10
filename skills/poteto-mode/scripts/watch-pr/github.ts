@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import type * as T from "./types.ts";
 import { nonEmpty, parsePrNumber } from "./types.ts";
 export const REVIEW_THREADS_QUERY =
-  "\nquery ReviewThreads($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      reviewThreads(first: 100) {\n        nodes {\n          id\n          isResolved\n          comments(first: 10) {\n            nodes {\n              body\n              createdAt\n              path\n              line\n              author { login }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
+  "\nquery ReviewThreads($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      reviewThreads(first: 100) {\n        nodes {\n          id\n          isResolved\n          comments(first: 10) {\n            nodes {\n              body\n              createdAt\n              path\n              line\n              author { login }\n              pullRequestReview { id }\n              originalCommit { oid }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_COMMIT_STATUS_QUERY =
   "\nquery PrCommitStatuses($owner: String!, $repo: String!, $pr: Int!) {\n  repository(owner: $owner, name: $repo) {\n    pullRequest(number: $pr) {\n      commits(last: 50) {\n        nodes {\n          commit {\n            oid\n            statusCheckRollup {\n              state\n            }\n          }\n        }\n      }\n    }\n  }\n}\n";
 export const PR_CHECK_ROLLUP_QUERY =
@@ -330,32 +330,35 @@ function parseComment(value: unknown): T.ReviewComment {
     createdAt: string(object.createdAt, "review comment.createdAt"),
   };
 }
-function isBugbot(comment: T.ReviewComment | null): boolean {
+function isReviewBot(comment: T.ReviewComment | null): boolean {
   if (comment === null) return false;
   const author = (comment.authorLogin ?? "").toLowerCase();
   const body = comment.body.toLowerCase();
   return (
-    author.includes("bugbot") ||
-    (author === "cursor" &&
-      [
-        "bugbot",
-        "cursor_automation_id",
-        "agentic security review",
-        "description start",
-        "severity",
-      ].some((token) => body.includes(token)))
+    author === "claude" &&
+    ["🔴", "🟡", "🟣", "bughunter-severity"].some((token) =>
+      body.includes(token)
+    )
   );
 }
-function passKey(comment: T.ReviewComment | null): string | null {
-  if (comment === null) return null;
-  for (const pattern of [
-    /RUN_ID:\s*([a-zA-Z0-9_.:-]+)/,
-    /CURSOR_AUTOMATION_ID:\s*([a-zA-Z0-9_.:-]+)/,
-  ]) {
-    const match = pattern.exec(comment.body);
-    if (match?.[1]) return match[1];
-  }
-  return null;
+// One Claude Code Review run posts one review, so the review a comment belongs
+// to keys its pass. A comment without a review falls back to the commit it was
+// first left on.
+function passKey(value: unknown): string | null {
+  const object = record(value, "review comment");
+  const review =
+    object.pullRequestReview === null
+      ? null
+      : record(object.pullRequestReview, "review comment.pullRequestReview");
+  if (review !== null)
+    return string(review.id, "review comment.pullRequestReview.id");
+  const commit =
+    object.originalCommit === null
+      ? null
+      : record(object.originalCommit, "review comment.originalCommit");
+  return commit === null
+    ? null
+    : string(commit.oid, "review comment.originalCommit.oid");
 }
 export function parseReviewThreads(value: unknown): readonly T.ReviewThread[] {
   const nodes = list(
@@ -365,6 +368,7 @@ export function parseReviewThreads(value: unknown): readonly T.ReviewThread[] {
   const threads: {
     readonly id: string;
     readonly firstComment: T.ReviewComment | null;
+    readonly passKey: string | null;
     readonly resolved: boolean;
   }[] = [];
   for (const node of nodes) {
@@ -378,14 +382,15 @@ export function parseReviewThreads(value: unknown): readonly T.ReviewThread[] {
     threads.push({
       id: string(thread.id, "review thread.id"),
       firstComment: comments.length === 0 ? null : parseComment(comments[0]),
+      passKey: comments.length === 0 ? null : passKey(comments[0]),
       resolved: thread.isResolved,
     });
   }
   const keys = new Set<string>();
   let keyless = false;
   for (const thread of threads) {
-    if (!isBugbot(thread.firstComment)) continue;
-    const key = passKey(thread.firstComment);
+    if (!isReviewBot(thread.firstComment)) continue;
+    const key = thread.passKey;
     if (key === null) keyless = true;
     else keys.add(key);
   }
@@ -395,8 +400,8 @@ export function parseReviewThreads(value: unknown): readonly T.ReviewThread[] {
     .map(({ id, firstComment }) => ({
       id,
       firstComment,
-      isBugbot: isBugbot(firstComment),
-      bugbotReviewPasses: passes,
+      isReviewBot: isReviewBot(firstComment),
+      reviewBotPasses: passes,
     }));
 }
 export function parsePullRequest(

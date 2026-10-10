@@ -1010,7 +1010,7 @@ function parseGtPullRequest({
   detail: string;
 }): GtPullRequest {
   const match =
-    /^(?:\[origin\] )?PR #([1-9]\d*)(?: \(([^)\r\n]+)\))?(?: .+)?$/.exec(
+    /^PR #([1-9]\d*)(?: \(([^)\r\n]+)\))?(?: .+)?$/.exec(
       detail
     );
   const pr = Number(match?.[1] ?? 0);
@@ -1086,10 +1086,7 @@ function graphitePullRequest({
   const rows = raw
     .replace(/\r/g, "")
     .split("\n")
-    .filter(
-      (line) =>
-        line.startsWith("PR #") || line.startsWith("[origin] PR #")
-    );
+    .filter((line) => line.startsWith("PR #"));
   if (rows.length === 0) {
     throw new UserError(
       `gt info output branch ${branch} has no pull request; this clone's gt metadata may predate the submit, so resolve the frontier from the stacker's clone or after gt sync`

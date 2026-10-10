@@ -1,6 +1,6 @@
 {
 	"name": "jatassi",
-	"description": "poteto's pstack, ported from Cursor to Claude Code.",
+	"description": "poteto's pstack.",
 	"owner": {
 		"name": "Jackson Atassi",
 		"url": "https://github.com/jatassi"

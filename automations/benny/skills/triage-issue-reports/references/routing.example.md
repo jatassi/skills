@@ -1,6 +1,6 @@
 # Routing map example
 
-Copy this file outside `.cursor/automations/benny/`, for example to `.cursor/benny/routing.md`, and replace every placeholder. Point `routing.map_path` at the copy. Pack refreshes must not overwrite it.
+Copy this file outside `.claude/automations/benny/`, for example to `.claude/benny/routing.md`, and replace every placeholder. Point `routing.map_path` at the copy. Pack refreshes must not overwrite it.
 
 The triage skill treats this as data. A route needs evidence from the report or cause trace. A keyword match alone is not enough.
 
@@ -58,4 +58,4 @@ ping_policy:
 - Do not include private data in a public copy.
 - Do not paste raw user or channel IDs into an example that will be published.
 - Keep feature-owner pings off until the target team agrees to them.
-- A reroute tells the reporter where to go. The automation never cross-posts.
+- A reroute tells the reporter where to go. The routine never cross-posts.
