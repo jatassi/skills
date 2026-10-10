@@ -69,7 +69,7 @@ Then run `git apply --3way pstack.patch` and `git apply --3way kit.patch` in thi
 | `.cursor/automations/benny/`, `.cursor/benny/` (benny's target-repo paths) | `.claude/automations/benny/`, `.claude/benny/` |
 | Grok Bot woken over a webhook | a routine's API trigger: `POST https://api.anthropic.com/v1/claude_code/routines/<trig_id>/fire` with `Authorization: Bearer <token>`, `anthropic-beta: experimental-cc-routine-2026-04-01`, `anthropic-version: 2023-06-01`, and body `{"text": ...}` |
 | Grok Bot's routine panel, `update_state` routine create, `SendToUser` secret-request card | claude.ai/code/routines (or `/schedule`, or `create_trigger` from a cloud session), the API trigger's URL and one-time token, and the user writes the token to `<ui-dir>/.token` from their own terminal |
-| Bugbot | Claude Code Review (🔴 Important, 🟡 Nit, 🟣 Pre-existing) |
+| Bugbot | Claude Code Review (🔴 Important, 🟡 Nit, 🟣 Pre-existing) on Team and Enterprise, the built-in `/code-review` skill elsewhere |
 | the agentic security review | the `claude-code-security-review` Action, or `/security-review` locally |
 | Origin (`origin pr ...`) | removed, `gh` is the only forge |
 | Cursor's built-in `babysit` skill | Claude Code's built-in PR auto-fix (`/autofix-pr`) |
@@ -103,7 +103,7 @@ Apply these verbatim to new upstream text that needs them.
 ## Known gaps
 
 - Origin has no Claude analog. Stacks land through `gh` only.
-- Claude Code Review is Team and Enterprise. Other plans use the `claude-code-action` review workflow in its place, and `review-bot-triage.md` triages its comments the same way. watch-pr recognizes only Claude Code Review, though. An action review's comments carry no 🔴, 🟡, or 🟣 marker, so they report `isReviewBot: false`. Its check is named after the workflow job, so a pending one doesn't set `reviewAutomationRunning` unless the job's name contains `review automation` or `claude code review`.
+- Claude Code Review is Team and Enterprise. Other plans run Claude Code's built-in `/code-review` skill on the PR in its place, which reviews the diff in fresh subagents, and `review-bot-triage.md` triages its findings the same way. Each run counts as one pass. watch-pr recognizes only Claude Code Review's comments, so it neither counts nor waits on a `/code-review` run.
 - A local session can't start a cloud session programmatically. `claude --cloud "<task>"` is rejected in non-interactive runs, and `create_session` exists only inside cloud sessions. So a local root runs its workers as worktree subagents on this computer, and work that must outlive the laptop needs its root in a cloud session or Project thread. The Agent tool's `isolation: "remote"` is not used, since it does not reliably start a cloud session.
 - Routines start a fresh cloud session per fire. Cursor's webhook could wake the same bot conversation.
 - The guide's illustrations show robots whose heads echo Cursor's cube logo. They are upstream art and stay as they are.

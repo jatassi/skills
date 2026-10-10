@@ -1,6 +1,6 @@
 # Claude Code Review triage
 
-Use this reference when the Babysit playbook (`../playbooks/babysit.md`) handles Claude Code Review (the PR-review bot) or review-automation comments. Claude Code Review runs on Team and Enterprise plans. Elsewhere the `claude-code-action` review workflow plays its role, and its comments get the same triage. The goal is not to ignore Claude Code Review by default. The goal is to stop treating every comment as a required code change.
+Use this reference when the Babysit playbook (`../playbooks/babysit.md`) handles Claude Code Review (the PR-review bot) or review-automation comments. Claude Code Review runs on Team and Enterprise plans. Elsewhere, run Claude Code's built-in `/code-review` skill on the PR in its place, which reviews the diff in fresh subagents, and give its findings the same triage. The goal is not to ignore Claude Code Review by default. The goal is to stop treating every comment as a required code change.
 
 ## Decision rubric
 
