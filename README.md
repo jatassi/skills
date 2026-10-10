@@ -15,7 +15,19 @@ fork it. improve it. make it yours. PRs are welcome!
 ## install
 
 ```bash
-/plugin install pstack --marketplace jatassi/skills
+/plugin marketplace add jatassi/skills
+/plugin install pstack@jatassi
+```
+
+to enable pstack for everyone who works in a repository, including cloud sessions, commit this to the repository's `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "jatassi": { "source": { "source": "github", "repo": "jatassi/skills" } }
+  },
+  "enabledPlugins": { "pstack@jatassi": true }
+}
 ```
 
 pstack needs claude code v2.1.292 or later, for the agent tool's `effort` parameter.
