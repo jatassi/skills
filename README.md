@@ -33,7 +33,7 @@ two steps:
 
 new here? the [pstack guide](./docs/guide/README.md) walks you through a first real task, from setup and prompting through verification and overnight runs. stuck, or unsure which skill fits? ask [`/poteto-help`](./skills/poteto-help/SKILL.md).
 
-that's it. the other skills are situational; the mode skill uses them for you as needed. out of the box the mode splits work by reasoning effort: code delegates (feature, refactoring, bug fix, perf, hillclimb) go to opus 5.5 at medium effort, while the hardest changes, prose, and judgment go to opus 5.5 at high effort. the default panel is opus 5.5 at high / opus 5.5 at medium. [`/setup-pstack`](./skills/setup-pstack/SKILL.md) changes any of it.
+that's it. the other skills are situational; the mode skill uses them for you as needed. out of the box the mode splits work by reasoning effort: code delegates (feature, refactoring, bug fix, perf, hillclimb) go to opus 5.5 at medium effort, while the hardest changes, prose, and judgment go to opus 5.5 at high effort. the default panel is two opus 5.5 runs at high effort. [`/setup-pstack`](./skills/setup-pstack/SKILL.md) changes any of it.
 
 ## usage
 

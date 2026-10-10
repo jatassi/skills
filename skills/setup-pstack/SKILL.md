@@ -57,11 +57,11 @@ why investigators: opus medium
 why synthesizer: opus high
 reflect tooling: opus medium
 reflect judgment, divergent, synthesizer: opus high
-arena runners: opus high, opus medium
-arena cross-judge pool: opus high, opus medium
+arena runners: opus high, opus high
+arena cross-judge pool: opus high, opus high
 swarm workers: opus medium
-architect runners: opus high, opus medium
-interrogate reviewers: opus high, opus medium
+architect runners: opus high, opus high
+interrogate reviewers: opus high, opus high
 ```
 
 ### 6. Confirm

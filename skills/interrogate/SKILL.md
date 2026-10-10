@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Interrogate
 
-Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from different models, not assigned personas.
+Spawn one reviewer per configured model to adversarially review code changes. Each model gets the same prompt and rubric. The adversarial signal comes from different models, or independent runs of one model, not assigned personas.
 
 The deliverable is a synthesized verdict. Do NOT auto-apply changes.
 
@@ -38,7 +38,7 @@ Launch all reviewers in a single message using the Agent tool. Use the `interrog
 | Subagent | Default model |
 |----------|---------------|
 | Reviewer A | `opus high` |
-| Reviewer B | `opus medium` |
+| Reviewer B | `opus high` |
 
 For each reviewer:
 - `subagent_type`: `general-purpose`
