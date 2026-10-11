@@ -6,24 +6,25 @@ This repo is poteto's [pstack](https://github.com/cursor/plugins/tree/main/pstac
 
 | Source | Commit | Imported as |
 | --- | --- | --- |
-| `cursor/plugins` `pstack/` | `df581122cde17e6e27686b5a448bde23e4ad4318` | commit `22c405b` (verbatim) |
-| `cursor/plugins` `cursor-team-kit/skills/{deslop,control-cli,control-ui}` and `cursor-team-kit/LICENSE` (as `LICENSE-cursor-team-kit`) | `df3fb154fb982fb83f649de8646d4af6a0cb16b3` | commit `98a8f5c` (verbatim) |
+| `cursor/plugins` `pstack/` | `11713c683fe4add4fd403ea880580abbc9e0875f` | commit `22c405b` (verbatim, at `df581122cde17e6e27686b5a448bde23e4ad4318`), then synced |
+| `cursor/plugins` `cursor-team-kit/skills/{deslop,control-cli,control-ui}` and `cursor-team-kit/LICENSE` (as `LICENSE-cursor-team-kit`) | `11713c683fe4add4fd403ea880580abbc9e0875f` | commit `98a8f5c` (verbatim, at `df3fb154fb982fb83f649de8646d4af6a0cb16b3`) |
 
 ## Syncing upstream
 
-`git diff 98a8f5c` shows the whole port. Commits `22c405b` and `98a8f5c` are verbatim, so every upstream blob at the pins already exists here, and `git apply --3way` merges upstream changes around the port's edits.
+`git apply --3way` merges upstream changes around the port's edits, but only when the upstream blobs at the old pin exist in this repo's object store. Fetch upstream into this repo first, so they do.
 
-To sync to a `cursor/plugins` commit `<new>`, run these in a `cursor/plugins` clone:
+To sync to a `cursor/plugins` commit `<new>`, with `<pin>` the pstack pin and `<kit-pin>` the cursor-team-kit pin from the table, run these in a `cursor/plugins` clone (`sed -i.bak` works with both GNU and BSD sed):
 
 ```sh
-git diff df581122cde17e6e27686b5a448bde23e4ad4318 <new> --relative=pstack -- pstack > pstack.patch
-git diff df3fb154fb982fb83f649de8646d4af6a0cb16b3 <new> --relative=cursor-team-kit -- \
+git diff <pin> <new> --relative=pstack -- pstack > pstack.patch
+git diff <kit-pin> <new> --relative=cursor-team-kit -- \
   cursor-team-kit/skills/deslop cursor-team-kit/skills/control-cli cursor-team-kit/skills/control-ui cursor-team-kit/LICENSE > kit.patch
-sed -i -E '/^(diff --git|--- a\/|\+\+\+ b\/)/s#references/bugbot-triage\.md#references/review-bot-triage.md#g' pstack.patch
-sed -i -E '/^(diff --git|--- a\/|\+\+\+ b\/)/s#([ab])/LICENSE($| )#\1/LICENSE-cursor-team-kit\2#g' kit.patch
+sed -i.bak -E '/^(diff --git|--- a\/|\+\+\+ b\/)/s#references/bugbot-triage\.md#references/review-bot-triage.md#g' pstack.patch
+sed -i.bak -E '/^(diff --git|--- a\/|\+\+\+ b\/)/s#\.cursor-plugin/plugin\.json#.claude-plugin/plugin.json#g' pstack.patch
+sed -i.bak -E '/^(diff --git|--- a\/|\+\+\+ b\/)/s#([ab])/LICENSE($| )#\1/LICENSE-cursor-team-kit\2#g' kit.patch
 ```
 
-Then run `git apply --3way pstack.patch` and `git apply --3way kit.patch` in this repo. Lines the port never touched merge cleanly. Hunks that touch ported lines come back as conflicts, so resolve each by applying the concept map and the standard wording below. Then update the Pins table to `<new>`.
+Then, in this repo, run `git fetch https://github.com/cursor/plugins.git <new>`, `git apply --3way pstack.patch`, and `git apply --3way kit.patch`. Lines the port never touched merge cleanly. Hunks that touch ported lines come back as conflicts, so resolve each by applying the concept map and the standard wording below. A clean merge can still bring in new Cursor-specific text, so grep every changed file for the concept map's Cursor terms (`Task`, `generalPurpose`, `readonly`, `.mdc`, `grok`, `xhigh`, `Origin`, `Bugbot`, `Cursor`) and port what turns up. Then update the Pins table to `<new>`.
 
 ## Packaging
 
