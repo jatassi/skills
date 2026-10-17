@@ -27,7 +27,7 @@ That covers the session (`<session-id>.jsonl`) and subagent (`<session-id>/subag
 
 One message, three `Agent` calls, `subagent_type: general-purpose` (never a read-only built-in type such as `Explore` or `Plan`). Reviewers need MCP access to look up the tickets, chat threads, and observability traces the transcript references, so never use a custom agent whose `tools` allowlist drops MCP.
 
-Each reviewer and the synthesizer name a role line in `~/.claude/rules/pstack-models.md` (in a cloud session, the same lines in the repo's `.claude/rules/pstack-models.md` or the Project instructions) and a default. Set `model` and `effort` to that line's value, or to the default if the rule or the line is missing. Leave `model` and `effort` unset when the value is `inherit-parent`. If the Agent tool rejects that model or effort, use the default and say so. If it rejects the default, use the same model at the highest effort it accepts below the default's.
+Each reviewer and the synthesizer name a role line in `~/.claude/rules/pstack-models.md` (in a cloud session, the same lines in the repo's `.claude/rules/pstack-models.md` or the Project instructions) and a default. Set `model` and `effort` to that line's value, or to the default if the rule or the line is missing. Leave `model` and `effort` unset when the value is `inherit-parent`. If the Agent tool rejects that model or effort, use the default and say so. If it rejects the default, use the same model at the highest effort it accepts below the default's. Pick each subagent's reasoning effort for the job, per the Subagents section of the **poteto-mode** skill.
 
 | Lens | Role line | Default `model` and `effort` | Prompt template |
 |---|---|---|---|
