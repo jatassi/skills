@@ -2,12 +2,15 @@ import { describe, expect, it } from "bun:test";
 import {
   ChecksUnavailable,
   WatcherQueryError,
+  buildReviewThreads,
   mapRollupNode,
   orderStack,
+  parseFastCheck,
   parsePullRequest,
-  parseReviewThreads,
+  parseReviewThreadPage,
   resolveChecks,
   resolveContext,
+  resolveReviewThreads,
 } from "./github.ts";
 import {
   fakeReader,
@@ -119,6 +122,37 @@ describe("rollup node mapping", () => {
     ).toMatchObject({ kind: "code-review-gate" });
   });
 
+  it("classifies a Code Review Gate waiting on an owner approval as the gate", () => {
+    expect(
+      mapRollupNode({
+        __typename: "CheckRun",
+        name: "Code Review Gate",
+        status: "COMPLETED",
+        conclusion: "ACTION_REQUIRED",
+        description: "1 of 2 policies",
+      })
+    ).toMatchObject({
+      kind: "code-review-gate",
+      reportedState: "ACTION_REQUIRED",
+    });
+  });
+
+  it("classifies a fast-path Code Review Gate waiting on an owner approval as the gate", () => {
+    expect(
+      parseFastCheck({
+        name: "Code Review Gate",
+        state: "ACTION_REQUIRED",
+        bucket: "fail",
+      })
+    ).toMatchObject({
+      kind: "code-review-gate",
+      reportedState: "ACTION_REQUIRED",
+    });
+    expect(
+      parseFastCheck({ name: "ci", state: "ACTION_REQUIRED", bucket: "fail" })
+    ).toMatchObject({ kind: "failed", reportedState: "ACTION_REQUIRED" });
+  });
+
   it("maps StatusContext states and drops unknown typenames", () => {
     expect(
       mapRollupNode({
@@ -198,6 +232,7 @@ it("annotates Claude Code Review threads with distinct review-pass counts", () =
       repository: {
         pullRequest: {
           reviewThreads: {
+            pageInfo: { hasNextPage: false, endCursor: null },
             nodes: [
               {
                 id: "one",
@@ -256,7 +291,7 @@ it("annotates Claude Code Review threads with distinct review-pass counts", () =
       },
     },
   };
-  const threads = parseReviewThreads(response);
+  const threads = buildReviewThreads(parseReviewThreadPage(response).threads);
   expect(threads).toHaveLength(2);
   expect(threads.map((thread) => thread.isReviewBot)).toEqual([true, true]);
   expect(threads.map((thread) => thread.reviewBotPasses)).toEqual([3, 3]);
@@ -287,6 +322,7 @@ it("counts Claude Code Review passes per review, not per thread", () => {
       repository: {
         pullRequest: {
           reviewThreads: {
+            pageInfo: { hasNextPage: false, endCursor: null },
             nodes: [
               thread(
                 "first-push-a",
@@ -366,7 +402,7 @@ it("counts Claude Code Review passes per review, not per thread", () => {
       },
     },
   };
-  const threads = parseReviewThreads(response);
+  const threads = buildReviewThreads(parseReviewThreadPage(response).threads);
   expect(threads.map((thread) => thread.isReviewBot)).toEqual([
     true,
     true,
@@ -380,6 +416,103 @@ it("counts Claude Code Review passes per review, not per thread", () => {
   expect(threads.map((thread) => thread.reviewBotPasses)).toEqual([
     3, 3, 3, 3, 3, 3, 3, 3,
   ]);
+});
+
+describe("review thread pagination", () => {
+  const thread = (id: string, resolved = false) => ({
+    id,
+    firstComment: {
+      authorLogin: "someone",
+      body: "please fix",
+      path: "a.ts",
+      line: 1,
+      createdAt: "now",
+    },
+    passKey: null,
+    resolved,
+  });
+
+  it("keeps walking pages until the cursor is exhausted", async () => {
+    const reader = fakeReader({
+      threadPages: [
+        { threads: [thread("one")], endCursor: "next" },
+        { threads: [thread("two")], endCursor: "last" },
+        { threads: [thread("three")], endCursor: null },
+      ],
+    });
+    const threads = await resolveReviewThreads(reader, context);
+    expect(threads.map((item) => item.id)).toEqual(["one", "two", "three"]);
+    expect(reader.calls).toEqual([
+      "reviewThreadPage:null",
+      "reviewThreadPage:next",
+      "reviewThreadPage:last",
+    ]);
+  });
+
+  it("sees an unresolved thread that sits past the first page", async () => {
+    const reader = fakeReader({
+      threadPages: [
+        { threads: [thread("early", true)], endCursor: "next" },
+        { threads: [thread("late")], endCursor: null },
+      ],
+    });
+    const threads = await resolveReviewThreads(reader, context);
+    expect(threads.map((item) => item.id)).toEqual(["late"]);
+  });
+
+  it("stops after a single page when the cursor is exhausted", async () => {
+    const reader = fakeReader({
+      threadPages: [{ threads: [thread("only")], endCursor: null }],
+    });
+    expect((await resolveReviewThreads(reader, context)).length).toBe(1);
+    expect(reader.calls).toEqual(["reviewThreadPage:null"]);
+  });
+
+  it("counts Claude Code Review passes across every page", async () => {
+    const review = (id: string, reviewId: string) => ({
+      id,
+      firstComment: {
+        authorLogin: "claude",
+        body: "🔴 **Important** null deref",
+        path: "a.ts",
+        line: 1,
+        createdAt: "now",
+      },
+      passKey: reviewId,
+      resolved: false,
+    });
+    const reader = fakeReader({
+      threadPages: [
+        { threads: [review("one", "PRR_1")], endCursor: "next" },
+        { threads: [review("two", "PRR_2")], endCursor: null },
+      ],
+    });
+    const threads = await resolveReviewThreads(reader, context);
+    expect(threads.map((item) => item.reviewBotPasses)).toEqual([2, 2]);
+  });
+
+  it("drops resolved threads from later pages too", async () => {
+    const reader = fakeReader({
+      threadPages: [
+        { threads: [thread("one")], endCursor: "next" },
+        { threads: [thread("two", true)], endCursor: null },
+      ],
+    });
+    expect(
+      (await resolveReviewThreads(reader, context)).map((item) => item.id)
+    ).toEqual(["one"]);
+  });
+
+  it("rejects a page that omits pageInfo instead of assuming one page", async () => {
+    const response = {
+      data: {
+        repository: {
+          pullRequest: { reviewThreads: { nodes: [] } },
+        },
+      },
+    };
+    expect(() => parseReviewThreadPage(response)).toThrow(WatcherQueryError);
+  });
 });
 
 describe("context and stack discovery", () => {

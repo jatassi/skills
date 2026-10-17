@@ -35,7 +35,7 @@ Each reviewer gets `subagent_type: general-purpose`, a read-only brief (no edits
 
 If the Agent tool rejects a configured entry, run that reviewer on the first table default of its family and say so. Families are the aliases: `opus`, `sonnet`, `haiku`, `fable`. If its family has no table default, use Reviewer A's default. If it rejects a table default, spawn with the same model at the highest effort it accepts below the default's, and open a separate PR to update the default table. Do not block the review on the rejection. Never treat an `inherit-parent` entry as rejected or apply either fallback to it.
 
-Read `references/reviewer-prompt.md` and fill in the same template for every reviewer with the stated intent, the diff or file contents, the rubric from `references/rubric.md`, and the code-quality lens from `references/code-quality-review.md`.
+Read `references/reviewer-prompt.md` and fill in the same template for every reviewer with the stated intent, the diff or file contents, the rubric from `references/rubric.md`, and the code-quality lens from `references/code-quality-review.md`. Pick each subagent's reasoning effort for the job, per the Subagents section of the **poteto-mode** skill.
 
 ## Step 4, Synthesize
 
