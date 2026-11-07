@@ -6,8 +6,8 @@ This repo is poteto's [pstack](https://github.com/cursor/plugins/tree/main/pstac
 
 | Source | Commit | Imported as |
 | --- | --- | --- |
-| `cursor/plugins` `pstack/` | `09d06eb4b97a1020ab31e84030e38baf1099c7dc` | commit `22c405b` (verbatim, at `df581122cde17e6e27686b5a448bde23e4ad4318`), then synced |
-| `cursor/plugins` `cursor-team-kit/skills/{deslop,control-cli,control-ui}` and `cursor-team-kit/LICENSE` (as `LICENSE-cursor-team-kit`) | `09d06eb4b97a1020ab31e84030e38baf1099c7dc` | commit `98a8f5c` (verbatim, at `df3fb154fb982fb83f649de8646d4af6a0cb16b3`) |
+| `cursor/plugins` `pstack/` | `8ecfb19f844b67a4bc7af7f66c366d57bc7b6d2b` | commit `22c405b` (verbatim, at `df581122cde17e6e27686b5a448bde23e4ad4318`), then synced |
+| `cursor/plugins` `cursor-team-kit/skills/{deslop,control-cli,control-ui}` and `cursor-team-kit/LICENSE` (as `LICENSE-cursor-team-kit`) | `8ecfb19f844b67a4bc7af7f66c366d57bc7b6d2b` | commit `98a8f5c` (verbatim, at `df3fb154fb982fb83f649de8646d4af6a0cb16b3`) |
 
 ## Syncing upstream
 
@@ -24,7 +24,7 @@ sed -i.bak -E '/^(diff --git|--- a\/|\+\+\+ b\/)/s#\.cursor-plugin/plugin\.json#
 sed -i.bak -E '/^(diff --git|--- a\/|\+\+\+ b\/)/s#([ab])/LICENSE($| )#\1/LICENSE-cursor-team-kit\2#g' kit.patch
 ```
 
-Then, in this repo, run `git fetch https://github.com/cursor/plugins.git <new>`, `git apply --3way pstack.patch`, and `git apply --3way kit.patch`. Lines the port never touched merge cleanly. Hunks that touch ported lines come back as conflicts, so resolve each by applying the concept map and the standard wording below. A clean merge can still bring in new Cursor-specific text, so grep every changed file for the concept map's Cursor terms (`Task`, `generalPurpose`, `readonly`, `.mdc`, `grok`, `composer`, `xhigh`, `fast or standard speed`, `Origin`, `--forge origin`, `Bugbot`, `Cursor`) and port what turns up. Then update the Pins table to `<new>`.
+Then, in this repo, run `git fetch https://github.com/cursor/plugins.git <new>`, `git apply --3way pstack.patch`, and `git apply --3way kit.patch`. `git apply` is all-or-nothing, so when upstream deletes a file the port changed, leave it out of the patch with a `':!<path>'` pathspec and `git rm` it here. Lines the port never touched merge cleanly. Hunks that touch ported lines come back as conflicts, so resolve each by applying the concept map and the standard wording below. A clean merge can still bring in new Cursor-specific text, so grep every changed file for the concept map's Cursor terms (`Task`, `generalPurpose`, `readonly`, `.mdc`, `grok`, `composer`, `xhigh`, `fast or standard speed`, `Origin`, `--forge origin`, `forge`, `Bugbot`, `Cursor`, `cursor`, `environment: "cloud"`, `model family`, `<skill dir>`, `Project tracker`) and port what turns up. Then update the Pins table to `<new>`.
 
 ## Packaging
 
@@ -68,6 +68,8 @@ Then, in this repo, run `git fetch https://github.com/cursor/plugins.git <new>`,
 | the Cursor sidebar's pinned chats | the session list (pinned sessions in `claude agents`, or the desktop app's sidebar) |
 | cloud agent | cloud session (Claude Code on the web) |
 | the Cursor dashboard | claude.ai/code |
+| the Project tracker (`notes.md`) and Project store | a `notes.md` in the agent store, on a pushed branch in a cloud session |
+| forking a worker for new work on its built state | `SendMessage` to that worker. Claude Code can't fork another agent |
 | Cursor Project | Project in Claude Code (project conversation plus threads) |
 | Automations, `/automate` | routines, `/schedule` or claude.ai/code/routines |
 | `.cursor/automations/benny/`, `.cursor/benny/` (benny's target-repo paths) | `.claude/automations/benny/`, `.claude/benny/` |
@@ -102,7 +104,7 @@ Apply these verbatim to new upstream text that needs them.
 - **Cloud sessions and plugins.** A cloud session doesn't install the plugins a repo enables. On Pro and Max, pstack reaches cloud work as a thread of a Project with pstack in Project settings > Plugins. The project conversation itself loads no plugins, so users start thread work with `/poteto-mode`, or put "before every task, read pstack's poteto-mode SKILL.md in full and follow it" in the Project instructions. Projects aren't on Team or Enterprise yet. There an Owner installs pstack for every cloud session through server-managed settings (`extraKnownMarketplaces` + `enabledPlugins`).
 - **GitHub in cloud sessions.** The cloud GitHub proxy rejects GraphQL, so `gh pr ...` and the watcher fail there. The PR playbooks fall back to the session's GitHub MCP tools and `gh api` REST, and wake on `subscribe_pr_activity`.
 - **watch-pr.** It detects Claude Code Review instead of Bugbot. A thread counts when its first comment's author is `claude` and the body carries a 🔴, 🟡, 🟣, or `bughunter-severity` marker. It counts passes per review. The review-threads query adds `pullRequestReview { id }` and `originalCommit { oid }`, and the pass key is the review id, or the comment's original commit when there is no review. A pending check whose name contains `claude code review` counts as review automation running. The JSON fields `isBugbot` and `bugbotReviewPasses` are now `isReviewBot` and `reviewBotPasses`, and the `--pretty` line's `isBugBot=` and `bugbotReviewPasses=` are now `isReviewBot=` and `reviewBotPasses=`.
-- **Scripts.** `worktree-audit.sh` finds transcripts under `~/.claude/projects/` by the main checkout's exact slug, its `<slug>--claude-worktrees-*` folders, and each worktree's own slug, never a bare prefix, and caps slugs at Claude Code's 200 characters. `worktree-audit.sh` reads PR state with `gh` only. `orch` keeps upstream's `Forge` type and query table narrowed to `gh`, and drops the `--forge` option and its `origin` entry. The tools package is `@pstack/poteto-mode-tools` (was `@cursor-skill/poteto-mode-tools`).
+- **Scripts.** `worktree-audit.sh` finds transcripts under `~/.claude/projects/` by the main checkout's exact slug, its `<slug>--claude-worktrees-*` folders, and each worktree's own slug, never a bare prefix, and caps slugs at Claude Code's 200 characters. `worktree-audit.sh` reads PR state with `gh` only. The tools packages are `@pstack/poteto-mode-tools` and `@pstack/statechart` (were `@cursor-skill/...`).
 - **benny.** Claude routines have no Slack-message trigger. Each stage runs as an hourly routine that reads a lookback window (`budgets.lookback_hours`) through the Slack connector and claims a report with a reaction before working it. Hourly runs can overlap, so claimed reports are skipped. Repro claims a report only after triage's verdict lands. Routines act as their owner. Triage posts as a distinct Slack bot through `BENNY_SLACK_BOT_TOKEN`, kept as a network secret on the routines' environment (an environment variable on Team and Enterprise). The proxy adds that secret to every request in the session, so with it configured the coordinator does every step itself. Without a bot, triage posts as the owner, who then never posts Benny markers or claim reactions by hand. On Team and Enterprise, Claude Tag watching the source channel is another route.
 
 ## Known gaps

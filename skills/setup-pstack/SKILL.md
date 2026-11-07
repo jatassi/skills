@@ -71,3 +71,7 @@ Tell the user the rule was written and that it applies to new sessions. Re-runni
 ### 7. Offer a verification skill (optional)
 
 Check whether the project has a way to drive the real app for proof (a `verify-*` skill, or an existing harness). If not, offer once: "want a project-local verification skill, so agents can drive the app the way a user does and prove changes work? I can generate one with /create-verification-skill." On yes, read `${CLAUDE_PLUGIN_ROOT}/skills/create-verification-skill/SKILL.md` in full and follow it. It sets `disable-model-invocation: true`, so Claude Code refuses it through the Skill tool. On no, move on without pushing.
+
+### 8. Offer a formal verification skill (optional)
+
+Check whether the project already has a formal verification skill (a project skill that runs a model checker, a proof, or another verifier against the code). If not, offer once: "want a formal verification skill, so agents can prove a key property of your code holds in every case in scope, not only the cases tests reach? I can generate one with /create-formal-verification-skill." On yes, read `${CLAUDE_PLUGIN_ROOT}/skills/create-formal-verification-skill/SKILL.md` in full and follow it. It sets `disable-model-invocation: true`, so Claude Code refuses it through the Skill tool. On no, move on without pushing.
