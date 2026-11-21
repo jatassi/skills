@@ -29,7 +29,7 @@ If a candidate produces no output, proceed with N-1 and note the dropout.
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, spawn one `general-purpose` judge, with a read-only brief, from the `arena cross-judge pool` line in the rule, by default `opus high`. Use the first entry on a different model from the parent's, never a less capable one. With no equally capable different model, use the same model in a fresh context. If the Agent tool rejects an entry, use the next entry, or skip the judge, and say so. While you read in Phase D, the judge scores each candidate, by path label, on each rubric criterion and recommends a base.
+After all Phase B candidates complete, spawn one `general-purpose` judge, with a read-only brief, from the `arena cross-judge pool` line in the rule, by default `opus high`. Use the first entry. The judge needs a fresh context, not a different model, so any entry can judge, the parent's model included. If the Agent tool rejects an entry, use the next entry, or skip the judge, and say so. While you read in Phase D, the judge scores each candidate, by path label, on each rubric criterion and recommends a base.
 
 ## Phase D: Pick a base
 
