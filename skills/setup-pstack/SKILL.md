@@ -28,7 +28,7 @@ The default role-to-model mapping is the rule shape shown in step 5 below. If th
 
 **(b) Apply it.** Build the working table from the skill defaults, and on a re-run keep any role you changed by family, list, or alias (`inherit-parent`). `unlimited`, `large`, `medium`, and `small` set the effort of every real model, panel entries included, to `max`, `xhigh`, `high`, or `medium`. The effort is the word after the model, on the ladder `max` > `xhigh` > `high` > `medium` > `low`. If a model rejects that level, use the highest level it accepts at or below the target, else mark the role as needing a choice. `inherit-parent` does not change. So `unlimited` turns `opus high` and `opus medium` into `opus max`. `large` turns both into `opus xhigh`. `small` turns both into `opus medium`.
 
-**(c) Show the roles and confirm.** Show every role with its model and effort, marking any real model not in the detected set as needing a choice. Also list each line step 2 dropped. Ask whether to accept as-is or change specific roles, offering the detected models, each at the budget's effort (such as `haiku xhigh` under `large`), plus `inherit-parent` (this role runs on the parent session's model and effort) as the options. Prefer AskUserQuestion over free text. It takes at most four options per question, so leave any extra model to its `Other` row. For panel roles (arena runners, interrogate reviewers) the value is a list, and one subagent runs per entry, alias entries included, so the list length sets the count. `arena cross-judge pool` is also a list, but Arena runs one judge. It takes the first value, in list order, whose model differs from the parent's and is not less capable, else the same model in a fresh context, so order it by preference. An `inherit-parent` value never judges. `swarm workers` is the default model for every worker unless a race or comparison assigns another model per arm.
+**(c) Show the roles and confirm.** Show every role with its model and effort, marking any real model not in the detected set as needing a choice. Also list each line step 2 dropped. Ask whether to accept as-is or change specific roles, offering the detected models, each at the budget's effort (such as `haiku xhigh` under `large`), plus `inherit-parent` (this role runs on the parent session's model and effort) as the options. Prefer AskUserQuestion over free text. It takes at most four options per question, so leave any extra model to its `Other` row. For panel roles (arena runners, interrogate reviewers) the value is a list, and one subagent runs per entry, alias entries included, so the list length sets the count. `arena cross-judge pool` is also a list, but Arena runs one judge. It takes the first value the Agent tool accepts, in list order, so order it by preference. The judge needs a fresh context, not a different model, so any value can judge, `inherit-parent` included. `swarm workers` is the default model for every worker unless a race or comparison assigns another model per arm.
 
 ### 4. Validate
 
@@ -51,7 +51,7 @@ perf-issue: opus medium
 hillclimb: opus medium
 judgment and prose: opus high
 arena runners: opus high, opus high
-arena cross-judge pool: opus high, opus high
+arena cross-judge pool: opus high
 swarm workers: opus medium
 interrogate reviewers: opus high, opus high
 ```
