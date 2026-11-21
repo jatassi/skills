@@ -54,7 +54,6 @@ Routines run as cloud sessions, which do not install plugins from `.claude/setti
 
 Have the user start a fresh cloud session for this check. On Pro and Max, that is a new cloud thread the Project conversation starts. On Team and Enterprise, it is a new cloud session at claude.ai/code with the target repository. In it, confirm that Claude Code named pstack's install folder at session start ("pstack is installed at ..."). These skills set `disable-model-invocation: true`, so they don't appear in the session's skill list and the Skill tool refuses them. Confirm instead that each has a `SKILL.md` at `skills/<name>/SKILL.md` under that folder:
 
-- `how`
 - `why`
 - `tdd`
 - `unslop`

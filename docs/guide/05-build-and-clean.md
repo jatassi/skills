@@ -56,7 +56,7 @@ In context, that's enough. [`/tdd`](../../skills/tdd/SKILL.md) writes the smalle
 
 ## Clean before you commit
 
-The [Opening a PR playbook](../../skills/poteto-mode/playbooks/opening-a-pr.md) runs [`/deslop`](../../skills/deslop/SKILL.md) on the diff before each commit and applies [`/unslop`](../../skills/unslop/SKILL.md) to the PR description and commit bodies.
+The [Opening a PR playbook](../../skills/poteto-mode/playbooks/opening-a-pr.md) runs [`/deslop`](../../skills/deslop/SKILL.md) on the diff before each commit, and poteto-mode applies [`/unslop`](../../skills/unslop/SKILL.md) to the PR description and commit bodies.
 
 For prose, `/unslop` takes a target and any extra rules you have:
 
