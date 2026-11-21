@@ -6,8 +6,8 @@ This repo is poteto's [pstack](https://github.com/cursor/plugins/tree/main/pstac
 
 | Source | Commit | Imported as |
 | --- | --- | --- |
-| `cursor/plugins` `pstack/` | `8ecfb19f844b67a4bc7af7f66c366d57bc7b6d2b` | commit `22c405b` (verbatim, at `df581122cde17e6e27686b5a448bde23e4ad4318`), then synced |
-| `cursor/plugins` `cursor-team-kit/skills/{deslop,control-cli,control-ui}` and `cursor-team-kit/LICENSE` (as `LICENSE-cursor-team-kit`) | `8ecfb19f844b67a4bc7af7f66c366d57bc7b6d2b` | commit `98a8f5c` (verbatim, at `df3fb154fb982fb83f649de8646d4af6a0cb16b3`) |
+| `cursor/plugins` `pstack/` | `792440e8a560a4a3f63748cdee70491ecd412982` | commit `22c405b` (verbatim, at `df581122cde17e6e27686b5a448bde23e4ad4318`), then synced |
+| `cursor/plugins` `cursor-team-kit/skills/{deslop,control-cli,control-ui}` and `cursor-team-kit/LICENSE` (as `LICENSE-cursor-team-kit`) | `792440e8a560a4a3f63748cdee70491ecd412982` | commit `98a8f5c` (verbatim, at `df3fb154fb982fb83f649de8646d4af6a0cb16b3`) |
 
 ## Syncing upstream
 
@@ -97,7 +97,7 @@ Apply these verbatim to new upstream text that needs them.
 
 ## Decisions
 
-- **Models.** Every role runs on Opus 5.5. Code roles (Cursor's fast Grok slot) default to `opus medium`, and the hardest work, prose, judgment, and every panel seat default to `opus high`. Panels stay panels. Arena, architect, and interrogate run two `opus high` entries, so their seats differ by fresh context rather than by model. Wherever pstack asks for a different model, it never picks a less capable one. No budget matches these mixed defaults, so `/setup-pstack` offers "defaults" alongside its four budgets, and changes any role.
+- **Models.** Every role runs on Opus 5.5. Code roles (Cursor's fast Grok slot) default to `opus medium`, and the hardest work, prose, judgment, and every panel seat default to `opus high`. Panels stay panels. Arena and interrogate run two `opus high` entries, so their seats differ by fresh context rather than by model. Upstream's Fable, Opus, and Gemini panel seats, its `-fast` Opus slugs, and its slug migrations in `/setup-pstack` are left out. Upstream's Fable exception stays: Fable runs only when the user names it for the task or two `opus high` runs of the same brief failed. Wherever pstack asks for a different model, it never picks a less capable one. No budget matches these mixed defaults, so `/setup-pstack` keeps the port's four fixed budgets (`unlimited`, `large`, `medium`, `small`) and "defaults" in place of upstream's relative ones, and changes any role.
 - **Matching effort to the job.** Upstream starts every role at `xhigh` and moves it per spawn: up one step for the hardest work, down one for judgment, down two or more for routine work, with fast mode only when urgent. The port's role defaults already sit where those moves land (`opus high` for judgment, `opus medium` for code), so poteto-mode's **Match the effort to the job** starts from the role's line or default and moves `effort` only one step: up (to at most `max`) for the hardest or subtlest work, down (to at least `low`) for routine work. Verification stays on the `swarm workers` line.
 - **`disable-model-invocation` stays.** It means the same thing in both harnesses. The skill is user-only and its description stays out of context. In Claude Code it also makes the Skill tool refuse the skill, so skills that route to other pstack skills carry the routing note telling Claude to read the sibling SKILL.md instead. The one exception is `maintain-verification-skill`, which upstream's guide runs on a schedule. Claude Code won't run a `disable-model-invocation` skill from a scheduled task.
 - **Task tools.** Playbooks open a todo list. Claude Code's task tools are off by default on Opus and Sonnet 5.5 in local sessions, so the router and the phase-driven skills fall back to a checklist in the reply, and the README says how to turn them on (`CLAUDE_CODE_ENABLE_TODO_TOOLS=1`).
